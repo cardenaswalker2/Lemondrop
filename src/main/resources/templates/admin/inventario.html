@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .inventory-layout {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        @media (max-width: 900px) {
+            .inventory-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar-admin :: sidebar}"></div>
+
+        <!-- Main workspace -->
+        <main class="main-content">
+            <header>
+                <h1 style="font-size: 2.2rem;">📦 Control de Inventario e Insumos</h1>
+                <p style="color: var(--text-secondary);">Supervisa y reabastece las materias primas para evitar paradas en el servicio.</p>
+            </header>
+
+            <div class="inventory-layout">
+                <!-- Stock Levels -->
+                <div class="card-premium">
+                    <h3 style="margin-bottom: 20px;">Niveles de Stock</h3>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--mint);">
+                                    <th style="padding:12px;">Insumo</th>
+                                    <th style="padding:12px;">Categoría</th>
+                                    <th style="padding:12px;">Cantidad Actual</th>
+                                    <th style="padding:12px;">Mínimo Requerido</th>
+                                    <th style="padding:12px;">Estado</th>
+                                    <th style="padding:12px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="i : ${items}" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                                    <td style="padding:12px; font-weight:700;" th:text="${i.name}">Hielo</td>
+                                    <td style="padding:12px;" th:text="${i.category}">Ingredientes</td>
+                                    <td style="padding:12px; font-weight:700;" th:text="${i.quantity + ' ' + i.unit}">50 Kg</td>
+                                    <td style="padding:12px;" th:text="${i.minStock + ' ' + i.unit}">10 Kg</td>
+                                    <td style="padding:12px;">
+                                        <!-- Derived state badge -->
+                                        <span th:if="${i.quantity <= 0}" class="badge-custom badge-out">🚫 AGOTADO</span>
+                                        <span th:if="${i.quantity > 0 && i.quantity <= i.minStock}" class="badge-custom badge-sold">⚠️ STOCK BAJO</span>
+                                        <span th:if="${i.quantity > i.minStock}" class="badge-custom badge-fav">🟢 Suficiente</span>
+                                    </td>
+                                    <td style="padding:12px;">
+                                        <button class="btn-custom btn-mint" style="padding: 5px 10px; font-size: 0.8rem;" th:attr="onclick=|fillInventoryForm('${i.id}', '${i.name}', '${i.category}', '${i.quantity}', '${i.unit}', '${i.minStock}')|">Reabastecer 📦</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Update stock Form -->
+                <div class="card-premium" style="background-color: var(--bg-cream); height: fit-content;">
+                    <h3 style="margin-bottom: 20px; border-bottom: 2px solid var(--mint); padding-bottom: 10px;">Ajustar Cantidades</h3>
+                    <form th:action="@{/admin/inventario/guardar}" method="post">
+                        <input type="hidden" name="id" id="invId">
+                        
+                        <div class="form-group">
+                            <label class="form-label">Nombre del Insumo *</label>
+                            <input type="text" name="name" id="invName" class="form-control" placeholder="Ej: Vasos" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Categoría *</label>
+                            <select name="category" id="invCategory" class="form-control">
+                                <option value="Ingredientes">Ingredientes</option>
+                                <option value="Insumos">Insumos (Desechables)</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                            <div class="form-group">
+                                <label class="form-label">Cantidad Actual *</label>
+                                <input type="number" step="0.1" name="quantity" id="invQty" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Unidad de Medida *</label>
+                                <input type="text" name="unit" id="invUnit" class="form-control" placeholder="Ej: Kg o Unidades" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Stock Mínimo de Alerta *</label>
+                            <input type="number" step="0.1" name="minStock" id="invMin" class="form-control" required>
+                        </div>
+
+                        <button type="submit" class="btn-custom btn-lemon" style="width:100%; margin-top:15px;">Aplicar Ajuste de Stock</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('side-inventory').classList.add('active');
+
+        function fillInventoryForm(id, name, category, quantity, unit, minStock) {
+            document.getElementById('invId').value = id;
+            document.getElementById('invName').value = name;
+            document.getElementById('invCategory').value = category;
+            document.getElementById('invQty').value = quantity;
+            document.getElementById('invUnit').value = unit;
+            document.getElementById('invMin').value = minStock;
+        }
+    </script>
+</body>
+</html>

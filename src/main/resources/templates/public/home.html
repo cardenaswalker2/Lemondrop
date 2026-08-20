@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemon Drop - Granizados que saben a verano</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .hero-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 80px 10%;
+            gap: 50px;
+            background: linear-gradient(135deg, #FFFDF6 0%, #FFF9D2 100%);
+            border-bottom: 2px solid var(--mint);
+        }
+        .hero-text {
+            max-width: 600px;
+        }
+        .hero-text h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            color: var(--dark);
+        }
+        .hero-text p {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+        .hero-image img {
+            max-width: 100%;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-medium);
+            transform: rotate(2deg);
+        }
+        .step-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        .step-card {
+            text-align: center;
+            padding: 30px 20px;
+            background-color: var(--bg-white);
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-soft);
+            border-bottom: 4px solid var(--green-medium);
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--lemon);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Public Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-text">
+            <span class="badge-custom badge-new" style="margin-bottom: 15px;">Feria Escolar 2026</span>
+            <h1>LEMON DROP</h1>
+            <h2 style="font-family:'Outfit'; font-weight:600; color: var(--green-dark); margin-bottom: 15px;">Granizados que saben a verano. 🍧✨</h2>
+            <p>Refrescantes granizados artesanales preparados al instante con pulpa 100% natural, hielo cristalino y deliciosos complementos.</p>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <a href="/catalogo" class="btn-custom btn-lemon">Haz tu Pedido 🛍️</a>
+                <a href="#sabores" class="btn-custom btn-outline">Ver Sabores</a>
+                <a href="#seguimiento" class="btn-custom btn-mint">Seguir mi Pedido</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&q=80&w=450" alt="Granizado Lemon Drop">
+        </div>
+    </section>
+
+    <!-- Sabores & Features -->
+    <section id="sabores" style="padding: 80px 10%; text-align: center;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 10px;">Nuestros Sabores Naturales 🍓🍋</h2>
+        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 50px auto;">Fruta de verdad para darte la mayor frescura en cada sorbo. Combínalos a tu gusto.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px;">
+            <div class="card-premium" th:each="flavor : ${flavors}">
+                <h3 style="margin-bottom: 10px;" th:text="${flavor.name}">Limón</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 15px;" th:text="${flavor.description}">El clásico e inigualable sabor cítrico</p>
+                <div style="font-weight: 700; color: var(--green-dark);">
+                    Adicional: <span th:text="${flavor.additionalPrice == 0 ? 'Gratis' : '$' + #numbers.formatDecimal(flavor.additionalPrice, 0, 'POINT', 0, 'COMMA')}">Gratis</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Complementos -->
+    <section style="padding: 80px 10%; background-color: var(--bg-white); border-top: 1px solid rgba(164, 208, 164, 0.15); border-bottom: 1px solid rgba(164, 208, 164, 0.15); text-align: center;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 10px;">Complementa tu Granizado 🥛🍮</h2>
+        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 50px auto;">Agrega un toque extra de cremosidad y dulce tradicional.</p>
+        
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+            <div class="card-premium" th:each="addon : ${addons}" style="min-width: 250px; background-color: var(--bg-cream);">
+                <h3 style="margin-bottom: 10px;" th:text="${addon.name}">Leche condensada</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;" th:text="${addon.description}">Toque dulce y cremoso</p>
+                <div style="font-weight: 700; color: var(--green-dark); margin-top: 10px;" th:text="${'+ $' + #numbers.formatDecimal(addon.additionalPrice, 0, 'POINT', 0, 'COMMA')}">
+                    +$1.000
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cómo Funciona -->
+    <section style="padding: 80px 10%; text-align: center;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 10px;">¿Cómo funciona? 🍧🚀</h2>
+        <p style="color: var(--text-secondary);">Realizar tu pedido en la feria escolar es extremadamente sencillo.</p>
+        
+        <div class="step-container">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Elige tu Granizado</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">Explora el catálogo y escoge tu sabor base preferido.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Personaliza</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">Define el tamaño del vaso, sabor e introduce complementos dulces.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Pide sin Cuentas</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">Indica tu nombre y teléfono. Obtén tu código de pedido único.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <h3>Seguimiento</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">Consulta el estado desde tu teléfono en tiempo real. Te avisamos por WhatsApp.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Por Qué Elegirnos / Calidad -->
+    <section style="padding: 80px 10%; background-color: var(--bg-white); border-bottom: 1px solid rgba(164, 208, 164, 0.15); text-align: center;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 10px;">¿Por qué Lemon Drop es diferente? 🌟</h2>
+        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 50px auto;">Cuidamos cada detalle para ofrecerte la mejor experiencia refrescante de la feria.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 30px;">
+            <div class="card-premium">
+                <span style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🍍</span>
+                <h3>Fruta 100% Natural</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">Utilizamos pulpa natural extraída directamente de frutas seleccionadas. Cero saborizantes artificiales.</p>
+            </div>
+            <div class="card-premium">
+                <span style="font-size: 2.5rem; display: block; margin-bottom: 15px;">❄️</span>
+                <h3>Hielo Cristalino</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">Hielo de agua doblemente filtrada para garantizar la máxima pureza e higiene en tu bebida.</p>
+            </div>
+            <div class="card-premium">
+                <span style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🥛</span>
+                <h3>Leche Premium</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">La mejor marca de leche condensada y complementos para lograr una textura y sabor de otro nivel.</p>
+            </div>
+            <div class="card-premium">
+                <span style="font-size: 2.5rem; display: block; margin-bottom: 15px;">⚡</span>
+                <h3>Sin Filas</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">Haz tu pedido desde tu celular y ven a recogerlo solo cuando recibas la notificación de que está listo.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Opiniones / Testimoniales -->
+    <section style="padding: 80px 10%; text-align: center;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 10px;">Lo que dicen nuestros clientes 💬💛</h2>
+        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 50px auto;">Las sonrisas y opiniones de quienes ya probaron nuestros granizados en esta feria.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 800px; margin: 0 auto;">
+            <div class="card-premium" style="background-color: var(--bg-white); border-top: 4px solid var(--lemon);">
+                <p style="font-style: italic; color: var(--text-secondary);">"El granizado de maracuyá con leche condensada es simplemente increíble. ¡Es refrescante y nada empalagoso!"</p>
+                <h4 style="margin-top: 20px; color: var(--dark);">— Sofía Gómez</h4>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">Estudiante de 11° Grado</span>
+            </div>
+            <div class="card-premium" style="background-color: var(--bg-white); border-top: 4px solid var(--strawberry);">
+                <p style="font-style: italic; color: var(--text-secondary);">"El granizado de fresa con dulce de leche me salvó del calor de la tarde. Los complementos se sienten muy frescos."</p>
+                <h4 style="margin-top: 20px; color: var(--dark);">— Valentina Peña</h4>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">Estudiante de 9° Grado</span>
+        </div>
+    </section>
+
+    <!-- Preguntas Frecuentes (FAQ) -->
+    <section style="padding: 80px 10%; background-color: var(--bg-white); border-top: 1px solid rgba(164, 208, 164, 0.15); text-align: left;">
+        <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 10px;">Preguntas Frecuentes 🤔❓</h2>
+        <p style="color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto 50px auto;">Todo lo que necesitas saber para pedir tu Lemon Drop.</p>
+        
+        <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+            <div style="border-bottom: 1px solid rgba(164, 208, 164, 0.2); padding-bottom: 15px;">
+                <h4 style="font-size: 1.15rem; color: var(--dark); margin-bottom: 8px;">¿Cómo recojo mi pedido?</h4>
+                <p style="color: var(--text-secondary); font-size: 0.95rem;">Una vez realices el pedido, verás un código único. Puedes consultarlo en la sección de seguimiento. Cuando tu pedido pase al estado "Listo", acércate a nuestro stand de Lemon Drop, muestra tu código y recíbelo de inmediato sin hacer filas.</p>
+            </div>
+            <div style="border-bottom: 1px solid rgba(164, 208, 164, 0.2); padding-bottom: 15px;">
+                <h4 style="font-size: 1.15rem; color: var(--dark); margin-bottom: 8px;">¿Cuáles son los métodos de pago?</h4>
+                <p style="color: var(--text-secondary); font-size: 0.95rem;">Aceptamos pagos en efectivo al recoger tu pedido en el stand, o pagos digitales mediante transferencia (los datos de pago se muestran al enviar tu pedido por WhatsApp).</p>
+            </div>
+            <div style="border-bottom: 1px solid rgba(164, 208, 164, 0.2); padding-bottom: 15px;">
+                <h4 style="font-size: 1.15rem; color: var(--dark); margin-bottom: 8px;">¿Puedo cancelar o modificar mi pedido?</h4>
+                <p style="color: var(--text-secondary); font-size: 0.95rem;">Si cometiste un error o deseas cambiar algo, comunícate con nosotros de inmediato por el botón de WhatsApp con tu código de pedido para que un asesor te asista.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Consulta de pedido -->
+    <section id="seguimiento" style="padding: 80px 10%; background: linear-gradient(135deg, #FFF9D2 0%, #FFFDF6 100%); border-top: 2px solid var(--mint); text-align: center;">
+        <div style="max-width: 600px; margin: 0 auto;">
+            <h2 style="font-size: 2.2rem; margin-bottom: 15px;">¿Ya hiciste tu pedido? 🛍️🔎</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 30px;">Introduce el código único de tu orden para comprobar en qué fase de preparación se encuentra.</p>
+            
+            <form action="/pedido/seguimiento" method="get" style="display: flex; flex-direction: column; gap: 12px; max-width: 400px; margin: 0 auto;">
+                <input type="text" name="code" class="form-control" placeholder="Código (Ej: LD-2026-00001)" style="font-weight: 700; text-transform: uppercase;">
+                <input type="text" name="phone" class="form-control" placeholder="Teléfono de WhatsApp (Ej: 3001234567)" style="font-weight: 700;">
+                <button type="submit" class="btn-custom btn-lemon" style="width: 100%;">Consultar Estado</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script>
+        document.getElementById('nav-home').classList.add('active');
+    </script>
+</body>
+</html>

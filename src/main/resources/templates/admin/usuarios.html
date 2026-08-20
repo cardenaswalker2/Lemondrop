@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios Asesores - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .users-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        @media (max-width: 900px) {
+            .users-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar-admin :: sidebar}"></div>
+
+        <!-- Main workspace -->
+        <main class="main-content">
+            <header>
+                <h1 style="font-size: 2.2rem;">👥 Personal y Asesores</h1>
+                <p style="color: var(--text-secondary);">Administra las cuentas autorizadas para gestionar pedidos y preparar granizados.</p>
+            </header>
+
+            <div class="users-layout">
+                <!-- User Accounts list -->
+                <div class="card-premium">
+                    <h3 style="margin-bottom: 20px;">Cuentas de Usuarios</h3>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--mint);">
+                                    <th style="padding:12px;">Nombre</th>
+                                    <th style="padding:12px;">Usuario</th>
+                                    <th style="padding:12px;">Teléfono</th>
+                                    <th style="padding:12px;">Rol</th>
+                                    <th style="padding:12px;">Estado</th>
+                                    <th style="padding:12px;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="u : ${users}" style="border-bottom:1px solid rgba(0,0,0,0.05);">
+                                    <td style="padding:12px; font-weight:700;" th:text="${u.name}">María</td>
+                                    <td style="padding:12px;" th:text="${u.username}">maria</td>
+                                    <td style="padding:12px;" th:text="${u.phone}">3001234567</td>
+                                    <td style="padding:12px;">
+                                        <span th:text="${u.role}" class="badge-custom badge-new" style="font-size:0.75rem;">ROLE</span>
+                                    </td>
+                                    <td style="padding:12px;">
+                                        <span th:text="${u.active ? 'Activo' : 'Inactivo'}" th:class="${u.active ? 'badge-custom badge-fav' : 'badge-custom badge-out'}">Activo</span>
+                                    </td>
+                                    <td style="padding:12px;">
+                                        <form th:action="@{/admin/usuarios/toggle/{id}(id=${u.id})}" method="post">
+                                            <button type="submit" class="btn-custom btn-strawberry" style="padding: 5px 10px; font-size: 0.8rem;" th:text="${u.active ? 'Desactivar' : 'Activar'}">Desactivar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Registration form -->
+                <div class="card-premium" style="background-color: var(--bg-cream); height: fit-content;">
+                    <h3 style="margin-bottom: 20px; border-bottom: 2px solid var(--mint); padding-bottom: 10px;">Registrar Asesor</h3>
+                    <form th:action="@{/admin/usuarios/guardar}" method="post">
+                        <div class="form-group">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" name="name" class="form-control" placeholder="Ej: María Gómez" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Teléfono *</label>
+                            <input type="tel" name="phone" class="form-control" placeholder="Ej: 3001234567" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nombre de Usuario *</label>
+                            <input type="text" name="username" class="form-control" placeholder="Ej: maria" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contraseña de acceso *</label>
+                            <input type="password" name="passwordHash" class="form-control" placeholder="••••••••" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Rol asignado *</label>
+                            <select name="role" class="form-control">
+                                <option value="ASESOR">ASESOR</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-custom btn-lemon" style="width:100%; margin-top:15px;">Registrar Cuenta</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('side-users').classList.add('active');
+    </script>
+</body>
+</html>

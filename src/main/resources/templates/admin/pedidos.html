@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Pedidos - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .filter-bar {
+            background-color: var(--bg-white);
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-soft);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar-admin :: sidebar}"></div>
+
+        <!-- Main workspace -->
+        <main class="main-content">
+            <header style="margin-bottom:30px;">
+                <h1 style="font-size: 2.2rem;">🛍️ Historial General de Pedidos</h1>
+                <p style="color: var(--text-secondary);">Consulta y audita todos los pedidos realizados en Lemon Drop.</p>
+            </header>
+
+            <!-- Filters -->
+            <form action="/admin/pedidos" method="get" class="filter-bar">
+                <div style="flex: 1; min-width: 200px;">
+                    <label class="form-label" style="font-size:0.85rem;">Buscar por Código, Nombre o Teléfono</label>
+                    <input type="text" name="query" class="form-control" placeholder="Ej: Juan o LD-2026-00001" th:value="${searchQuery}">
+                </div>
+                <div style="min-width: 180px;">
+                    <label class="form-label" style="font-size:0.85rem;">Filtrar por Estado</label>
+                    <select name="status" class="form-control">
+                        <option value="">Todos los estados</option>
+                        <option th:each="st : ${statuses}" th:value="${st}" th:text="${st.getDisplayName()}" th:selected="${st == selectedStatus}"></option>
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn-custom btn-lemon" style="padding: 11px 24px;">Aplicar Filtros</button>
+                    <a href="/admin/pedidos" class="btn-custom btn-outline" style="padding: 11px 24px;">Limpiar</a>
+                </div>
+            </form>
+
+            <!-- Orders Table -->
+            <div class="card-premium">
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; text-align:left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--mint);">
+                                <th style="padding:15px;">Código</th>
+                                <th style="padding:15px;">Cliente</th>
+                                <th style="padding:15px;">Teléfono</th>
+                                <th style="padding:15px;">Estado</th>
+                                <th style="padding:15px;">Total</th>
+                                <th style="padding:15px;">Modificado por</th>
+                                <th style="padding:15px;">Creación</th>
+                                <th style="padding:15px;">Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="o : ${orders}" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                                <td style="padding:15px; font-weight:700;" th:text="${o.orderCode}">LD-26-00001</td>
+                                <td style="padding:15px;" th:text="${o.customerName}">Juan</td>
+                                <td style="padding:15px;" th:text="${o.customerPhone}">3001234567</td>
+                                <td style="padding:15px;">
+                                    <span th:text="${o.status.getDisplayName()}" class="badge-custom badge-new" style="font-size:0.75rem; padding: 4px 10px;">Recibido</span>
+                                </td>
+                                <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.lastModifiedBy}">GUEST</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}">Hora</td>
+                                <td style="padding:15px;">
+                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:attr="onclick=|openOrderDetailsModal('${o.id}', '${o.orderCode}', '${o.customerName}', '${o.customerPhone}', '${o.total}', '${o.status.getDisplayName()}')|">Ver Detalle 🔎</button>
+                                </td>
+                            </tr>
+                            <tr th:if="${orders.size() == 0}">
+                                <td colspan="8" style="text-align:center; padding: 30px; color:var(--text-secondary);">No se encontraron pedidos con los filtros aplicados.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Order Detail View Modal -->
+    <div class="modal-overlay" id="orderDetailModal">
+        <div class="modal-container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 id="detCode">Pedido Details</h2>
+                <button onclick="closeModal('orderDetailModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-secondary);">&times;</button>
+            </div>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; background-color: var(--bg-cream); padding:15px; border-radius: var(--border-radius-sm); margin-bottom:20px;">
+                <div>
+                    <span style="font-size:0.8rem; color:var(--text-secondary);">Cliente:</span>
+                    <h4 id="detCustomer">Name</h4>
+                </div>
+                <div>
+                    <span style="font-size:0.8rem; color:var(--text-secondary);">Teléfono:</span>
+                    <h4 id="detPhone">Phone</h4>
+                </div>
+                <div>
+                    <span style="font-size:0.8rem; color:var(--text-secondary);">Estado Actual:</span>
+                    <h4 id="detStatus">Status</h4>
+                </div>
+                <div>
+                    <span style="font-size:0.8rem; color:var(--text-secondary);">Total Cobrado:</span>
+                    <h4 id="detTotal" style="color: var(--green-dark);">$0</h4>
+                </div>
+            </div>
+
+            <!-- Products List inside order -->
+            <div style="margin-bottom:20px;">
+                <h4 style="margin-bottom: 10px;">Detalle de Insumos</h4>
+                <div id="detItemsList" style="display:flex; flex-direction:column; gap:8px;">
+                    <!-- dynamic load -->
+                </div>
+            </div>
+
+            <div style="text-align:right;">
+                <button class="btn-custom btn-lemon" onclick="closeModal('orderDetailModal')">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        document.getElementById('side-orders').classList.add('active');
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function openOrderDetailsModal(orderId, orderCode, customerName, customerPhone, total, status) {
+            document.getElementById('detCode').innerText = "Pedido #" + orderCode;
+            document.getElementById('detCustomer').innerText = customerName;
+            document.getElementById('detPhone').innerText = customerPhone;
+            document.getElementById('detStatus').innerText = status;
+            document.getElementById('detTotal').innerText = "$" + parseFloat(total).toLocaleString('es-CO');
+            
+            const list = document.getElementById('detItemsList');
+            list.innerHTML = `<p style="color:var(--text-secondary); font-size:0.9rem;">Cargando detalles...</p>`;
+            document.getElementById('orderDetailModal').classList.add('active');
+
+            // Fetch order snapshot details dynamically from the database
+            fetch('/asesor/api/pedidos/updates')
+                .then(res => res.json())
+                .then(orders => {
+                    // This is a mockup/polling helper to easily retrieve from the local UI
+                    // To get precise items, we can read details or find the specific order from list
+                    // Since it's in templates, we can pass model object directly. 
+                    // Let's print out order items by reading the lists
+                    const ordersFull = /*[[${orders}]]*/ [];
+                    const matched = ordersFull.find(o => o.id === orderId);
+                    if (matched) {
+                        list.innerHTML = "";
+                        matched.items.forEach(item => {
+                            const addonsStr = item.addons.map(a => a.addonName).join(', ');
+                            list.innerHTML += `
+                                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding-bottom:6px;">
+                                    <div>
+                                        <strong>${item.productName} (${item.flavorName})</strong>
+                                        <div style="font-size:0.75rem; color:var(--text-secondary);">Tamaño: ${item.size} | Cantidad: ${item.quantity}</div>
+                                        ${addonsStr ? `<div style="font-size:0.75rem; color:var(--green-dark);">Adicionales: ${addonsStr}</div>` : ""}
+                                    </div>
+                                    <span style="font-weight:700;">$${item.subtotal.toLocaleString('es-CO')}</span>
+                                </div>
+                            `;
+                        });
+                    }
+                })
+                .catch(err => {
+                    list.innerHTML = `<p style="color:var(--strawberry);">Error al cargar productos.</p>`;
+                });
+        }
+    </script>
+</body>
+</html>

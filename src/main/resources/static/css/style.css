@@ -1,0 +1,616 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
+
+:root {
+    --bg-cream: #FFFDF6;
+    --bg-white: #FFFFFF;
+    --mint: #D8EBB5;
+    --green-medium: #A4D0A4;
+    --green-dark: #4E9F3D;
+    --lemon: #FCE22A;
+    --lemon-hover: #E4C815;
+    --strawberry: #FF6B6B;
+    --strawberry-hover: #E05252;
+    --dark: #2C3E2B;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.04);
+    --shadow-medium: 0 10px 40px rgba(0, 0, 0, 0.08);
+    --border-radius-sm: 8px;
+    --border-radius-md: 16px;
+    --border-radius-lg: 24px;
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-cream);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    color: var(--dark);
+    font-weight: 700;
+}
+
+/* Base Styles */
+a {
+    color: var(--green-dark);
+    text-decoration: none;
+    transition: var(--transition-smooth);
+}
+a:hover {
+    color: var(--dark);
+}
+
+.btn-custom {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: var(--border-radius-lg);
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.btn-lemon {
+    background-color: var(--lemon);
+    color: #333;
+}
+.btn-lemon:hover {
+    background-color: var(--lemon-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(252, 226, 42, 0.3);
+}
+
+.btn-mint {
+    background-color: var(--mint);
+    color: var(--dark);
+}
+.btn-mint:hover {
+    background-color: var(--green-medium);
+    transform: translateY(-2px);
+}
+
+.btn-strawberry {
+    background-color: var(--strawberry);
+    color: white;
+}
+.btn-strawberry:hover {
+    background-color: var(--strawberry-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 2px solid var(--green-medium);
+    color: var(--dark);
+}
+.btn-outline:hover {
+    background-color: var(--green-medium);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Cards & Containers */
+.card-premium {
+    background-color: var(--bg-white);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(164, 208, 164, 0.15);
+    padding: 24px;
+    transition: var(--transition-smooth);
+}
+.card-premium:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-medium);
+}
+
+/* Badge system */
+.badge-custom {
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+}
+.badge-new {
+    background-color: var(--mint);
+    color: var(--dark);
+}
+.badge-sold {
+    background-color: var(--lemon);
+    color: #333;
+}
+.badge-fav {
+    background-color: var(--green-medium);
+    color: white;
+}
+.badge-out {
+    background-color: var(--strawberry);
+    color: white;
+}
+
+/* Layout Parts */
+.app-container, .admin-layout, .dashboard-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+/* Sidebar Styling (Admin & Advisor) */
+.sidebar {
+    width: 280px;
+    background-color: var(--bg-white);
+    border-right: 1px solid rgba(164, 208, 164, 0.2);
+    display: flex;
+    flex-direction: column;
+    padding: 30px 20px;
+    transition: var(--transition-smooth);
+}
+
+.sidebar-logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-menu {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+}
+
+.sidebar-item a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-radius: var(--border-radius-md);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.sidebar-item.active a, .sidebar-item a:hover {
+    background-color: var(--bg-cream);
+    color: var(--dark);
+    border-left: 4px solid var(--green-dark);
+}
+
+.sidebar-user {
+    padding-top: 20px;
+    border-top: 1px solid rgba(164, 208, 164, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: var(--mint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+/* Public Header / Navbar */
+.navbar-public {
+    background-color: rgba(255, 253, 246, 0.85);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(164, 208, 164, 0.15);
+    padding: 15px 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--dark);
+}
+
+.navbar-links {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    align-items: center;
+}
+
+.navbar-links a {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.navbar-links a:hover, .navbar-links a.active {
+    color: var(--dark);
+}
+
+/* Kanban Board (Advisor) */
+.kanban-board {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 20px;
+    min-height: 70vh;
+}
+
+.kanban-col {
+    flex: 1;
+    min-width: 300px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: var(--border-radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border: 1px solid rgba(164, 208, 164, 0.1);
+}
+
+.kanban-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--mint);
+    margin-bottom: 5px;
+}
+
+.kanban-title {
+    font-size: 1rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.kanban-count {
+    background-color: var(--mint);
+    color: var(--dark);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.kanban-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.kanban-card {
+    background-color: var(--bg-white);
+    border-radius: var(--border-radius-sm);
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    border-left: 4px solid var(--green-medium);
+    transition: var(--transition-smooth);
+    cursor: pointer;
+}
+.kanban-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.kanban-card.status-received { border-left-color: var(--mint); }
+.kanban-card.status-accepted { border-left-color: var(--green-medium); }
+.kanban-card.status-preparing { border-left-color: var(--lemon); }
+.kanban-card.status-almost_ready { border-left-color: #FFA500; }
+.kanban-card.status-ready { border-left-color: var(--green-dark); }
+
+/* Form Styling */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--mint);
+    background-color: var(--bg-white);
+    border-radius: var(--border-radius-sm);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: var(--transition-smooth);
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--green-medium);
+    box-shadow: 0 0 0 4px rgba(164, 208, 164, 0.25);
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(44, 62, 43, 0.4);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition-smooth);
+}
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-container {
+    background-color: var(--bg-white);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: var(--border-radius-md);
+    padding: 32px;
+    box-shadow: var(--shadow-medium);
+    transform: translateY(20px);
+    transition: var(--transition-smooth);
+}
+.modal-overlay.active .modal-container {
+    transform: translateY(0);
+}
+
+/* Cart Float Button */
+.cart-float {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background-color: var(--lemon);
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    box-shadow: 0 10px 25px rgba(252, 226, 42, 0.4);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    z-index: 900;
+}
+.cart-float:hover {
+    transform: scale(1.1);
+}
+.cart-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: var(--strawberry);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .app-container, .admin-layout, .dashboard-layout {
+        flex-direction: column;
+        width: 100% !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+    .sidebar {
+        width: 100% !important;
+        max-width: 100% !important;
+        border-right: none;
+        border-bottom: 1px solid rgba(164, 208, 164, 0.2);
+        padding: 15px;
+    }
+    .sidebar-logo {
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+        justify-content: center;
+    }
+    .sidebar-menu {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    .sidebar-item a {
+        padding: 8px 12px !important;
+        font-size: 0.85rem;
+    }
+    .sidebar-user {
+        margin-top: 15px;
+        justify-content: center;
+    }
+    .navbar-public {
+        padding: 15px 20px;
+    }
+    .kanban-board {
+        flex-direction: column;
+        gap: 20px;
+    }
+    .kanban-col {
+        min-width: 100% !important;
+    }
+    .main-content {
+        padding: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Navbar public */
+    .navbar-public {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px 10px;
+        text-align: center;
+    }
+    .navbar-links {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+        padding-left: 0;
+    }
+    
+    /* Main Content Headers */
+    .main-content header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+    }
+    .main-content header div {
+        width: 100%;
+    }
+    .main-content header button, .main-content header a {
+        width: 100%;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        flex-direction: column-reverse;
+        text-align: center;
+        padding: 40px 20px !important;
+        gap: 30px;
+    }
+    .hero-text h1 {
+        font-size: 2.3rem !important;
+    }
+    .hero-text h2 {
+        font-size: 1.3rem !important;
+    }
+    .hero-text p {
+        font-size: 1rem;
+    }
+    .hero-image img {
+        max-width: 70%;
+        margin: 0 auto;
+    }
+
+    /* Section padding */
+    section {
+        padding: 40px 15px !important;
+    }
+    section h2 {
+        font-size: 1.8rem !important;
+    }
+
+    /* Step columns */
+    .step-container {
+        grid-template-columns: 1fr !important;
+        gap: 20px;
+    }
+
+    /* Table text scaling */
+    table th, table td {
+        padding: 8px !important;
+        font-size: 0.8rem;
+    }
+    
+    /* Dashboard stats cards */
+    .dashboard-stats {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Catalog specific styles */
+    .catalog-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        padding: 20px 15px !important;
+    }
+    .product-info > div {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        text-align: center;
+    }
+    .product-info button {
+        width: 100% !important;
+    }
+    .size-options-container {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    .modal-footer-action {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 15px !important;
+        text-align: center;
+    }
+    .modal-footer-action button {
+        width: 100% !important;
+    }
+    .modal-container {
+        padding: 20px !important;
+    }
+
+    /* Force tables inside overflow-x divs to be scrollable and not squashed on mobile */
+    div[style*="overflow-x"] {
+        display: block;
+        width: 100%;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    div[style*="overflow-x"] table {
+        min-width: 650px !important; /* Forces spacious columns on mobile, preventing word wraps or cuts */
+    }
+
+    /* Stack multi-column inline grids to 1 column on mobile to prevent squeezing */
+    div[style*="display:grid"][style*="grid-template-columns"],
+    div[style*="display: grid"][style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario Producto - Lemon Drop</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .form-container {
+            max-width: 700px;
+            background-color: var(--bg-white);
+            border-radius: var(--border-radius-md);
+            padding: 40px;
+            box-shadow: var(--shadow-soft);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar-admin :: sidebar}"></div>
+
+        <!-- Main workspace -->
+        <main class="main-content">
+            <header>
+                <h1 th:text="${product.id == null ? '➕ Nuevo Producto (Granizado)' : '✏️ Editar Producto'}">Formulario</h1>
+                <p style="color: var(--text-secondary);">Ingresa la información básica y el precio por tamaño del granizado.</p>
+            </header>
+
+            <div class="form-container">
+                <form th:action="@{/admin/productos/guardar}" method="post" th:object="${product}">
+                    <input type="hidden" th:field="*{id}">
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre del Producto *</label>
+                        <input type="text" th:field="*{name}" class="form-control" placeholder="Ej: Granizado de Maracuyá" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea th:field="*{description}" class="form-control" placeholder="Describe los ingredientes, pulpa, etc." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">URL de Imagen</label>
+                        <input type="text" th:field="*{image}" class="form-control" placeholder="Ej: https://images.unsplash.com/...">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Categoría</label>
+                        <input type="text" th:field="*{category}" class="form-control" placeholder="Ej: Granizados" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Etiqueta Especial (Opcional)</label>
+                        <select th:field="*{badge}" class="form-control">
+                            <option value="">Ninguna etiqueta</option>
+                            <option value="Nuevo">Nuevo</option>
+                            <option value="Más vendido">Más vendido</option>
+                            <option value="Favorito">Favorito</option>
+                        </select>
+                    </div>
+
+                    <!-- Pricing by Sizes -->
+                    <h3 style="margin: 30px 0 15px 0; border-bottom: 2px solid var(--mint); padding-bottom: 8px;">Precios por Tamaño 📏💰</h3>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label class="form-label">Pequeño (SMALL) *</label>
+                            <input type="number" name="priceSmall" class="form-control" th:value="${priceSmall}" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mediano (MEDIUM) *</label>
+                            <input type="number" name="priceMedium" class="form-control" th:value="${priceMedium}" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Grande (LARGE) *</label>
+                            <input type="number" name="priceLarge" class="form-control" th:value="${priceLarge}" min="0" required>
+                        </div>
+                    </div>
+
+                    <h3 style="margin: 20px 0 15px 0; border-bottom: 2px solid var(--mint); padding-bottom: 8px;">Ajustes de Visibilidad</h3>
+
+                    <div style="display:flex; gap: 30px; margin-bottom: 30px;">
+                        <label>
+                            <input type="checkbox" name="available" th:checked="${product.id == null || product.available}">
+                            <strong>Disponible en Menú</strong>
+                        </label>
+                        <label>
+                            <input type="checkbox" name="featured" th:checked="${product.featured}">
+                            <strong>Destacar en la Landing Page</strong>
+                        </label>
+                    </div>
+
+                    <div style="display:flex; gap: 15px; border-top: 1px solid #eee; padding-top: 25px;">
+                        <button type="submit" class="btn-custom btn-lemon">Guardar Producto</button>
+                        <a href="/admin/productos" class="btn-custom btn-outline">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('side-products').classList.add('active');
+    </script>
+</body>
+</html>

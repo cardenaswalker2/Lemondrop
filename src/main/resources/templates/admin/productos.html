@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrar Productos - Lemon Drop</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar-admin :: sidebar}"></div>
+
+        <!-- Main workspace -->
+        <main class="main-content">
+            <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                <div>
+                    <h1 style="font-size: 2.2rem;">🍧 Productos (Granizados)</h1>
+                    <p style="color: var(--text-secondary);">Administra el menú principal de granizados artesanales.</p>
+                </div>
+                <a href="/admin/productos/nuevo" class="btn-custom btn-lemon">Crear Producto 🍧</a>
+            </header>
+
+            <div class="card-premium">
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; text-align:left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--mint);">
+                                <th style="padding:15px;">Imagen</th>
+                                <th style="padding:15px;">Nombre</th>
+                                <th style="padding:15px;">Categoría</th>
+                                <th style="padding:15px;">Destacado</th>
+                                <th style="padding:15px;">Disponibilidad</th>
+                                <th style="padding:15px;">Precio (S / M / L)</th>
+                                <th style="padding:15px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${products}" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                                <td style="padding:15px;">
+                                    <img th:src="${p.image}" alt="Producto" style="width: 50px; height: 50px; object-fit: cover; border-radius: var(--border-radius-sm);">
+                                </td>
+                                <td style="padding:15px;">
+                                    <strong th:text="${p.name}">Granizado</strong>
+                                    <span style="font-size:0.75rem; color:var(--text-secondary); display:block;" th:text="${#strings.abbreviate(p.description, 60)}">desc</span>
+                                </td>
+                                <td style="padding:15px;" th:text="${p.category}">Granizados</td>
+                                <td style="padding:15px;">
+                                    <span th:text="${p.featured ? '★ Sí' : 'No'}" th:class="${p.featured ? 'badge-custom badge-new' : ''}">No</span>
+                                </td>
+                                <td style="padding:15px;">
+                                    <span th:text="${p.available ? '✅ Disponible' : '❌ Agotado'}" th:class="${p.available ? 'badge-custom badge-fav' : 'badge-custom badge-out'}">Disponible</span>
+                                </td>
+                                <td style="padding:15px; font-weight:700;">
+                                    <span th:text="${'$' + #numbers.formatDecimal(p.smallPrice, 0, 'POINT', 0, 'COMMA')}">$5.000</span> /
+                                    <span th:text="${'$' + #numbers.formatDecimal(p.mediumPrice, 0, 'POINT', 0, 'COMMA')}">$7.000</span> /
+                                    <span th:text="${'$' + #numbers.formatDecimal(p.largePrice, 0, 'POINT', 0, 'COMMA')}">$9.000</span>
+                                </td>
+                                <td style="padding:15px; display:flex; gap:10px;">
+                                    <a th:href="@{/admin/productos/editar/{id}(id=${p.id})}" class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.85rem;">Editar ✏️</a>
+                                    <form th:action="@{/admin/productos/eliminar/{id}(id=${p.id})}" method="post" onsubmit="return confirm('¿Seguro que deseas desactivar este producto del catálogo?')">
+                                        <button type="submit" class="btn-custom btn-strawberry" style="padding: 6px 12px; font-size: 0.85rem;">Desactivar 🗑️</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr th:if="${products.size() == 0}">
+                                <td colspan="7" style="text-align:center; padding: 20px; color:var(--text-secondary);">No hay productos activos en el catálogo.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('side-products').classList.add('active');
+    </script>
+</body>
+</html>

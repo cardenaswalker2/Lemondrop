@@ -1,0 +1,43 @@
+<aside th:fragment="sidebar" class="sidebar" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <div class="sidebar-logo">
+        <span>🍋 LEMON DROP</span>
+    </div>
+    
+    <ul class="sidebar-menu">
+        <li class="sidebar-item" id="side-db">
+            <a href="/admin/dashboard">📊 Dashboard</a>
+        </li>
+        <li class="sidebar-item" id="side-orders">
+            <a href="/admin/pedidos">🛍️ Historial Pedidos</a>
+        </li>
+        <li class="sidebar-item" id="side-products">
+            <a href="/admin/productos">🍧 Productos (Granizados)</a>
+        </li>
+        <li class="sidebar-item" id="side-flavors">
+            <a href="/admin/sabores">🍓 Sabores</a>
+        </li>
+        <li class="sidebar-item" id="side-addons">
+            <a href="/admin/complementos">🥛 Complementos</a>
+        </li>
+        <li class="sidebar-item" id="side-inventory">
+            <a href="/admin/inventario">📦 Inventario Insumos</a>
+        </li>
+        <li class="sidebar-item" id="side-users">
+            <a href="/admin/usuarios">👥 Usuarios Asesores</a>
+        </li>
+        <li class="sidebar-item">
+            <a href="/">🌐 Ver Web Pública</a>
+        </li>
+    </ul>
+
+    <div class="sidebar-user">
+        <div class="user-avatar" sec:authentication="name">A</div>
+        <div style="flex-grow: 1;">
+            <p style="font-weight: 700; font-size: 0.9rem; color: var(--dark);" sec:authentication="name">Admin</p>
+            <p style="font-size: 0.75rem; color: var(--text-secondary);">Administrador</p>
+        </div>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem;" title="Cerrar Sesión">🚪</button>
+        </form>
+    </div>
+</aside>

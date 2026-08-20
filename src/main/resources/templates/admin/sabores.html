@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrar Sabores - Lemon Drop</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .sabores-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        @media (max-width: 900px) {
+            .sabores-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar-admin :: sidebar}"></div>
+
+        <!-- Main workspace -->
+        <main class="main-content">
+            <header>
+                <h1 style="font-size: 2.2rem;">🍓 Sabores de Granizados</h1>
+                <p style="color: var(--text-secondary);">Agrega, habilita o deshabilita sabores complementarios para los granizados.</p>
+            </header>
+
+            <div class="sabores-layout">
+                <!-- Flavors List -->
+                <div class="card-premium">
+                    <h3 style="margin-bottom: 20px;">Sabores Registrados</h3>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--mint);">
+                                    <th style="padding:12px;">Nombre</th>
+                                    <th style="padding:12px;">Descripción</th>
+                                    <th style="padding:12px;">Precio Adicional</th>
+                                    <th style="padding:12px;">Disponibilidad</th>
+                                    <th style="padding:12px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="f : ${flavors}" style="border-bottom:1px solid rgba(0,0,0,0.05);">
+                                    <td style="padding:12px; font-weight:700;" th:text="${f.name}">Limón</td>
+                                    <td style="padding:12px;" th:text="${f.description}">desc</td>
+                                    <td style="padding:12px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(f.additionalPrice, 0, 'POINT', 0, 'COMMA')}">$0</td>
+                                    <td style="padding:12px;">
+                                        <span th:text="${f.available ? 'Habilitado' : 'Agotado'}" th:class="${f.available ? 'badge-custom badge-fav' : 'badge-custom badge-out'}">Habilitado</span>
+                                    </td>
+                                    <td style="padding:12px; display:flex; gap:10px;">
+                                        <button class="btn-custom btn-mint" style="padding: 5px 10px; font-size: 0.8rem;" th:attr="onclick=|fillFlavorForm('${f.id}', '${f.name}', '${f.description}', '${f.additionalPrice}', ${f.available})|">Editar ✏️</button>
+                                        <form th:action="@{/admin/sabores/eliminar/{id}(id=${f.id})}" method="post" onsubmit="return confirm('¿Seguro que deseas eliminar este sabor?')">
+                                            <button type="submit" class="btn-custom btn-strawberry" style="padding: 5px 10px; font-size: 0.8rem;">Eliminar 🗑️</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Inline Creation/Edit Form -->
+                <div class="card-premium" style="background-color: var(--bg-cream); height: fit-content;">
+                    <h3 id="formTitle" style="margin-bottom: 20px; border-bottom: 2px solid var(--mint); padding-bottom: 10px;">Añadir Sabor</h3>
+                    <form th:action="@{/admin/sabores/guardar}" method="post" id="flavorForm">
+                        <input type="hidden" name="id" id="flvId">
+                        
+                        <div class="form-group">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" name="name" id="flvName" class="form-control" placeholder="Ej: Cereza" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" name="description" id="flvDesc" class="form-control" placeholder="Ej: Cerezas dulces del monte">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Precio Adicional *</label>
+                            <input type="number" name="additionalPrice" id="flvPrice" class="form-control" value="0" min="0" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" name="available" id="flvAvail" checked>
+                                <strong>Disponible para compra</strong>
+                            </label>
+                        </div>
+
+                        <div style="display:flex; gap:10px; margin-top:25px;">
+                            <button type="submit" class="btn-custom btn-lemon" style="width:100%;">Guardar Sabor</button>
+                            <button type="button" class="btn-custom btn-outline" style="display:none;" id="btnCancelEdit" onclick="resetFlavorForm()">Limpiar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('side-flavors').classList.add('active');
+
+        function fillFlavorForm(id, name, desc, price, available) {
+            document.getElementById('formTitle').innerText = "Editar Sabor";
+            document.getElementById('flvId').value = id;
+            document.getElementById('flvName').value = name;
+            document.getElementById('flvDesc').value = desc;
+            document.getElementById('flvPrice').value = price;
+            document.getElementById('flvAvail').checked = available;
+            document.getElementById('btnCancelEdit').style.display = 'inline-block';
+        }
+
+        function resetFlavorForm() {
+            document.getElementById('formTitle').innerText = "Añadir Sabor";
+            document.getElementById('flvId').value = "";
+            document.getElementById('flvName').value = "";
+            document.getElementById('flvDesc').value = "";
+            document.getElementById('flvPrice').value = "0";
+            document.getElementById('flvAvail').checked = true;
+            document.getElementById('btnCancelEdit').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

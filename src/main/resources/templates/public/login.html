@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingreso Administrativo - Lemon Drop</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .split-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .branding-side {
+            flex: 1.2;
+            background: linear-gradient(135deg, #FCE22A 0%, #A4D0A4 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 80px;
+            color: var(--dark);
+            position: relative;
+        }
+        .form-side {
+            flex: 1;
+            background-color: var(--bg-cream);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 80px;
+        }
+        .login-card {
+            background-color: var(--bg-white);
+            border-radius: var(--border-radius-md);
+            padding: 40px;
+            box-shadow: var(--shadow-medium);
+            max-width: 450px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        @media (max-width: 900px) {
+            .split-layout {
+                flex-direction: column;
+            }
+            .branding-side {
+                padding: 40px;
+                flex: none;
+            }
+            .form-side {
+                padding: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="split-layout">
+        <!-- Left: Branding -->
+        <div class="branding-side">
+            <h1 style="font-size: 3.5rem; font-weight: 800; line-height: 1;">🍋 LEMON DROP</h1>
+            <h3 style="font-family: 'Outfit'; margin-top: 15px; font-weight: 600; opacity: 0.9;">Plataforma de Operación y Control</h3>
+            <p style="margin-top: 20px; font-size: 1.1rem; opacity: 0.85; max-width: 500px;">
+                Panel de administración y gestión operativa de granizados para la feria escolar.
+            </p>
+        </div>
+
+        <!-- Right: Login Form -->
+        <div class="form-side">
+            <div class="login-card">
+                <h2 style="margin-bottom: 5px; font-size: 1.8rem;">Iniciar Sesión 🚪</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 25px; font-size: 0.9rem;">Ingresa tus credenciales autorizadas.</p>
+
+                <!-- Error Warning -->
+                <div th:if="${param.error}" style="background-color: rgba(255, 107, 107, 0.15); border-left: 4px solid var(--strawberry); color: var(--dark); padding: 12px; border-radius: var(--border-radius-sm); margin-bottom: 20px; font-size: 0.9rem; font-weight: 600;">
+                    ❌ Usuario o contraseña incorrectos.
+                </div>
+
+                <form th:action="@{/login}" method="post">
+                    <!-- CSRF input gets automatically populated by Thymeleaf th:action -->
+                    <div class="form-group">
+                        <label class="form-label">Usuario</label>
+                        <input type="text" name="username" class="form-control" placeholder="Ej: asesor" required autofocus>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 30px;">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="btn-custom btn-lemon" style="width: 100%; font-size: 1rem; padding: 14px;">Ingresar 🍧</button>
+                </form>
+                
+                <div style="text-align: center; margin-top: 25px;">
+                    <a href="/" style="font-size: 0.9rem; font-weight: 600; color: var(--green-dark);">← Volver a la Web Pública</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

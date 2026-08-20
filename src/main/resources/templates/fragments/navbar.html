@@ -1,0 +1,21 @@
+<header th:fragment="navbar" class="navbar-public" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <a href="/" class="navbar-logo">🍋 LEMON DROP</a>
+    <nav>
+        <ul class="navbar-links">
+            <li><a href="/" id="nav-home">Inicio</a></li>
+            <li><a href="/catalogo" id="nav-catalog">Nuestros Granizados</a></li>
+            <li><a href="/pedido/seguimiento" id="nav-tracking">Seguimiento</a></li>
+            
+            <!-- Dynamic Authentication actions -->
+            <li sec:authorize="isAnonymous()">
+                <a href="/login" class="btn-custom btn-mint" style="padding: 8px 18px; font-size: 0.9rem;">Ingresar</a>
+            </li>
+            <li sec:authorize="hasRole('ADMIN')">
+                <a href="/admin/dashboard" class="btn-custom btn-lemon" style="padding: 8px 18px; font-size: 0.9rem;">Admin Panel</a>
+            </li>
+            <li sec:authorize="hasRole('ASESOR')">
+                <a href="/asesor/dashboard" class="btn-custom btn-lemon" style="padding: 8px 18px; font-size: 0.9rem;">Asesor Panel</a>
+            </li>
+        </ul>
+    </nav>
+</header>

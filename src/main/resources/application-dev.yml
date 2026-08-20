@@ -1,0 +1,12 @@
+spring:
+  thymeleaf:
+    cache: false
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/lemondrop_dev
+
+logging:
+  level:
+    org.springframework.security: INFO
+    org.springframework.data.mongodb: DEBUG
+    com.lemondrop: DEBUG

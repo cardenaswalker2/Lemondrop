@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Interno - Lemon Drop</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .error-card {
+            max-width: 500px;
+            margin: 100px auto;
+            text-align: center;
+            background-color: var(--bg-white);
+            border-radius: var(--border-radius-md);
+            padding: 50px;
+            box-shadow: var(--shadow-medium);
+            border-top: 8px solid var(--strawberry);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <span style="font-size: 5rem;">💥🍧</span>
+        <h1 style="font-size: 2.2rem; margin-top: 20px;">500 - Error en el Servidor</h1>
+        <p style="color: var(--text-secondary); margin: 15px 0 30px 0;">¡Vaya! Algo salió mal de nuestro lado al triturar los ingredientes. Por favor, reintenta más tarde.</p>
+        <a href="/" class="btn-custom btn-lemon">Volver al Inicio</a>
+    </div>
+</body>
+</html>

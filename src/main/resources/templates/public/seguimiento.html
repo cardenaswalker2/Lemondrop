@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Pedido - Lemon Drop</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .search-box {
+            max-width: 500px;
+            margin: 40px auto;
+            background-color: var(--bg-white);
+            padding: 30px;
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-soft);
+            text-align: center;
+        }
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin: 40px 0;
+            padding: 0 10px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background-color: #E2E8F0;
+            z-index: 1;
+        }
+        .timeline-progress {
+            position: absolute;
+            top: 25px;
+            left: 0;
+            height: 4px;
+            background-color: var(--green-dark);
+            z-index: 2;
+            transition: var(--transition-smooth);
+        }
+        .timeline-step {
+            position: relative;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+        }
+        .step-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #E2E8F0;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: var(--transition-smooth);
+            border: 3px solid #FFFDF6;
+        }
+        .timeline-step.active .step-icon {
+            background-color: var(--lemon);
+            color: #333;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 5px rgba(252, 226, 42, 0.25);
+        }
+        .timeline-step.completed .step-icon {
+            background-color: var(--green-dark);
+            color: white;
+        }
+        .step-label {
+            margin-top: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .timeline-step.active .step-label {
+            color: var(--dark);
+        }
+        .timeline-step.completed .step-label {
+            color: var(--green-dark);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Public Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <section style="padding: 40px 10% 10px 10%; text-align: center;">
+        <h1 style="font-size: 2.5rem;">🔎 Seguimiento de tu Granizado</h1>
+        <p style="color: var(--text-secondary);">Consulta el avance de tu orden desde nuestra cocina hasta tus manos.</p>
+    </section>
+
+    <!-- Search Box -->
+    <div class="search-box">
+        <h3 style="margin-bottom: 15px;">Consulta el estado de tu pedido</h3>
+        <form action="/pedido/seguimiento" method="get" style="display:flex; flex-direction:column; gap:12px;">
+            <input type="text" name="code" class="form-control" placeholder="Código de Pedido (Ej: LD-2026-00001)" th:value="${searchedCode}" style="text-align:center; font-weight:700; text-transform:uppercase;">
+            <input type="text" name="phone" class="form-control" placeholder="Número de WhatsApp (Ej: 3001234567)" th:value="${searchedPhone}" style="text-align:center; font-weight:700;">
+            <button type="submit" class="btn-custom btn-lemon" style="width: 100%;">Consultar Estado</button>
+        </form>
+    </div>
+
+    <!-- Multiple Orders Found Area -->
+    <div th:if="${orders != null}" style="max-width: 900px; margin: 0 auto 60px auto; background-color: var(--bg-white); border-radius: var(--border-radius-md); box-shadow: var(--shadow-medium); padding: 40px; border: 1px solid rgba(164, 208, 164, 0.15);">
+        <h2 style="margin-bottom: 20px; font-size: 1.8rem; text-align: center;">📋 Pedidos Encontrados</h2>
+        <p style="color: var(--text-secondary); text-align: center; margin-bottom: 30px;">Hemos encontrado múltiples pedidos asociados a tu número de WhatsApp. Selecciona uno para hacer el seguimiento:</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div th:each="o : ${orders}" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background-color: var(--bg-cream); border-radius: var(--border-radius-sm); border: 1px solid rgba(164, 208, 164, 0.15); flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h3 style="font-size: 1.2rem; color: var(--green-dark);" th:text="${o.orderCode}">LD-2026-00001</h3>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary);" th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}">19/08/2026</span>
+                </div>
+                <div style="text-align: center;">
+                    <span style="font-size: 0.9rem; font-weight: 700;" th:text="${o.items.size() + (o.items.size() == 1 ? ' producto' : ' productos')}">1 producto</span>
+                    <span style="font-size: 0.95rem; font-weight: 800; display: block;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+                </div>
+                <div>
+                    <!-- Status Badge -->
+                    <span th:if="${o.status.name() == 'RECEIVED'}" class="badge-custom badge-new">Recibido</span>
+                    <span th:if="${o.status.name() == 'ACCEPTED'}" class="badge-custom badge-new">Aceptado</span>
+                    <span th:if="${o.status.name() == 'PREPARING'}" class="badge-custom badge-fav">Preparando</span>
+                    <span th:if="${o.status.name() == 'ALMOST_READY'}" class="badge-custom badge-fav">Casi Listo</span>
+                    <span th:if="${o.status.name() == 'READY'}" class="badge-custom badge-fav">Listo</span>
+                    <span th:if="${o.status.name() == 'DELIVERED'}" class="badge-custom badge-fav">Entregado</span>
+                    <span th:if="${o.status.name() == 'CANCELLED'}" class="badge-custom badge-out">Cancelado</span>
+                </div>
+                <div>
+                    <a th:href="@{/pedido/seguimiento(code=${o.orderCode},phone=${o.customerPhone})}" class="btn-custom btn-lemon" style="padding: 8px 15px; font-size: 0.9rem;">Seguir Pedido 🔎</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tracking Info Area -->
+    <div th:if="${order != null}" style="max-width: 900px; margin: 0 auto 60px auto; background-color: var(--bg-white); border-radius: var(--border-radius-md); box-shadow: var(--shadow-medium); padding: 40px; border: 1px solid rgba(164, 208, 164, 0.15);">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(164, 208, 164, 0.2); padding-bottom: 20px; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <span class="badge-custom badge-new" style="font-size: 0.75rem; margin-bottom: 5px;">Código de Pedido</span>
+                <h2 style="font-size: 1.8rem;" th:text="${order.orderCode}">LD-2026-00001</h2>
+            </div>
+            <div style="text-align:right;">
+                <span style="font-size: 0.9rem; color: var(--text-secondary);">Cliente:</span>
+                <h3 th:text="${order.customerName}">Juan Pérez</h3>
+            </div>
+        </div>
+
+        <!-- Cancellation banner if applies -->
+        <div th:if="${order.status.name() == 'CANCELLED'}" style="background-color: rgba(255, 107, 107, 0.15); border-left: 5px solid var(--strawberry); padding: 20px; border-radius: var(--border-radius-sm); margin-bottom: 30px;">
+            <h3 style="color: var(--strawberry);">❌ Pedido Cancelado</h3>
+            <p style="margin-top: 5px;" th:text="${'Motivo: ' + order.cancellationReason}">Motivo de cancelación</p>
+        </div>
+
+        <!-- Timeline Graphic (Only if not cancelled) -->
+        <div th:if="${order.status.name() != 'CANCELLED'}" class="timeline" id="trackingTimeline">
+            
+            <!-- Progress Line Filler (Calculated via script based on index) -->
+            <div class="timeline-progress" id="progressLine" style="width: 0%;"></div>
+
+            <!-- Step 1: RECEIVED -->
+            <div class="timeline-step" id="step-RECEIVED">
+                <div class="step-icon">1</div>
+                <div class="step-label">Recibido</div>
+            </div>
+
+            <!-- Step 2: ACCEPTED -->
+            <div class="timeline-step" id="step-ACCEPTED">
+                <div class="step-icon">2</div>
+                <div class="step-label">Aceptado</div>
+            </div>
+
+            <!-- Step 3: PREPARING -->
+            <div class="timeline-step" id="step-PREPARING">
+                <div class="step-icon">3</div>
+                <div class="step-label">Preparando</div>
+            </div>
+
+            <!-- Step 4: ALMOST_READY -->
+            <div class="timeline-step" id="step-ALMOST_READY">
+                <div class="step-icon">4</div>
+                <div class="step-label">Casi Listo</div>
+            </div>
+
+            <!-- Step 5: READY -->
+            <div class="timeline-step" id="step-READY">
+                <div class="step-icon">5</div>
+                <div class="step-label">Listo</div>
+            </div>
+
+            <!-- Step 6: DELIVERED -->
+            <div class="timeline-step" id="step-DELIVERED">
+                <div class="step-icon">6</div>
+                <div class="step-label">Entregado</div>
+            </div>
+
+        </div>
+
+        <!-- Order Items Detail List -->
+        <div style="background-color: var(--bg-cream); border-radius: var(--border-radius-sm); padding: 25px; margin-top: 40px;">
+            <h4 style="border-bottom: 1px solid rgba(164, 208, 164, 0.2); padding-bottom: 10px; margin-bottom: 15px;">Detalle de Preparación</h4>
+            <div th:each="item : ${order.items}" style="display:flex; justify-content:space-between; align-items:center; font-size:1.05rem; padding: 10px 0; border-bottom: 1px dashed rgba(164, 208, 164, 0.1);">
+                <div>
+                    <span style="font-weight: 700;" th:text="${item.productName + ' (' + item.flavorName + ')'}">Granizado de Limón</span>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary); display: block;" th:text="${'Tamaño: ' + item.size + ' | Cantidad: ' + item.quantity}">Tamaño: MEDIUM | Cantidad: 1</span>
+                    <span th:if="${item.addons.size() > 0}" style="font-size: 0.8rem; color: var(--green-dark); display: block;" th:text="${'Complementos: ' + #strings.listJoin(item.addons.![addonName], ', ')}">Complementos: Leche Condensada</span>
+                    <span th:if="${item.observations != null && !item.observations.empty}" style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic; display: block;" th:text="${'Nota: ' + item.observations}">Nota: Sin azúcar</span>
+                </div>
+                <span style="font-weight: 800;" th:text="${'$' + #numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-weight: 800; font-size: 1.2rem; color: var(--green-dark); margin-top: 15px; padding-top: 10px;">
+                <span>Total a Pagar:</span>
+                <span th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script th:inline="javascript">
+        document.getElementById('nav-tracking').classList.add('active');
+
+        // Logic to paint the timeline progress dynamically
+        /*[ThymeLeaf Injection]*/
+        const order = /*[[${order}]]*/ null;
+
+        if (order) {
+            const status = order.status;
+            const steps = ["RECEIVED", "ACCEPTED", "PREPARING", "ALMOST_READY", "READY", "DELIVERED"];
+            const currentIdx = steps.indexOf(status);
+
+            if (currentIdx !== -1) {
+                // Set progress line width percentage
+                const percent = (currentIdx / (steps.length - 1)) * 100;
+                document.getElementById('progressLine').style.width = percent + '%';
+
+                steps.forEach((step, idx) => {
+                    const el = document.getElementById('step-' + step);
+                    if (el) {
+                        if (idx < currentIdx) {
+                            el.classList.add('completed');
+                        } else if (idx === currentIdx) {
+                            el.classList.add('active');
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

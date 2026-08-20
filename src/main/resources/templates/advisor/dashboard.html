@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Preparación - Lemon Drop</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .order-card-detail {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin: 8px 0;
+            border-top: 1px dashed rgba(0,0,0,0.05);
+            padding-top: 6px;
+        }
+        .btn-card-action {
+            width: 100%;
+            padding: 8px;
+            font-size: 0.8rem;
+            border-radius: var(--border-radius-sm);
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition-smooth);
+            margin-top: 8px;
+        }
+        .alert-new-order-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-medium);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar-asesor :: sidebar}"></div>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                <div>
+                    <h1 style="font-size: 2.2rem;">📋 Cola de Preparación</h1>
+                    <p style="color: var(--text-secondary);">Recibe, acepta y despacha los granizados en tiempo real.</p>
+                </div>
+                <div style="display:flex; gap: 15px; align-items:center;">
+                    <button class="btn-custom btn-outline" id="soundToggle" onclick="toggleSound()" style="padding: 10px 20px; font-size: 0.85rem;">
+                        🔊 Sonido Activado
+                    </button>
+                    <span style="font-size: 0.85rem; background-color: var(--mint); color: var(--dark); padding: 8px 15px; border-radius: 50px; font-weight:700;">
+                        🟢 Polling en Línea
+                    </span>
+                </div>
+            </header>
+
+            <!-- Kanban Grid -->
+            <div class="kanban-board">
+
+                <!-- Column 1: RECEIVED -->
+                <div class="kanban-col">
+                    <div class="kanban-header">
+                        <span class="kanban-title">Nuevos</span>
+                        <span class="kanban-count" th:text="${receivedOrders.size()}">0</span>
+                    </div>
+                    <div class="kanban-cards" id="col-RECEIVED">
+                        <div class="kanban-card status-received" th:each="order : ${receivedOrders}">
+                            <div style="display:flex; justify-content:space-between; font-weight:700;">
+                                <span th:text="${order.orderCode}">LD-26-00001</span>
+                                <span th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+                            </div>
+                            <div style="font-weight:600; color:var(--dark); margin-top:5px;" th:text="${order.customerName}">Juan</div>
+                            
+                            <div class="order-card-detail">
+                                <div th:each="item : ${order.items}">
+                                    <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
+                                    <span style="font-size:0.75rem; display:block; color:var(--green-dark);" th:if="${item.addons.size() > 0}" th:text="${'+ ' + #strings.listJoin(item.addons.![addonName], ', ')}">addons</span>
+                                </div>
+                                <div style="margin-top:6px; font-style:italic;" th:if="${order.observations != null && !order.observations.empty}" th:text="${'Obs: ' + order.observations}">Obs</div>
+                            </div>
+
+                            <!-- Actions -->
+                            <form th:action="@{/asesor/pedidos/{id}/estado(id=${order.id})}" method="post" style="margin-top:10px;">
+                                <input type="hidden" name="status" value="ACCEPTED">
+                                <button type="submit" class="btn-card-action btn-lemon">Aceptar Pedido ✓</button>
+                            </form>
+                            <button class="btn-card-action btn-strawberry" th:attr="onclick=|openCancelModal('${order.id}', '${order.orderCode}')|">Rechazar ❌</button>
+                            <button class="btn-card-action btn-outline" style="margin-top:4px;" th:attr="onclick=|openEditModal('${order.id}', '${order.items[0].productId}', '${order.items[0].flavorId}', '${order.items[0].size}', ${order.items[0].quantity}, '${order.observations}')|">Modificar ✏️</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: ACCEPTED -->
+                <div class="kanban-col">
+                    <div class="kanban-header">
+                        <span class="kanban-title">Aceptados</span>
+                        <span class="kanban-count" th:text="${acceptedOrders.size()}">0</span>
+                    </div>
+                    <div class="kanban-cards" id="col-ACCEPTED">
+                        <div class="kanban-card status-accepted" th:each="order : ${acceptedOrders}">
+                            <div style="display:flex; justify-content:space-between; font-weight:700;">
+                                <span th:text="${order.orderCode}">LD-26-00001</span>
+                                <span th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+                            </div>
+                            <div style="font-weight:600;" th:text="${order.customerName}">Juan</div>
+                            
+                            <div class="order-card-detail">
+                                <div th:each="item : ${order.items}">
+                                    <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
+                                </div>
+                            </div>
+
+                            <form th:action="@{/asesor/pedidos/{id}/estado(id=${order.id})}" method="post">
+                                <input type="hidden" name="status" value="PREPARING">
+                                <button type="submit" class="btn-card-action btn-lemon">Iniciar Preparación 🍧</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 3: PREPARING -->
+                <div class="kanban-col">
+                    <div class="kanban-header">
+                        <span class="kanban-title">Preparando</span>
+                        <span class="kanban-count" th:text="${preparingOrders.size()}">0</span>
+                    </div>
+                    <div class="kanban-cards" id="col-PREPARING">
+                        <div class="kanban-card status-preparing" th:each="order : ${preparingOrders}">
+                            <div style="display:flex; justify-content:space-between; font-weight:700;">
+                                <span th:text="${order.orderCode}">LD-26-00001</span>
+                                <span th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+                            </div>
+                            <div style="font-weight:600;" th:text="${order.customerName}">Juan</div>
+                            
+                            <div class="order-card-detail">
+                                <div th:each="item : ${order.items}">
+                                    <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
+                                </div>
+                            </div>
+
+                            <form th:action="@{/asesor/pedidos/{id}/estado(id=${order.id})}" method="post">
+                                <input type="hidden" name="status" value="ALMOST_READY">
+                                <button type="submit" class="btn-card-action btn-mint">Marcar Casi Listo ⏳</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 4: ALMOST_READY -->
+                <div class="kanban-col">
+                    <div class="kanban-header">
+                        <span class="kanban-title">Casi Listos</span>
+                        <span class="kanban-count" th:text="${almostReadyOrders.size()}">0</span>
+                    </div>
+                    <div class="kanban-cards" id="col-ALMOST_READY">
+                        <div class="kanban-card status-almost_ready" th:each="order : ${almostReadyOrders}">
+                            <div style="display:flex; justify-content:space-between; font-weight:700;">
+                                <span th:text="${order.orderCode}">LD-26-00001</span>
+                                <span th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+                            </div>
+                            <div style="font-weight:600;" th:text="${order.customerName}">Juan</div>
+                            
+                            <div class="order-card-detail">
+                                <div th:each="item : ${order.items}">
+                                    <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
+                                </div>
+                            </div>
+
+                            <form th:action="@{/asesor/pedidos/{id}/estado(id=${order.id})}" method="post">
+                                <input type="hidden" name="status" value="READY">
+                                <button type="submit" class="btn-card-action btn-lemon">Listo para Recoger 🎉</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 5: READY -->
+                <div class="kanban-col">
+                    <div class="kanban-header">
+                        <span class="kanban-title">Listos</span>
+                        <span class="kanban-count" th:text="${readyOrders.size()}">0</span>
+                    </div>
+                    <div class="kanban-cards" id="col-READY">
+                        <div class="kanban-card status-ready" th:each="order : ${readyOrders}">
+                            <div style="display:flex; justify-content:space-between; font-weight:700;">
+                                <span th:text="${order.orderCode}">LD-26-00001</span>
+                                <span th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+                            </div>
+                            <div style="font-weight:600;" th:text="${order.customerName}">Juan</div>
+                            
+                            <div class="order-card-detail">
+                                <div th:each="item : ${order.items}">
+                                    <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
+                                </div>
+                            </div>
+
+                            <!-- WhatsApp Trigger -->
+                            <a th:href="${@whatsAppService.generateWhatsAppUrl(order)}" target="_blank" class="btn-card-action btn-mint" style="display:block; text-align:center; margin-bottom:8px; line-height:2;">
+                                Avisar por WhatsApp 📱
+                            </a>
+
+                            <form th:action="@{/asesor/pedidos/{id}/estado(id=${order.id})}" method="post">
+                                <input type="hidden" name="status" value="DELIVERED">
+                                <button type="submit" class="btn-card-action btn-lemon">Marcar Entregado ✓</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Rejection Reason Modal -->
+    <div class="modal-overlay" id="cancelModal">
+        <div class="modal-container" style="max-width: 450px;">
+            <h3 style="margin-bottom:15px;">❌ Rechazar Pedido <span id="cancelOrderCode"></span></h3>
+            <form id="cancelForm" method="post">
+                <input type="hidden" name="status" value="CANCELLED">
+                <div class="form-group">
+                    <label class="form-label">Motivo de Rechazo *</label>
+                    <select name="notes" class="form-control" required>
+                        <option value="Sabor agotado">Sabor agotado</option>
+                        <option value="Insumos insuficientes">Insumos insuficientes</option>
+                        <option value="Falta de hielo">Falta de hielo</option>
+                        <option value="Otro motivo especificado en cocina">Otro motivo</option>
+                    </select>
+                </div>
+                <div class="modal-footer-action" style="margin-top:20px;">
+                    <button type="button" class="btn-custom btn-outline" style="padding: 8px 18px;" onclick="closeModal('cancelModal')">Cancelar</button>
+                    <button type="submit" class="btn-custom btn-strawberry" style="padding: 8px 18px;">Confirmar Rechazo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Order Modal (Substitution) -->
+    <div class="modal-overlay" id="editOrderModal">
+        <div class="modal-container">
+            <h3 style="margin-bottom:15px;">✏️ Modificar e Intercambiar Pedido</h3>
+            <form id="editOrderForm" method="post">
+                <div class="form-group">
+                    <label class="form-label">Producto Base</label>
+                    <select name="productId" id="editProductId" class="form-control">
+                        <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sabor</label>
+                    <select name="flavorId" id="editFlavorId" class="form-control">
+                        <option th:each="f : ${flavors}" th:value="${f.id}" th:text="${f.name}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tamaño</label>
+                    <select name="size" id="editSize" class="form-control">
+                        <option value="SMALL">Pequeño</option>
+                        <option value="MEDIUM">Mediano</option>
+                        <option value="LARGE">Grande</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" name="quantity" id="editQty" class="form-control" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Complementos (Seleccionar los deseados)</label>
+                    <div class="addon-selection-list">
+                        <label class="addon-item" th:each="a : ${addons}">
+                            <span>
+                                <input type="checkbox" name="addonIds" th:value="${a.id}">
+                                <span th:text="${' ' + a.name}">Leche condensada</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Observación adicional</label>
+                    <input type="text" name="observations" id="editObs" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Motivo del Cambio * (Obligatorio para auditoría)</label>
+                    <input type="text" name="reason" placeholder="Ej: Maracuyá agotado, cambió a limón" class="form-control" required>
+                </div>
+                <div class="modal-footer-action" style="margin-top:20px;">
+                    <button type="button" class="btn-custom btn-outline" onclick="closeModal('editOrderModal')">Cancelar</button>
+                    <button type="submit" class="btn-custom btn-lemon">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alert Toast -->
+    <div class="alert-new-order-toast" id="newOrderToast">
+        <span>🔔 ¡LLEGÓ UN NUEVO PEDIDO!</span>
+        <button onclick="dismissToast()" style="background:none; border:none; color:white; font-size:1.1rem; cursor:pointer;">&times;</button>
+    </div>
+
+    <script th:inline="javascript">
+        let soundEnabled = true;
+        let lastReceivedCount = /*[[${receivedOrders.size()}]]*/ 0;
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggle');
+            btn.innerText = soundEnabled ? "🔊 Sonido Activado" : "🔇 Sonido Silenciado";
+            btn.className = soundEnabled ? "btn-custom btn-outline" : "btn-custom btn-strawberry";
+        }
+
+        function openCancelModal(orderId, orderCode) {
+            document.getElementById('cancelOrderCode').innerText = "#" + orderCode;
+            document.getElementById('cancelForm').action = "/asesor/pedidos/" + orderId + "/estado";
+            document.getElementById('cancelModal').classList.add('active');
+        }
+
+        function openEditModal(orderId, productId, flavorId, size, qty, obs) {
+            document.getElementById('editOrderForm').action = "/asesor/pedidos/" + orderId + "/editar";
+            document.getElementById('editProductId').value = productId;
+            document.getElementById('editFlavorId').value = flavorId;
+            document.getElementById('editSize').value = size;
+            document.getElementById('editQty').value = qty;
+            document.getElementById('editObs').value = obs;
+            
+            // Uncheck all checkboxes
+            const cbs = document.querySelectorAll('#editOrderForm input[type="checkbox"]');
+            cbs.forEach(cb => cb.checked = false);
+
+            document.getElementById('editOrderModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function dismissToast() {
+            document.getElementById('newOrderToast').style.display = 'none';
+        }
+
+        // Play standard browser tone
+        function playBeep() {
+            if (!soundEnabled) return;
+            try {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = context.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, context.currentTime); // A5 note
+                osc.connect(context.destination);
+                osc.start();
+                osc.stop(context.currentTime + 0.15);
+            } catch(e) {
+                console.error("Audio block", e);
+            }
+        }
+
+        // Smart polling every 4 seconds
+        setInterval(() => {
+            fetch('/asesor/api/pedidos/updates')
+                .then(res => res.json())
+                .then(orders => {
+                    const received = orders.filter(o => o.status === 'RECEIVED');
+                    if (received.length > lastReceivedCount) {
+                        playBeep();
+                        document.getElementById('newOrderToast').style.display = 'flex';
+                        setTimeout(() => {
+                            window.location.reload(); // simple reload components to update kanban dynamically
+                        }, 1500);
+                    }
+                    lastReceivedCount = received.length;
+                })
+                .catch(err => console.error("Poll err", err));
+        }, 4000);
+    </script>
+</body>
+</html>
