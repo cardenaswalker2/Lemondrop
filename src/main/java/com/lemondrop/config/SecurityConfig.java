@@ -50,6 +50,7 @@ public class SecurityConfig {
                     "/pedido/seguimiento/**", 
                     "/api/public/**",
                     "/api/mobile/auth/login",
+                    "/api/health",
                     "/login", 
                     "/css/**", 
                     "/js/**", 
