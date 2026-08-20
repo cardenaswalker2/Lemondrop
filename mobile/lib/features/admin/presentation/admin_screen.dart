@@ -12,7 +12,10 @@ class AdminScreen extends ConsumerWidget {
   void _openWebConsole(BuildContext context) async {
     // Generate web dashboard URL based on current configured API host
     final apiUri = Uri.parse(AppPreferences.baseUrl);
-    final webUrl = Uri.parse('http://${apiUri.host}:8080/admin/dashboard');
+    final hasExplicitPort = apiUri.hasPort && apiUri.port != 80 && apiUri.port != 443;
+    final portStr = hasExplicitPort ? ':${apiUri.port}' : (apiUri.host.contains('192.168.') || apiUri.host == 'localhost' ? ':8080' : '');
+    final scheme = apiUri.scheme == 'https' ? 'https' : 'http';
+    final webUrl = Uri.parse('$scheme://${apiUri.host}$portStr/admin/dashboard');
 
     if (await launchUrl(webUrl, mode: LaunchMode.externalApplication)) {
       // success
