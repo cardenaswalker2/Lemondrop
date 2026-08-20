@@ -22,6 +22,6 @@ class AppPreferences {
   static set keepScreenOn(bool value) => _prefs?.setBool(_keyKeepScreenOn, value);
 
   // Fallback default dev backend URL
-  static String get baseUrl => _prefs?.getString(_keyBaseUrl) ?? 'http://192.168.1.90:8080';
+  static String get baseUrl => _prefs?.getString(_keyBaseUrl) ?? 'https://lemondrop-b7su.onrender.com';
   static set baseUrl(String value) => _prefs?.setString(_keyBaseUrl, value);
 }
