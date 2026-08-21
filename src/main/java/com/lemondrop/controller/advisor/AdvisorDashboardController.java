@@ -11,6 +11,7 @@ import com.lemondrop.service.AddonService;
 import com.lemondrop.security.SecurityUtils;
 import com.lemondrop.service.WhatsAppService;
 import org.springframework.http.ResponseEntity;
+import java.time.LocalDateTime;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -114,6 +115,61 @@ public class AdvisorDashboardController {
             return map;
         }).collect(Collectors.toList());
 
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/api/pedidos/historial")
+    @ResponseBody
+    public ResponseEntity<?> getHistorialOrdersApi(
+            @RequestParam(required = false, defaultValue = "") String query,
+            @RequestParam(required = false, defaultValue = "TODOS") String filter) {
+        
+        List<Order> allOrders = orderService.getAllOrders();
+        
+        List<Order> finishedOrders = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.DELIVERED || o.getStatus() == OrderStatus.CANCELLED)
+                .collect(Collectors.toList());
+                
+        LocalDateTime now = LocalDateTime.now();
+        if ("HOY".equalsIgnoreCase(filter)) {
+            LocalDateTime startOfToday = now.toLocalDate().atStartOfDay();
+            finishedOrders = finishedOrders.stream()
+                    .filter(o -> o.getCreatedAt().isAfter(startOfToday))
+                    .collect(Collectors.toList());
+        } else if ("AYER".equalsIgnoreCase(filter)) {
+            LocalDateTime startOfYesterday = now.toLocalDate().minusDays(1).atStartOfDay();
+            LocalDateTime endOfYesterday = now.toLocalDate().atStartOfDay().minusSeconds(1);
+            finishedOrders = finishedOrders.stream()
+                    .filter(o -> o.getCreatedAt().isAfter(startOfYesterday) && o.getCreatedAt().isBefore(endOfYesterday))
+                    .collect(Collectors.toList());
+        } else if ("7_DIAS".equalsIgnoreCase(filter)) {
+            LocalDateTime startOf7DaysAgo = now.toLocalDate().minusDays(7).atStartOfDay();
+            finishedOrders = finishedOrders.stream()
+                    .filter(o -> o.getCreatedAt().isAfter(startOf7DaysAgo))
+                    .collect(Collectors.toList());
+        }
+        
+        if (query != null && !query.trim().isEmpty()) {
+            final String q = query.toLowerCase().trim();
+            finishedOrders = finishedOrders.stream()
+                    .filter(o -> o.getOrderCode().toLowerCase().contains(q)
+                            || o.getCustomerName().toLowerCase().contains(q)
+                            || (o.getCustomerPhone() != null && o.getCustomerPhone().contains(q)))
+                    .collect(Collectors.toList());
+        }
+        
+        List<Map<String, Object>> response = finishedOrders.stream().map(o -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("code", o.getOrderCode());
+            map.put("customerName", o.getCustomerName());
+            map.put("total", o.getTotal());
+            map.put("status", o.getStatus().name());
+            map.put("statusDisplay", o.getStatus().getDisplayName());
+            map.put("createdAt", o.getCreatedAt().toString());
+            map.put("lastModifiedBy", o.getLastModifiedBy() != null ? o.getLastModifiedBy() : "GUEST");
+            return map;
+        }).collect(Collectors.toList());
+        
         return ResponseEntity.ok(response);
     }
 

@@ -183,6 +183,36 @@ public class OrderService {
             return order;
         }
 
+        boolean isValidTransition = false;
+        if (oldStatus == null) {
+            isValidTransition = true;
+        } else {
+            switch (oldStatus) {
+                case RECEIVED:
+                    isValidTransition = (newStatus == OrderStatus.ACCEPTED || newStatus == OrderStatus.CANCELLED);
+                    break;
+                case ACCEPTED:
+                    isValidTransition = (newStatus == OrderStatus.PREPARING || newStatus == OrderStatus.CANCELLED);
+                    break;
+                case PREPARING:
+                    isValidTransition = (newStatus == OrderStatus.ALMOST_READY || newStatus == OrderStatus.CANCELLED);
+                    break;
+                case ALMOST_READY:
+                    isValidTransition = (newStatus == OrderStatus.READY || newStatus == OrderStatus.CANCELLED);
+                    break;
+                case READY:
+                    isValidTransition = (newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.CANCELLED);
+                    break;
+                case DELIVERED:
+                case CANCELLED:
+                    isValidTransition = false;
+                    break;
+            }
+        }
+        if (!isValidTransition) {
+            throw new IllegalStateException("Transición de estado inválida de " + oldStatus + " a " + newStatus);
+        }
+
         order.setStatus(newStatus);
         order.setLastModifiedBy(actor);
         order.setUpdatedAt(LocalDateTime.now());
