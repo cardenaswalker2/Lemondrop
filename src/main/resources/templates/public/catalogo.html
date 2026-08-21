@@ -440,7 +440,7 @@
 
         // Idempotency and submission flags
         let isSubmittingOrder = false;
-        let checkoutRequestId = Date.now() + '-' + Math.random().toString(36).substring(2);
+        let checkoutRequestId = (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).substring(2));
 
         function hideLoadingState() {
             isSubmittingOrder = false;

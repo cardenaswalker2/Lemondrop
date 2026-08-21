@@ -139,8 +139,18 @@ public class OrderService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-
-        Order saved = orderRepository.save(order);
+        Order saved;
+        try {
+            saved = orderRepository.save(order);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            if (request.getRequestId() != null && !request.getRequestId().trim().isEmpty()) {
+                Optional<Order> existing = orderRepository.findByRequestId(request.getRequestId());
+                if (existing.isPresent()) {
+                    return existing.get();
+                }
+            }
+            throw e;
+        }
 
         // Track History
         OrderStatusHistory history = OrderStatusHistory.builder()

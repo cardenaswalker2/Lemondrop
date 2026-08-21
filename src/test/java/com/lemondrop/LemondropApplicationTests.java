@@ -205,4 +205,72 @@ class LemondropApplicationTests {
 
         assertEquals(expectedTotal, modified.getTotal());
     }
+
+    @Test
+    void testIdempotencyConcurrencyAndLegacy() throws InterruptedException, java.util.concurrent.ExecutionException {
+        // 1. Test legacy/normal order without requestId (should succeed)
+        OrderItemDto item = OrderItemDto.builder()
+                .productId(testProduct.getId())
+                .flavorId(testFlavor.getId())
+                .size(ProductSize.SMALL)
+                .quantity(1)
+                .build();
+
+        CreateOrderRequest legacyRequest = CreateOrderRequest.builder()
+                .customerName("Legacy Customer")
+                .customerPhone("3001234567")
+                .items(Collections.singletonList(item))
+                .build();
+
+        Order legacyOrder = orderService.createOrder(legacyRequest);
+        assertNotNull(legacyOrder);
+        assertNull(legacyOrder.getRequestId());
+
+        // 2. Test concurrent submissions (10 simultaneous threads with SAME requestId)
+        final String duplicateRequestId = "CONCURRENT-TEST-REQ-123";
+        final int threadCount = 10;
+        
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        
+        List<java.util.concurrent.Future<Order>> futures = new java.util.ArrayList<>();
+        for (int i = 0; i < threadCount; i++) {
+            final int index = i;
+            futures.add(executor.submit(() -> {
+                latch.await();
+                
+                CreateOrderRequest req = CreateOrderRequest.builder()
+                        .customerName("Concurrent Client " + index)
+                        .customerPhone("3007654321")
+                        .requestId(duplicateRequestId)
+                        .items(Collections.singletonList(item))
+                        .build();
+                return orderService.createOrder(req);
+            }));
+        }
+        
+        latch.countDown();
+        
+        List<Order> createdOrders = new java.util.ArrayList<>();
+        for (java.util.concurrent.Future<Order> future : futures) {
+            createdOrders.add(future.get());
+        }
+        
+        executor.shutdown();
+        
+        String firstOrderCode = createdOrders.get(0).getOrderCode();
+        String firstOrderId = createdOrders.get(0).getId();
+        assertNotNull(firstOrderCode);
+        assertNotNull(firstOrderId);
+        
+        for (Order order : createdOrders) {
+            assertEquals(firstOrderId, order.getId(), "All concurrent requests with same requestId must resolve to the same Order ID");
+            assertEquals(firstOrderCode, order.getOrderCode(), "All concurrent requests with same requestId must resolve to the same Order Code");
+        }
+        
+        long countInDb = orderRepository.findAll().stream()
+                .filter(o -> duplicateRequestId.equals(o.getRequestId()))
+                .count();
+        assertEquals(1, countInDb, "Only one order must exist in the database with the duplicate requestId");
+    }
 }

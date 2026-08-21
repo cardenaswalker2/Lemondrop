@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
@@ -71,9 +72,25 @@ class _CustomerWizardScreenState extends ConsumerState<CustomerWizardScreen> {
     _orderObsController.clear();
     _isSubmitting = false;
     _successOrderCode = null;
-    _checkoutRequestId = '${DateTime.now().millisecondsSinceEpoch}-${(100000 + (DateTime.now().microsecond % 900000))}';
+    _checkoutRequestId = _generateUuidV4();
     _autoReturnTimer?.cancel();
     _returnSecondsRemaining = 15;
+  }
+
+  String _generateUuidV4() {
+    final random = math.Random.secure();
+    final values = List<int>.generate(16, (i) => random.nextInt(256));
+    values[6] = (values[6] & 0x0f) | 0x40; // Set version 4
+    values[8] = (values[8] & 0x3f) | 0x80; // Set variant RFC 4122
+    
+    final buffer = StringBuffer();
+    for (var i = 0; i < 16; i++) {
+      if (i == 4 || i == 6 || i == 8 || i == 10) {
+        buffer.write('-');
+      }
+      buffer.write(values[i].toRadixString(16).padLeft(2, '0'));
+    }
+    return buffer.toString();
   }
 
   Future<void> _fetchPublicCatalog() async {

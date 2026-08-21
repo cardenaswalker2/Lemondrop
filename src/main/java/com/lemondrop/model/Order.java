@@ -67,6 +67,7 @@ public class Order {
     private String closedBy;
     private String reopenReason;
     
+    @Indexed(unique = true, sparse = true)
     private String requestId;
     
     private LocalDateTime createdAt;
