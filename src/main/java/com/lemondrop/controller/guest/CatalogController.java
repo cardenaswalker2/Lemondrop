@@ -64,6 +64,16 @@ public class CatalogController {
         }
     }
 
+    @GetMapping("/api/public/catalog")
+    @ResponseBody
+    public ResponseEntity<?> getPublicCatalog() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("products", productService.getAllActiveAndAvailable());
+        response.put("flavors", flavorService.getAvailableFlavors());
+        response.put("addons", addonService.getAvailableAddons());
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/api/public/pedidos/check-request/{requestId}")
     @ResponseBody
     public ResponseEntity<?> checkRequestStatus(@PathVariable String requestId) {

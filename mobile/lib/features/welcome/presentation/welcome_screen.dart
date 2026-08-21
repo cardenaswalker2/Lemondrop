@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../auth/providers/auth_provider.dart';
+import 'customer_wizard_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -109,6 +110,62 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Prominent Customer Order Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Card(
+                elevation: 4,
+                shadowColor: AppTheme.primaryLemon.withOpacity(0.3),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                color: AppTheme.primaryLemon,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const CustomerWizardScreen()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(28),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('🛒', style: TextStyle(fontSize: 36)),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'HACER MI PEDIDO',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.darkBg,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Realiza tu pedido fácil y rápido aquí',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.darkGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 24),
