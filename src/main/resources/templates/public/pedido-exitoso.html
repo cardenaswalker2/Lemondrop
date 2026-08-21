@@ -8,7 +8,7 @@
     <style>
         .success-box {
             max-width: 600px;
-            margin: 60px auto;
+            margin: 40px auto;
             text-align: center;
             background-color: var(--bg-white);
             border-radius: var(--border-radius-md);
@@ -27,6 +27,27 @@
             color: var(--dark);
             margin: 25px 0;
             display: inline-block;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+        
+        @media (max-width: 768px) {
+            .success-box {
+                margin: 20px 15px;
+                padding: 25px 15px;
+            }
+            .success-box h1 {
+                font-size: 1.6rem;
+            }
+            .code-display {
+                font-size: 1.5rem;
+                padding: 10px 15px;
+                margin: 15px 0;
+            }
+            .success-box .btn-custom {
+                width: 100%;
+                text-align: center;
+            }
         }
     </style>
 </head>
