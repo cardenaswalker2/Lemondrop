@@ -82,6 +82,47 @@
         .addon-item input {
             cursor: pointer;
         }
+        
+        /* Loading Overlay & Animations */
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 253, 246, 0.96);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+            font-family: 'Inter', sans-serif;
+        }
+        @keyframes pulseLim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        @keyframes rotateHourglass {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+            100% { transform: rotate(180deg); }
+        }
+        .animate-pulse-lemon {
+            font-size: 4.5rem;
+            margin-bottom: 20px;
+            animation: pulseLim 1.8s infinite ease-in-out;
+            display: inline-block;
+        }
+        .animate-rotate-hourglass {
+            font-size: 2rem;
+            margin-top: 15px;
+            animation: rotateHourglass 2s infinite ease-in-out;
+            display: inline-block;
+            color: var(--green-dark);
+        }
     </style>
 </head>
 <body>
@@ -224,6 +265,19 @@
                 <button type="submit" class="btn-custom btn-lemon" style="width: 100%; font-size: 1.1rem; padding: 14px;">Confirmar y Crear Pedido 🍨🔥</button>
             </form>
         </div>
+    </div>
+
+    <!-- Loading Overlay Modal -->
+    <div id="loadingOverlay">
+        <div class="animate-pulse-lemon">🍋</div>
+        <h2 style="color: var(--dark); margin-bottom: 10px; font-family: 'Outfit';">Estamos creando tu pedido...</h2>
+        <p style="color: var(--text-secondary); max-width: 400px; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px;">
+            Estamos enviando tu pedido al equipo de Lemon Drop. Por favor espera un momento.
+        </p>
+        <div class="animate-rotate-hourglass">⏳</div>
+        <p style="color: var(--strawberry); font-weight: 700; font-size: 0.85rem; margin-top: 25px;">
+            No presiones nuevamente el botón ni cierres esta ventana.
+        </p>
     </div>
 
     <!-- Footer -->
@@ -384,18 +438,55 @@
             openCartModal();
         }
 
+        // Idempotency and submission flags
+        let isSubmittingOrder = false;
+        let checkoutRequestId = Date.now() + '-' + Math.random().toString(36).substring(2);
+
+        function hideLoadingState() {
+            isSubmittingOrder = false;
+            document.getElementById('loadingOverlay').style.display = 'none';
+            const btn = document.querySelector('#checkoutForm button[type="submit"]');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Confirmar y Crear Pedido 🍨🔥";
+            }
+        }
+
         function submitCheckout(event) {
             event.preventDefault();
+
+            // Client-side cart validation
+            if (cart.length === 0) {
+                alert("Tu carrito está vacío. Agrega productos antes de confirmar.");
+                return;
+            }
+
+            if (isSubmittingOrder) {
+                return;
+            }
+            
+            isSubmittingOrder = true;
+
+            // Block button and change text immediately
+            const submitBtn = document.querySelector('#checkoutForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "⏳ Creando tu pedido...";
+            }
+
+            // Show Loading Overlay
+            document.getElementById('loadingOverlay').style.display = 'flex';
             
             const customerName = document.getElementById('custName').value;
             const customerPhone = document.getElementById('custPhone').value;
             const observations = document.getElementById('custObs').value;
 
-            // Build request payload
+            // Build request payload with idempotency requestId
             const payload = {
                 customerName,
                 customerPhone,
                 observations,
+                requestId: checkoutRequestId,
                 items: cart.map(i => ({
                     productId: i.productId,
                     flavorId: i.flavorId,
@@ -416,27 +507,68 @@
                 headers[csrfHeader] = csrfToken;
             }
 
+            let checkAttempts = 0;
+            const maxCheckAttempts = 3;
+
+            function verifyOrderCreated() {
+                checkAttempts++;
+                document.querySelector('#loadingOverlay h2').innerText = "Verificando respuesta del servidor (" + checkAttempts + ")...";
+                
+                fetch('/api/public/pedidos/check-request/' + checkoutRequestId)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.found) {
+                            // Successfully created!
+                            cart = [];
+                            updateCartCounter();
+                            closeModal('cartModal');
+                            window.location.href = '/pedido/exitoso/' + data.orderCode;
+                        } else if (checkAttempts < maxCheckAttempts) {
+                            setTimeout(verifyOrderCreated, 3000);
+                        } else {
+                            // Not created, release block
+                            hideLoadingState();
+                            alert("No pudimos confirmar la respuesta del servidor. Por seguridad, verifica tu conexión e inténtalo nuevamente.");
+                        }
+                    })
+                    .catch(err => {
+                        if (checkAttempts < maxCheckAttempts) {
+                            setTimeout(verifyOrderCreated, 3000);
+                        } else {
+                            hideLoadingState();
+                            alert("Error de red persistente. No pudimos confirmar la creación del pedido.");
+                        }
+                    });
+            }
+
             fetch('/api/public/pedidos', {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify(payload)
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error("HTTP error " + res.status);
+                }
+                return res.json();
+            })
             .then(data => {
                 if (data.success) {
-                    // Empty cart
+                    // Empty cart & redirect
                     cart = [];
                     updateCartCounter();
                     closeModal('cartModal');
-                    // Redirect to success page
                     window.location.href = '/pedido/exitoso/' + data.orderCode;
                 } else {
+                    // Actual logical validation error, release state immediately
+                    hideLoadingState();
                     alert('Error al crear el pedido: ' + data.message);
                 }
             })
             .catch(err => {
-                console.error(err);
-                alert('Ocurrió un error al procesar tu solicitud.');
+                console.error("Network or timeout error occurred:", err);
+                // Start status verification loop to check if request made it to DB
+                verifyOrderCreated();
             });
         }
     </script>

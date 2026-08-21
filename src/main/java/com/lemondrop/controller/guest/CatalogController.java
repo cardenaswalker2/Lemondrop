@@ -64,6 +64,20 @@ public class CatalogController {
         }
     }
 
+    @GetMapping("/api/public/pedidos/check-request/{requestId}")
+    @ResponseBody
+    public ResponseEntity<?> checkRequestStatus(@PathVariable String requestId) {
+        java.util.Optional<Order> existing = orderService.getOrderByRequestId(requestId);
+        Map<String, Object> response = new HashMap<>();
+        if (existing.isPresent()) {
+            response.put("found", true);
+            response.put("orderCode", existing.get().getOrderCode());
+        } else {
+            response.put("found", false);
+        }
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/api/public/pedidos/track/{query}")
     @ResponseBody
     public ResponseEntity<?> trackOrderApi(@PathVariable String query) {

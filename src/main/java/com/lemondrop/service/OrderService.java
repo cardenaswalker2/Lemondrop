@@ -49,6 +49,13 @@ public class OrderService {
     }
 
     public Order createOrder(CreateOrderRequest request) {
+        if (request.getRequestId() != null && !request.getRequestId().trim().isEmpty()) {
+            Optional<Order> existing = orderRepository.findByRequestId(request.getRequestId());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
         int currentYear = LocalDate.now().getYear();
         String code = counterService.getNextOrderCode(currentYear);
 
@@ -125,6 +132,7 @@ public class OrderService {
                 .total(subtotal) // Taxes or discounts can be added here
                 .status(OrderStatus.RECEIVED)
                 .observations(request.getObservations())
+                .requestId(request.getRequestId())
                 .createdBy("GUEST")
                 .lastModifiedBy("GUEST")
                 .receivedAt(LocalDateTime.now())
@@ -339,6 +347,10 @@ public class OrderService {
 
     public List<Order> getOrdersByPhone(String phone) {
         return orderRepository.findByCustomerPhoneOrderByCreatedAtDesc(phone);
+    }
+
+    public Optional<Order> getOrderByRequestId(String requestId) {
+        return orderRepository.findByRequestId(requestId);
     }
 
     public synchronized Order deleteOrderLogically(String id, String reason, String actor) {

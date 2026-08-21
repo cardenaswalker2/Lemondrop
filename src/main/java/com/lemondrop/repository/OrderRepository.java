@@ -22,5 +22,6 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     List<Order> findAllByOrderByCreatedAtDesc();
     List<Order> findByDeletedFalseOrderByCreatedAtDesc();
     List<Order> findByDeletedTrueOrderByCreatedAtDesc();
+    Optional<Order> findByRequestId(String requestId);
     List<Order> findByUpdatedAtAfter(LocalDateTime since);
 }

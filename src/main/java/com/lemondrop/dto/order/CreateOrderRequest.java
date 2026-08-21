@@ -26,6 +26,8 @@ public class CreateOrderRequest {
     
     private String observations;
     
+    private String requestId;
+    
     @NotEmpty(message = "El pedido debe contener al menos un granizado.")
     @Valid
     @Builder.Default

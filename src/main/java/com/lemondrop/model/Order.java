@@ -67,6 +67,8 @@ public class Order {
     private String closedBy;
     private String reopenReason;
     
+    private String requestId;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
