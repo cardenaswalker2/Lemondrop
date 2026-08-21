@@ -1,6 +1,7 @@
 <header th:fragment="navbar" class="navbar-public" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <a href="/" class="navbar-logo">🍋 LEMON DROP</a>
-    <nav>
+    <button class="navbar-toggle" aria-label="Menú de navegación" onclick="toggleMobileMenu()">☰</button>
+    <nav id="publicNavbarContent">
         <ul class="navbar-links">
             <li><a href="/" id="nav-home">Inicio</a></li>
             <li><a href="/catalogo" id="nav-catalog">Nuestros Granizados</a></li>
@@ -18,4 +19,19 @@
             </li>
         </ul>
     </nav>
+    <script>
+        function toggleMobileMenu() {
+            const nav = document.getElementById('publicNavbarContent');
+            nav.classList.toggle('active');
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const header = document.querySelector('.navbar-public');
+            const nav = document.getElementById('publicNavbarContent');
+            if (header && !header.contains(event.target)) {
+                nav.classList.remove('active');
+            }
+        });
+    </script>
 </header>

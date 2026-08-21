@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Papelera de Pedidos - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .trash-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar-admin :: sidebar}"></div>
+
+        <!-- Main workspace -->
+        <main class="main-content">
+            <header class="trash-header">
+                <div>
+                    <h1 style="font-size: 2.2rem;">🗑️ Papelera de Pedidos</h1>
+                    <p style="color: var(--text-secondary);">Pedidos eliminados lógicamente que pueden ser restaurados.</p>
+                </div>
+                <a href="/admin/pedidos" class="btn-custom btn-mint">Volver a Pedidos</a>
+            </header>
+
+            <!-- Deleted Orders Table -->
+            <div class="card-premium">
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; text-align:left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--strawberry);">
+                                <th style="padding:15px;">Código</th>
+                                <th style="padding:15px;">Cliente</th>
+                                <th style="padding:15px;">Teléfono</th>
+                                <th style="padding:15px;">Total</th>
+                                <th style="padding:15px;">Eliminado por</th>
+                                <th style="padding:15px;">Motivo Eliminación</th>
+                                <th style="padding:15px;">Fecha Eliminación</th>
+                                <th style="padding:15px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="o : ${orders}" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                                <td style="padding:15px; font-weight:700;" th:text="${o.orderCode}">LD-26-00001</td>
+                                <td style="padding:15px;" th:text="${o.customerName}">Juan</td>
+                                <td style="padding:15px;" th:text="${o.customerPhone}">3001234567</td>
+                                <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
+                                <td style="padding:15px; font-size:0.85rem;" th:text="${o.deletedBy}">admin</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.deletionReason}">Motivo</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${#temporals.format(o.deletedAt, 'dd/MM/yyyy HH:mm')}">Hora</td>
+                                <td style="padding:15px; display:flex; gap:8px;">
+                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="'restoreOrder(\'' + ${o.id} + '\')'">↩️ Restaurar</button>
+                                </td>
+                            </tr>
+                            <tr th:if="${orders.size() == 0}">
+                                <td colspan="8" style="text-align:center; padding: 30px; color:var(--text-secondary);">La papelera está vacía.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script th:inline="javascript">
+        document.getElementById('side-deleted-orders').classList.add('active');
+
+        function restoreOrder(orderId) {
+            if (confirm('¿Está seguro de que desea restaurar este pedido al historial activo?')) {
+                fetch('/admin/api/pedidos/' + orderId + '/restaurar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert('Pedido restaurado con éxito.');
+                        window.location.reload();
+                    } else {
+                        res.json().then(data => alert('Error: ' + data.error));
+                    }
+                })
+                .catch(err => alert('Error al procesar la solicitud.'));
+            }
+        }
+    </script>
+</body>
+</html>

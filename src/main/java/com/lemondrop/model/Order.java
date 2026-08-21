@@ -51,6 +51,22 @@ public class Order {
     
     private String cancellationReason;
     
+    @Builder.Default
+    private String priority = "NORMAL"; // "NORMAL", "ALTA"
+    private String assignedAdvisor; // username of Advisor
+    
+    @Builder.Default
+    private boolean deleted = false;
+    private LocalDateTime deletedAt;
+    private String deletedBy;
+    private String deletionReason;
+    
+    @Builder.Default
+    private boolean closed = false;
+    private LocalDateTime closedAt;
+    private String closedBy;
+    private String reopenReason;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

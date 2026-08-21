@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -313,11 +314,15 @@ public class OrderService {
     }
 
     public List<Order> getAllOrders() {
-        return orderRepository.findAllByOrderByCreatedAtDesc();
+        return orderRepository.findByDeletedFalseOrderByCreatedAtDesc();
+    }
+
+    public List<Order> getAllDeletedOrders() {
+        return orderRepository.findByDeletedTrueOrderByCreatedAtDesc();
     }
 
     public List<Order> getOrdersByStatus(OrderStatus status) {
-        return orderRepository.findByStatus(status);
+        return orderRepository.findByStatus(status); // Note: we can filter deleted ones in the controller if needed or repository
     }
 
     public Optional<Order> getOrderById(String id) {
@@ -334,5 +339,267 @@ public class OrderService {
 
     public List<Order> getOrdersByPhone(String phone) {
         return orderRepository.findByCustomerPhoneOrderByCreatedAtDesc(phone);
+    }
+
+    public synchronized Order deleteOrderLogically(String id, String reason, String actor) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));
+        order.setDeleted(true);
+        order.setDeletedAt(LocalDateTime.now());
+        order.setDeletedBy(actor);
+        order.setDeletionReason(reason);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        OrderChangeHistory changeHistory = OrderChangeHistory.builder()
+                .orderId(order.getId())
+                .orderCode(order.getOrderCode())
+                .propertyName("deleted")
+                .oldValue("false")
+                .newValue("true")
+                .updatedBy(actor)
+                .updatedAt(LocalDateTime.now())
+                .reason(reason)
+                .build();
+        changeHistoryRepository.save(changeHistory);
+
+        return orderRepository.save(order);
+    }
+
+    public synchronized Order restoreOrderLogically(String id, String actor) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));
+        order.setDeleted(false);
+        order.setDeletedAt(null);
+        order.setDeletedBy(null);
+        order.setDeletionReason(null);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        OrderChangeHistory changeHistory = OrderChangeHistory.builder()
+                .orderId(order.getId())
+                .orderCode(order.getOrderCode())
+                .propertyName("deleted")
+                .oldValue("true")
+                .newValue("false")
+                .updatedBy(actor)
+                .updatedAt(LocalDateTime.now())
+                .reason("Restaurado desde papelera")
+                .build();
+        changeHistoryRepository.save(changeHistory);
+
+        return orderRepository.save(order);
+    }
+
+    public synchronized Order togglePriority(String id, String priority, String actor) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));
+        String oldPriority = order.getPriority();
+        if (oldPriority == null) oldPriority = "NORMAL";
+        
+        order.setPriority(priority);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        OrderChangeHistory changeHistory = OrderChangeHistory.builder()
+                .orderId(order.getId())
+                .orderCode(order.getOrderCode())
+                .propertyName("priority")
+                .oldValue(oldPriority)
+                .newValue(priority)
+                .updatedBy(actor)
+                .updatedAt(LocalDateTime.now())
+                .reason("Cambio de prioridad por administrador")
+                .build();
+        changeHistoryRepository.save(changeHistory);
+
+        return orderRepository.save(order);
+    }
+
+    public synchronized Order reassignAdvisor(String id, String newAdvisor, String actor) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));
+        String oldAdvisor = order.getAssignedAdvisor() != null ? order.getAssignedAdvisor() : "Ninguno";
+        
+        order.setAssignedAdvisor(newAdvisor);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        OrderChangeHistory changeHistory = OrderChangeHistory.builder()
+                .orderId(order.getId())
+                .orderCode(order.getOrderCode())
+                .propertyName("assignedAdvisor")
+                .oldValue(oldAdvisor)
+                .newValue(newAdvisor)
+                .updatedBy(actor)
+                .updatedAt(LocalDateTime.now())
+                .reason("Reasignación de asesor por administrador")
+                .build();
+        changeHistoryRepository.save(changeHistory);
+
+        return orderRepository.save(order);
+    }
+
+    public synchronized Order closeOrder(String id, String actor) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));
+        order.setClosed(true);
+        order.setClosedAt(LocalDateTime.now());
+        order.setClosedBy(actor);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        OrderChangeHistory changeHistory = OrderChangeHistory.builder()
+                .orderId(order.getId())
+                .orderCode(order.getOrderCode())
+                .propertyName("closed")
+                .oldValue("false")
+                .newValue("true")
+                .updatedBy(actor)
+                .updatedAt(LocalDateTime.now())
+                .reason("Cierre del pedido")
+                .build();
+        changeHistoryRepository.save(changeHistory);
+
+        return orderRepository.save(order);
+    }
+
+    public synchronized Order reopenOrder(String id, String reason, String actor) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));
+        order.setClosed(false);
+        order.setReopenReason(reason);
+        order.setClosedAt(null);
+        order.setClosedBy(null);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        OrderChangeHistory changeHistory = OrderChangeHistory.builder()
+                .orderId(order.getId())
+                .orderCode(order.getOrderCode())
+                .propertyName("closed")
+                .oldValue("true")
+                .newValue("false")
+                .updatedBy(actor)
+                .updatedAt(LocalDateTime.now())
+                .reason(reason)
+                .build();
+        changeHistoryRepository.save(changeHistory);
+
+        return orderRepository.save(order);
+    }
+
+    public synchronized Order modifyOrderAdmin(String id, String customerName, String customerPhone, 
+                                               List<OrderItemDto> itemsDto, String priority, 
+                                               String assignedAdvisor, String reason, String actor) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));
+
+        if (order.isClosed()) {
+            throw new IllegalStateException("El pedido está cerrado. Debe reabrirse antes de editar.");
+        }
+
+        // Generate ANTES string
+        StringBuilder oldState = new StringBuilder();
+        oldState.append("Cliente: ").append(order.getCustomerName()).append(" (Tel: ").append(order.getCustomerPhone()).append(")\n");
+        oldState.append("Prioridad: ").append(order.getPriority() != null ? order.getPriority() : "NORMAL").append("\n");
+        oldState.append("Asesor: ").append(order.getAssignedAdvisor() != null ? order.getAssignedAdvisor() : "Ninguno").append("\n");
+        oldState.append("Total: $").append(order.getTotal()).append("\n");
+        oldState.append("Items:\n");
+        for (OrderItem item : order.getItems()) {
+            String addonsStr = item.getAddons().stream().map(a -> a.getAddonName()).collect(Collectors.joining(", "));
+            oldState.append("- ").append(item.getProductName()).append(" (").append(item.getFlavorName()).append(") [")
+                    .append(item.getSize()).append("] x").append(item.getQuantity()).append(" ($").append(item.getSubtotal()).append(")");
+            if (!addonsStr.isEmpty()) {
+                oldState.append(" + Adicionales: ").append(addonsStr);
+            }
+            oldState.append("\n");
+        }
+
+        // Process new items and calculate prices securely on backend
+        List<OrderItem> newItems = new ArrayList<>();
+        BigDecimal subtotal = BigDecimal.ZERO;
+
+        for (OrderItemDto itemDto : itemsDto) {
+            Product product = productRepository.findById(itemDto.getProductId())
+                    .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado."));
+            BigDecimal unitPrice = product.getSizePrices().get(itemDto.getSize());
+            if (unitPrice == null) {
+                throw new IllegalArgumentException("Tamaño no disponible para el producto.");
+            }
+            
+            Flavor flavor = flavorRepository.findById(itemDto.getFlavorId())
+                    .orElseThrow(() -> new IllegalArgumentException("Sabor no encontrado."));
+            
+            BigDecimal unitTotal = unitPrice.add(flavor.getAdditionalPrice());
+
+            List<OrderItemAddon> itemAddons = new ArrayList<>();
+            BigDecimal addonsTotal = BigDecimal.ZERO;
+            if (itemDto.getAddonIds() != null) {
+                for (String addonId : itemDto.getAddonIds()) {
+                    Addon addon = addonRepository.findById(addonId)
+                            .orElseThrow(() -> new IllegalArgumentException("Complemento no encontrado."));
+                    itemAddons.add(OrderItemAddon.builder()
+                            .addonId(addon.getId())
+                            .addonName(addon.getName())
+                            .unitPrice(addon.getAdditionalPrice())
+                            .quantity(1)
+                            .build());
+                    addonsTotal = addonsTotal.add(addon.getAdditionalPrice());
+                }
+            }
+
+            BigDecimal itemSubtotal = unitTotal.add(addonsTotal).multiply(new BigDecimal(itemDto.getQuantity()));
+            subtotal = subtotal.add(itemSubtotal);
+
+            newItems.add(OrderItem.builder()
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .flavorId(flavor.getId())
+                    .flavorName(flavor.getName())
+                    .size(itemDto.getSize())
+                    .quantity(itemDto.getQuantity())
+                    .unitPrice(unitTotal)
+                    .addons(itemAddons)
+                    .addonTotal(addonsTotal)
+                    .subtotal(itemSubtotal)
+                    .observations(itemDto.getObservations())
+                    .build());
+        }
+
+        order.setCustomerName(customerName);
+        order.setCustomerPhone(customerPhone);
+        order.setItems(newItems);
+        order.setSubtotal(subtotal);
+        order.setTotal(subtotal);
+        order.setPriority(priority);
+        order.setAssignedAdvisor(assignedAdvisor);
+        order.setLastModifiedBy(actor);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        // Generate DESPUES string
+        StringBuilder newState = new StringBuilder();
+        newState.append("Cliente: ").append(order.getCustomerName()).append(" (Tel: ").append(order.getCustomerPhone()).append(")\n");
+        newState.append("Prioridad: ").append(order.getPriority()).append("\n");
+        newState.append("Asesor: ").append(order.getAssignedAdvisor() != null ? order.getAssignedAdvisor() : "Ninguno").append("\n");
+        newState.append("Total: $").append(order.getTotal()).append("\n");
+        newState.append("Items:\n");
+        for (OrderItem item : order.getItems()) {
+            String addonsStr = item.getAddons().stream().map(a -> a.getAddonName()).collect(Collectors.joining(", "));
+            newState.append("- ").append(item.getProductName()).append(" (").append(item.getFlavorName()).append(") [")
+                    .append(item.getSize()).append("] x").append(item.getQuantity()).append(" ($").append(item.getSubtotal()).append(")");
+            if (!addonsStr.isEmpty()) {
+                newState.append(" + Adicionales: ").append(addonsStr);
+            }
+            newState.append("\n");
+        }
+
+        OrderChangeHistory changeHistory = OrderChangeHistory.builder()
+                .orderId(order.getId())
+                .orderCode(order.getOrderCode())
+                .propertyName("modificacion_admin")
+                .oldValue(oldState.toString())
+                .newValue(newState.toString())
+                .updatedBy(actor)
+                .updatedAt(LocalDateTime.now())
+                .reason(reason)
+                .build();
+        changeHistoryRepository.save(changeHistory);
+
+        return orderRepository.save(order);
     }
 }

@@ -614,3 +614,147 @@ a:hover {
         gap: 12px !important;
     }
 }
+
+/* --- Floating Quick Action Buttons --- */
+.floating-actions-container {
+    position: fixed;
+    right: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 1000;
+    align-items: flex-end;
+    pointer-events: none;
+}
+.floating-btn {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    transition: var(--transition-smooth);
+}
+.floating-btn-whatsapp {
+    background-color: #25D366;
+    color: white;
+    width: 54px;
+    height: 54px;
+    font-size: 1.6rem;
+    border-radius: 50%;
+}
+.floating-btn-whatsapp:hover {
+    background-color: #20ba5a;
+    transform: scale(1.1);
+}
+.floating-btn-order {
+    background-color: var(--lemon);
+    color: #333;
+    padding: 12px 22px;
+    border-radius: 30px;
+    font-size: 0.95rem;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(252, 226, 42, 0.4);
+}
+.floating-btn-order:hover {
+    background-color: var(--lemon-hover);
+    transform: translateY(-2px);
+}
+
+/* Tooltip on hover for Desktop */
+.floating-btn-whatsapp::after {
+    content: "Escríbenos por WhatsApp";
+    position: absolute;
+    right: 65px;
+    background-color: #333;
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition-smooth);
+    white-space: nowrap;
+}
+.floating-btn-whatsapp:hover::after {
+    opacity: 1;
+}
+
+/* Sticky Navbar and Hamburger Menu */
+.navbar-public {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    transition: var(--transition-smooth);
+}
+.navbar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    color: var(--dark);
+}
+
+@media (max-width: 768px) {
+    .navbar-public {
+        flex-direction: row !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px !important;
+        gap: 0 !important;
+    }
+    .navbar-toggle {
+        display: block !important;
+    }
+    .navbar-public nav {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: var(--bg-white);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-in-out;
+    }
+    .navbar-public nav.active {
+        max-height: 300px;
+    }
+    .navbar-links {
+        flex-direction: column !important;
+        padding: 15px !important;
+        align-items: stretch !important;
+        text-align: left;
+        gap: 12px !important;
+    }
+    .navbar-links li {
+        width: 100%;
+    }
+    .navbar-links a {
+        display: block;
+        padding: 8px 0;
+        font-size: 1rem;
+    }
+    /* Floating button sizes for mobile */
+    .floating-btn-order span {
+        display: none; /* Icon only */
+    }
+    .floating-btn-order {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        padding: 0;
+        font-size: 1.3rem;
+    }
+    .floating-btn-whatsapp::after {
+        display: none; /* Hide tooltips on mobile */
+    }
+}
+

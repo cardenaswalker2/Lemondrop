@@ -151,4 +151,58 @@ class LemondropApplicationTests {
         assertEquals(OrderStatus.PREPARING, preparing.getStatus());
         assertNotNull(preparing.getPreparingAt());
     }
+
+    @Test
+    void testModifyOrderAdmin() {
+        OrderItemDto item = OrderItemDto.builder()
+                .productId(testProduct.getId())
+                .flavorId(testFlavor.getId())
+                .size(ProductSize.MEDIUM)
+                .quantity(1)
+                .build();
+
+        CreateOrderRequest request = CreateOrderRequest.builder()
+                .customerName("Carlos Perez")
+                .customerPhone("3004444444")
+                .items(Collections.singletonList(item))
+                .build();
+
+        Order order = orderService.createOrder(request);
+        assertNotNull(order);
+
+        // Modify order as admin: change size to LARGE, change name, add addon
+        OrderItemDto modifiedItem = OrderItemDto.builder()
+                .productId(testProduct.getId())
+                .flavorId(testFlavor.getId())
+                .size(ProductSize.LARGE)
+                .quantity(2)
+                .addonIds(Collections.singletonList(testAddon.getId()))
+                .build();
+
+        Order modified = orderService.modifyOrderAdmin(
+                order.getId(),
+                "Carlos Perez Modificado",
+                "3009999999",
+                Collections.singletonList(modifiedItem),
+                "ALTA",
+                "asesor",
+                "El cliente solicitó cambiar a tamaño grande con adicionales",
+                "admin"
+        );
+
+        assertNotNull(modified);
+        assertEquals("Carlos Perez Modificado", modified.getCustomerName());
+        assertEquals("3009999999", modified.getCustomerPhone());
+        assertEquals("ALTA", modified.getPriority());
+        assertEquals("asesor", modified.getAssignedAdvisor());
+
+        // Expected calculation:
+        // Product LARGE price + flavor price + addon price * quantity 2
+        BigDecimal base = testProduct.getSizePrices().get(ProductSize.LARGE);
+        BigDecimal expectedUnit = base.add(testFlavor.getAdditionalPrice());
+        BigDecimal expectedAddons = testAddon.getAdditionalPrice();
+        BigDecimal expectedTotal = expectedUnit.add(expectedAddons).multiply(new BigDecimal(2));
+
+        assertEquals(expectedTotal, modified.getTotal());
+    }
 }

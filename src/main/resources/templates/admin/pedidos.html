@@ -12,10 +12,102 @@
             padding: 20px;
             box-shadow: var(--shadow-soft);
             margin-bottom: 30px;
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             align-items: flex-end;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .date-range-container {
+            display: flex;
+            gap: 10px;
+        }
+        .date-range-container input {
+            flex: 1;
+        }
+        .badge-priority-alta {
+            background-color: var(--strawberry);
+            color: white;
+            font-weight: 800;
+        }
+        .badge-priority-normal {
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+        .badge-closed {
+            background-color: #4a5568;
+            color: white;
+        }
+        .timeline-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f7fafc;
+            border-radius: var(--border-radius-sm);
+            max-height: 250px;
+            overflow-y: auto;
+            border-left: 3px solid var(--green-medium);
+        }
+        .timeline-item {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #e2e8f0;
+            font-size: 0.85rem;
+        }
+        .timeline-time {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .timeline-actor {
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            background-color: var(--bg-cream);
+            padding: 15px;
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 20px;
+        }
+        .detail-actions {
+            display: flex;
             flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #edf2f7;
+            border-radius: var(--border-radius-sm);
+        }
+        .edit-item-card {
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: var(--border-radius-sm);
+            background-color: var(--bg-white);
+            margin-bottom: 10px;
+        }
+        .addons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .addons-grid label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        pre {
+            white-space: pre-wrap;
+            font-family: inherit;
+            margin: 0;
         }
     </style>
 </head>
@@ -27,27 +119,69 @@
 
         <!-- Main workspace -->
         <main class="main-content">
-            <header style="margin-bottom:30px;">
-                <h1 style="font-size: 2.2rem;">🛍️ Historial General de Pedidos</h1>
-                <p style="color: var(--text-secondary);">Consulta y audita todos los pedidos realizados en Lemon Drop.</p>
+            <header style="margin-bottom:30px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h1 style="font-size: 2.2rem;">🛍️ Historial General de Pedidos</h1>
+                    <p style="color: var(--text-secondary);">Consulta, audita y corrige errores de pedidos realizados.</p>
+                </div>
+                <a href="/admin/pedidos/eliminados" class="btn-custom btn-outline" style="font-size:0.9rem;">🗑️ Ver Papelera</a>
             </header>
 
             <!-- Filters -->
             <form action="/admin/pedidos" method="get" class="filter-bar">
-                <div style="flex: 1; min-width: 200px;">
-                    <label class="form-label" style="font-size:0.85rem;">Buscar por Código, Nombre o Teléfono</label>
-                    <input type="text" name="query" class="form-control" placeholder="Ej: Juan o LD-2026-00001" th:value="${searchQuery}">
+                <div class="filter-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Buscar</label>
+                    <input type="text" name="query" class="form-control" placeholder="Código, Cliente, Teléfono o Asesor" th:value="${searchQuery}">
                 </div>
-                <div style="min-width: 180px;">
-                    <label class="form-label" style="font-size:0.85rem;">Filtrar por Estado</label>
+                
+                <div class="filter-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Estado</label>
                     <select name="status" class="form-control">
                         <option value="">Todos los estados</option>
                         <option th:each="st : ${statuses}" th:value="${st}" th:text="${st.getDisplayName()}" th:selected="${st == selectedStatus}"></option>
                     </select>
                 </div>
-                <div>
-                    <button type="submit" class="btn-custom btn-lemon" style="padding: 11px 24px;">Aplicar Filtros</button>
-                    <a href="/admin/pedidos" class="btn-custom btn-outline" style="padding: 11px 24px;">Limpiar</a>
+
+                <div class="filter-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Asesor Asignado</label>
+                    <select name="advisor" class="form-control">
+                        <option value="all" th:selected="${selectedAdvisor == null || selectedAdvisor == 'all'}">Todos</option>
+                        <option th:each="adv : ${advisors}" th:value="${adv.username}" th:text="${adv.name}" th:selected="${adv.username == selectedAdvisor}"></option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Fecha</label>
+                    <select name="dateFilter" id="dateFilterSelect" class="form-control" onchange="toggleCustomDates()">
+                        <option value="" th:selected="${dateFilter == null || dateFilter == ''}">Cualquier fecha</option>
+                        <option value="today" th:selected="${dateFilter == 'today'}">Hoy</option>
+                        <option value="yesterday" th:selected="${dateFilter == 'yesterday'}">Ayer</option>
+                        <option value="last7days" th:selected="${dateFilter == 'last7days'}">Últimos 7 días</option>
+                        <option value="custom" th:selected="${dateFilter == 'custom'}">Rango personalizado</option>
+                    </select>
+                </div>
+
+                <div class="filter-group" id="customDateRange" style="display:none; grid-column: span 1;">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Rango de Fechas</label>
+                    <div class="date-range-container">
+                        <input type="date" name="startDate" class="form-control" th:value="${startDate}">
+                        <input type="date" name="endDate" class="form-control" th:value="${endDate}">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Ordenar por</label>
+                    <select name="sort" class="form-control">
+                        <option value="newest" th:selected="${selectedSort == 'newest'}">Más recientes</option>
+                        <option value="oldest" th:selected="${selectedSort == 'oldest'}">Más antiguos</option>
+                        <option value="highest" th:selected="${selectedSort == 'highest'}">Mayor valor</option>
+                        <option value="lowest" th:selected="${selectedSort == 'lowest'}">Menor valor</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn-custom btn-lemon" style="padding: 11px 20px; flex:1;">Buscar</button>
+                    <a href="/admin/pedidos" class="btn-custom btn-outline" style="padding: 11px 20px;">Limpiar</a>
                 </div>
             </form>
 
@@ -59,27 +193,35 @@
                             <tr style="border-bottom: 2px solid var(--mint);">
                                 <th style="padding:15px;">Código</th>
                                 <th style="padding:15px;">Cliente</th>
-                                <th style="padding:15px;">Teléfono</th>
+                                <th style="padding:15px;">Prioridad</th>
                                 <th style="padding:15px;">Estado</th>
+                                <th style="padding:15px;">Asesor</th>
                                 <th style="padding:15px;">Total</th>
-                                <th style="padding:15px;">Modificado por</th>
                                 <th style="padding:15px;">Creación</th>
-                                <th style="padding:15px;">Detalles</th>
+                                <th style="padding:15px;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="o : ${orders}" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
-                                <td style="padding:15px; font-weight:700;" th:text="${o.orderCode}">LD-26-00001</td>
+                                <td style="padding:15px; font-weight:700;">
+                                    <span th:text="${o.orderCode}">LD-26-00001</span>
+                                    <span th:if="${o.closed}" class="badge-custom badge-closed" style="font-size:0.65rem; padding: 2px 6px; margin-left: 5px;">🔒 Cerrado</span>
+                                </td>
                                 <td style="padding:15px;" th:text="${o.customerName}">Juan</td>
-                                <td style="padding:15px;" th:text="${o.customerPhone}">3001234567</td>
+                                <td style="padding:15px;">
+                                    <span th:text="${o.priority == 'ALTA' ? '⚡ ALTA' : 'NORMAL'}" 
+                                          class="badge-custom" 
+                                          th:classappend="${o.priority == 'ALTA' ? 'badge-priority-alta' : 'badge-priority-normal'}"
+                                          style="font-size:0.7rem; padding: 3px 8px;">Normal</span>
+                                </td>
                                 <td style="padding:15px;">
                                     <span th:text="${o.status.getDisplayName()}" class="badge-custom badge-new" style="font-size:0.75rem; padding: 4px 10px;">Recibido</span>
                                 </td>
+                                <td style="padding:15px; font-size:0.85rem;" th:text="${o.assignedAdvisor != null ? o.assignedAdvisor : 'Sin asignar'}">Sin asignar</td>
                                 <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
-                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.lastModifiedBy}">GUEST</td>
                                 <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}">Hora</td>
                                 <td style="padding:15px;">
-                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:attr="onclick=|openOrderDetailsModal('${o.id}', '${o.orderCode}', '${o.customerName}', '${o.customerPhone}', '${o.total}', '${o.status.getDisplayName()}')|">Ver Detalle 🔎</button>
+                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="'openOrderDetails(\'' + ${o.id} + '\')'">Administrar ⚙️</button>
                                 </td>
                             </tr>
                             <tr th:if="${orders.size() == 0}">
@@ -92,15 +234,15 @@
         </main>
     </div>
 
-    <!-- Order Detail View Modal -->
+    <!-- Order Detail & Administration Modal -->
     <div class="modal-overlay" id="orderDetailModal">
-        <div class="modal-container">
+        <div class="modal-container" style="max-width:800px; width:90%; max-height: 90vh; overflow-y: auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                 <h2 id="detCode">Pedido Details</h2>
                 <button onclick="closeModal('orderDetailModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-secondary);">&times;</button>
             </div>
             
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; background-color: var(--bg-cream); padding:15px; border-radius: var(--border-radius-sm); margin-bottom:20px;">
+            <div class="detail-grid">
                 <div>
                     <span style="font-size:0.8rem; color:var(--text-secondary);">Cliente:</span>
                     <h4 id="detCustomer">Name</h4>
@@ -115,72 +257,635 @@
                 </div>
                 <div>
                     <span style="font-size:0.8rem; color:var(--text-secondary);">Total Cobrado:</span>
-                    <h4 id="detTotal" style="color: var(--green-dark);">$0</h4>
+                    <h4 id="detTotal" style="color: var(--green-dark); font-size:1.3rem;">$0</h4>
+                </div>
+                <div>
+                    <span style="font-size:0.8rem; color:var(--text-secondary);">Prioridad:</span>
+                    <h4 id="detPriority">NORMAL</h4>
+                </div>
+                <div>
+                    <span style="font-size:0.8rem; color:var(--text-secondary);">Asesor Responsable:</span>
+                    <h4 id="detAdvisor">Ninguno</h4>
                 </div>
             </div>
 
-            <!-- Products List inside order -->
+            <!-- Products List -->
             <div style="margin-bottom:20px;">
                 <h4 style="margin-bottom: 10px;">Detalle de Insumos</h4>
                 <div id="detItemsList" style="display:flex; flex-direction:column; gap:8px;">
-                    <!-- dynamic load -->
+                    <!-- dynamic -->
                 </div>
             </div>
 
-            <div style="text-align:right;">
-                <button class="btn-custom btn-lemon" onclick="closeModal('orderDetailModal')">Cerrar</button>
+            <!-- Operations panel inside detail -->
+            <div>
+                <h4 style="margin-bottom:10px;">Acciones Administrativas</h4>
+                <div class="detail-actions">
+                    <button class="btn-custom btn-lemon" id="btnEditOrder">Editar Pedido ✏️</button>
+                    
+                    <button class="btn-custom btn-mint" id="btnTogglePriority" onclick="togglePriorityAction()">Cambiar Prioridad ⚡</button>
+                    
+                    <div style="display:inline-flex; align-items:center; gap:5px; background:white; padding:5px 12px; border-radius:var(--border-radius-lg); border:1px solid #cbd5e0;">
+                        <span style="font-size:0.75rem; font-weight:700;">Asignar Asesor:</span>
+                        <select id="selectReassignAdvisor" onchange="reassignAdvisorAction()" style="border:none; outline:none; font-size:0.8rem; background:transparent;">
+                            <option value="">Ninguno</option>
+                        </select>
+                    </div>
+
+                    <div style="display:inline-flex; align-items:center; gap:5px; background:white; padding:5px 12px; border-radius:var(--border-radius-lg); border:1px solid #cbd5e0;">
+                        <span style="font-size:0.75rem; font-weight:700;">Cambiar Estado:</span>
+                        <select id="selectChangeStatus" onchange="changeStatusAction()" style="border:none; outline:none; font-size:0.8rem; background:transparent;">
+                            <option th:each="st : ${statuses}" th:value="${st}" th:text="${st.getDisplayName()}"></option>
+                        </select>
+                    </div>
+
+                    <button class="btn-custom btn-strawberry" id="btnCancelOrder" onclick="cancelOrderAction()">Cancelar Pedido 🚫</button>
+                    <button class="btn-custom btn-strawberry" id="btnDeleteOrder" onclick="deleteOrderAction()" style="background-color: #e53e3e;">Mover a Papelera 🗑️</button>
+                    
+                    <button class="btn-custom btn-outline" id="btnToggleClose" onclick="toggleCloseAction()">Cerrar Pedido 🔒</button>
+                    <a href="#" class="btn-custom btn-mint" id="btnWhatsApp" target="_blank">Enviar WhatsApp 📱</a>
+                </div>
             </div>
+
+            <!-- Visual timeline of order history -->
+            <div>
+                <h4 style="margin-top: 20px;">Línea de Tiempo del Pedido</h4>
+                <div class="timeline-container" id="detTimeline">
+                    <!-- dynamic -->
+                </div>
+            </div>
+
+            <div style="text-align:right; margin-top:20px;">
+                <button class="btn-custom btn-outline" onclick="closeModal('orderDetailModal')">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Order Modal (ADMIN ONLY) -->
+    <div class="modal-overlay" id="orderEditModal">
+        <div class="modal-container" style="max-width:700px; width:90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>✏️ Modificar Composición del Pedido</h2>
+                <button onclick="closeModal('orderEditModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-secondary);">&times;</button>
+            </div>
+
+            <form id="formEditOrder" onsubmit="submitEditOrder(event)">
+                <input type="hidden" id="editOrderId">
+                
+                <h4 style="border-bottom:1px solid #e2e8f0; padding-bottom:5px; margin-bottom:15px;">Datos del Cliente</h4>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+                    <div>
+                        <label class="form-label">Nombre del Cliente</label>
+                        <input type="text" id="editCustomerName" class="form-control" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Teléfono de Contacto</label>
+                        <input type="text" id="editCustomerPhone" class="form-control" required pattern="^[0-9]{7,15}$" title="Debe contener entre 7 y 15 números.">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+                    <div>
+                        <label class="form-label">Prioridad</label>
+                        <select id="editPriority" class="form-control">
+                            <option value="NORMAL">NORMAL</option>
+                            <option value="ALTA">ALTA</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Asesor Asignado</label>
+                        <select id="editAssignedAdvisor" class="form-control">
+                            <option value="">Ninguno</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h4 style="border-bottom:1px solid #e2e8f0; padding-bottom:5px; margin-bottom:15px;">Ingredientes y Productos</h4>
+                <div id="editItemsContainer">
+                    <!-- dynamic lists of items to modify -->
+                </div>
+
+                <div style="text-align:right; margin-bottom:20px;">
+                    <button type="button" class="btn-custom btn-mint" onclick="addEditItemRow()" style="font-size:0.85rem; padding:6px 15px;">+ Agregar Producto</button>
+                </div>
+
+                <div style="background-color:var(--bg-cream); padding:15px; border-radius:var(--border-radius-sm); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+                    <h4>Total Estimado (Calculado):</h4>
+                    <span id="editPreviewTotal" style="font-size:1.5rem; font-weight:800; color:var(--green-dark);">$0</span>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label class="form-label" style="font-weight:700; color:var(--strawberry);">Motivo de la Modificación (Obligatorio) *</label>
+                    <textarea id="editReason" class="form-control" rows="3" required placeholder="Ej: Cliente se equivocó de sabor o solicitó tamaño grande en lugar de mediano."></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" class="btn-custom btn-outline" onclick="closeModal('orderEditModal')">Cancelar</button>
+                    <button type="submit" class="btn-custom btn-lemon">Guardar Cambios</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script th:inline="javascript">
         document.getElementById('side-orders').classList.add('active');
 
+        // Global variables to store loaded catalog options
+        let activeProducts = [];
+        let activeFlavors = [];
+        let activeAddons = [];
+        let currentOrder = null;
+
+        function toggleCustomDates() {
+            const select = document.getElementById('dateFilterSelect');
+            const customDates = document.getElementById('customDateRange');
+            if (select.value === 'custom') {
+                customDates.style.display = 'block';
+            } else {
+                customDates.style.display = 'none';
+            }
+        }
+
+        // Run on load
+        toggleCustomDates();
+
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
 
-        function openOrderDetailsModal(orderId, orderCode, customerName, customerPhone, total, status) {
-            document.getElementById('detCode').innerText = "Pedido #" + orderCode;
-            document.getElementById('detCustomer').innerText = customerName;
-            document.getElementById('detPhone').innerText = customerPhone;
-            document.getElementById('detStatus').innerText = status;
-            document.getElementById('detTotal').innerText = "$" + parseFloat(total).toLocaleString('es-CO');
-            
-            const list = document.getElementById('detItemsList');
-            list.innerHTML = `<p style="color:var(--text-secondary); font-size:0.9rem;">Cargando detalles...</p>`;
-            document.getElementById('orderDetailModal').classList.add('active');
-
-            // Fetch order snapshot details dynamically from the database
-            fetch('/asesor/api/pedidos/updates')
+        function openOrderDetails(orderId) {
+            fetch('/admin/api/pedidos/' + orderId)
                 .then(res => res.json())
-                .then(orders => {
-                    // This is a mockup/polling helper to easily retrieve from the local UI
-                    // To get precise items, we can read details or find the specific order from list
-                    // Since it's in templates, we can pass model object directly. 
-                    // Let's print out order items by reading the lists
-                    const ordersFull = /*[[${orders}]]*/ [];
-                    const matched = ordersFull.find(o => o.id === orderId);
-                    if (matched) {
-                        list.innerHTML = "";
-                        matched.items.forEach(item => {
-                            const addonsStr = item.addons.map(a => a.addonName).join(', ');
-                            list.innerHTML += `
-                                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding-bottom:6px;">
-                                    <div>
-                                        <strong>${item.productName} (${item.flavorName})</strong>
-                                        <div style="font-size:0.75rem; color:var(--text-secondary);">Tamaño: ${item.size} | Cantidad: ${item.quantity}</div>
-                                        ${addonsStr ? `<div style="font-size:0.75rem; color:var(--green-dark);">Adicionales: ${addonsStr}</div>` : ""}
-                                    </div>
-                                    <span style="font-weight:700;">$${item.subtotal.toLocaleString('es-CO')}</span>
+                .then(data => {
+                    currentOrder = data.order;
+                    activeProducts = data.products;
+                    activeFlavors = data.flavors;
+                    activeAddons = data.addons;
+
+                    // 1. Populate details modal
+                    document.getElementById('detCode').innerHTML = "Pedido #" + currentOrder.orderCode;
+                    document.getElementById('detCustomer').innerText = currentOrder.customerName;
+                    document.getElementById('detPhone').innerText = currentOrder.customerPhone;
+                    document.getElementById('detStatus').innerText = currentOrder.status;
+                    document.getElementById('detTotal').innerText = "$" + currentOrder.total.toLocaleString('es-CO');
+                    
+                    const isAlta = currentOrder.priority === 'ALTA';
+                    document.getElementById('detPriority').innerHTML = isAlta ? '<span style="color:var(--strawberry);">⚡ ALTA</span>' : 'NORMAL';
+                    document.getElementById('detAdvisor').innerText = currentOrder.assignedAdvisor ? currentOrder.assignedAdvisor : 'Ninguno';
+                    
+                    // Show lock/unlock label for Close state
+                    const btnToggleClose = document.getElementById('btnToggleClose');
+                    if (currentOrder.closed) {
+                        document.getElementById('detCode').innerHTML += ' <span style="font-size:0.8rem; background-color:#718096; color:white; padding:3px 8px; border-radius:5px;">🔒 CERRADO</span>';
+                        btnToggleClose.innerText = "Reabrir Pedido 🔓";
+                        btnToggleClose.className = "btn-custom btn-mint";
+                        document.getElementById('btnEditOrder').innerText = "Reabrir para editar 🔓";
+                    } else {
+                        btnToggleClose.innerText = "Cerrar Pedido 🔒";
+                        btnToggleClose.className = "btn-custom btn-outline";
+                        document.getElementById('btnEditOrder').innerText = "Editar Pedido ✏️";
+                    }
+
+                    // Populate reassign advisor dropdown
+                    const selectReassign = document.getElementById('selectReassignAdvisor');
+                    selectReassign.innerHTML = '<option value="">Ninguno</option>';
+                    data.advisors.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.username;
+                        opt.innerText = a.name;
+                        if (a.username === currentOrder.assignedAdvisor) {
+                            opt.selected = true;
+                        }
+                        selectReassign.appendChild(opt);
+                    });
+
+                    // Set select status
+                    document.getElementById('selectChangeStatus').value = currentOrder.status;
+
+                    // Items display
+                    const list = document.getElementById('detItemsList');
+                    list.innerHTML = "";
+                    currentOrder.items.forEach(item => {
+                        const addonsStr = item.addons.map(a => a.addonName).join(', ');
+                        list.innerHTML += `
+                            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding-bottom:6px;">
+                                <div>
+                                    <strong>${item.productName} (${item.flavorName})</strong>
+                                    <div style="font-size:0.75rem; color:var(--text-secondary);">Tamaño: ${item.size} | Cantidad: ${item.quantity}</div>
+                                    ${addonsStr ? `<div style="font-size:0.75rem; color:var(--green-dark);">Adicionales: ${addonsStr}</div>` : ""}
+                                </div>
+                                <span style="font-weight:700;">$${item.subtotal.toLocaleString('es-CO')}</span>
+                            </div>
+                        `;
+                    });
+
+                    // WhatsApp link
+                    const whatsappUrl = "https://wa.me/57" + currentOrder.customerPhone + "?text=" + encodeURIComponent(
+                        "¡Hola " + currentOrder.customerName + "! Tu pedido " + currentOrder.orderCode + " por valor de $" + currentOrder.total.toLocaleString('es-CO') + " se encuentra en estado: " + currentOrder.status
+                    );
+                    document.getElementById('btnWhatsApp').href = whatsappUrl;
+
+                    // Edit button click action
+                    document.getElementById('btnEditOrder').onclick = function() {
+                        if (currentOrder.closed) {
+                            const reason = prompt("El pedido está cerrado. Ingrese el motivo de reapertura:");
+                            if (reason) {
+                                fetch('/admin/api/pedidos/' + currentOrder.id + '/reabrir?reason=' + encodeURIComponent(reason), {method: 'POST'})
+                                    .then(res => {
+                                        if (res.ok) {
+                                            alert("Pedido reabierto con éxito.");
+                                            closeModal('orderDetailModal');
+                                            openOrderEditModal();
+                                        } else {
+                                            alert("Error al reabrir pedido.");
+                                        }
+                                    });
+                            }
+                        } else {
+                            closeModal('orderDetailModal');
+                            openOrderEditModal();
+                        }
+                    };
+
+                    // Render merged history timeline
+                    const timeline = document.getElementById('detTimeline');
+                    timeline.innerHTML = "";
+                    
+                    const events = [];
+                    // Add status history
+                    data.statusHistory.forEach(sh => {
+                        events.push({
+                            time: new Date(sh.updatedAt),
+                            type: 'status',
+                            title: `Estado cambiado de ${sh.previousStatus ? sh.previousStatus : 'Ninguno'} a ${sh.newStatus}`,
+                            actor: sh.updatedBy,
+                            notes: sh.notes
+                        });
+                    });
+                    // Add change history
+                    data.changeHistory.forEach(ch => {
+                        events.push({
+                            time: new Date(ch.updatedAt),
+                            type: 'change',
+                            title: `Modificación (${ch.propertyName})`,
+                            actor: ch.updatedBy,
+                            notes: ch.reason,
+                            details: `Antes:\n${ch.oldValue}\n\nDespués:\n${ch.newValue}`
+                        });
+                    });
+
+                    // Sort chronologically desc
+                    events.sort((a,b) => b.time - a.time);
+
+                    if (events.length === 0) {
+                        timeline.innerHTML = `<p style="font-size:0.85rem; color:var(--text-secondary);">No hay registros históricos de este pedido.</p>`;
+                    } else {
+                        events.forEach(e => {
+                            const formattedTime = e.time.toLocaleString('es-CO');
+                            timeline.innerHTML += `
+                                <div class="timeline-item">
+                                    <span class="timeline-time">${formattedTime}</span> | 
+                                    <span class="timeline-actor">${e.actor}</span>: 
+                                    <strong>${e.title}</strong>
+                                    ${e.notes ? `<div style="font-style:italic; margin-top:2px;">"${e.notes}"</div>` : ""}
+                                    ${e.details ? `<pre style="font-size:0.75rem; background:#edf2f7; padding:8px; border-radius:4px; margin-top:5px; overflow-x:auto;">${e.details}</pre>` : ""}
                                 </div>
                             `;
                         });
                     }
+
+                    document.getElementById('orderDetailModal').classList.add('active');
                 })
                 .catch(err => {
-                    list.innerHTML = `<p style="color:var(--strawberry);">Error al cargar productos.</p>`;
+                    alert('Error al cargar detalles de la orden.');
                 });
+        }
+
+        function openOrderEditModal() {
+            // Populate basic fields
+            document.getElementById('editOrderId').value = currentOrder.id;
+            document.getElementById('editCustomerName').value = currentOrder.customerName;
+            document.getElementById('editCustomerPhone').value = currentOrder.customerPhone;
+            document.getElementById('editPriority').value = currentOrder.priority ? currentOrder.priority : "NORMAL";
+            
+            // Populate advisors list in edit
+            const editAdvisorSelect = document.getElementById('editAssignedAdvisor');
+            editAdvisorSelect.innerHTML = '<option value="">Ninguno</option>';
+            // Fetch users from detail data if available
+            const selectReassign = document.getElementById('selectReassignAdvisor');
+            Array.from(selectReassign.options).forEach(opt => {
+                if (opt.value) {
+                    const editOpt = document.createElement('option');
+                    editOpt.value = opt.value;
+                    editOpt.innerText = opt.text;
+                    if (opt.value === currentOrder.assignedAdvisor) {
+                        editOpt.selected = true;
+                    }
+                    editAdvisorSelect.appendChild(editOpt);
+                }
+            });
+
+            document.getElementById('editReason').value = "";
+
+            // Populate rows
+            const container = document.getElementById('editItemsContainer');
+            container.innerHTML = "";
+
+            currentOrder.items.forEach((item, index) => {
+                addItemRow(item, index);
+            });
+
+            recalculatePreviewTotal();
+            document.getElementById('orderEditModal').classList.add('active');
+        }
+
+        function addItemRow(itemData = null, index = 0) {
+            const container = document.getElementById('editItemsContainer');
+            const rowId = 'editItemRow_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+            const div = document.createElement('div');
+            div.className = 'edit-item-card';
+            div.id = rowId;
+
+            // Generate size options
+            const sizeValue = itemData ? itemData.size : 'MEDIUM';
+
+            // Selected addons list
+            const selectedAddonIds = itemData ? itemData.addons.map(a => a.addonId) : [];
+
+            let addonsHtml = "";
+            activeAddons.forEach(a => {
+                const checked = selectedAddonIds.includes(a.id) ? "checked" : "";
+                addonsHtml += `
+                    <label>
+                        <input type="checkbox" class="edit-item-addon-cb" value="${a.id}" ${checked} onchange="recalculatePreviewTotal()">
+                        ${a.name} (+$${a.additionalPrice.toLocaleString('es-CO')})
+                    </label>
+                `;
+            });
+
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h5 style="color:var(--green-dark);">Producto</h5>
+                    <button type="button" class="btn-custom" style="padding:4px 8px; font-size:0.75rem; background-color:var(--strawberry); color:white;" onclick="removeEditItemRow('${rowId}')">Eliminar</button>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem;">Granizado</label>
+                        <select class="form-control edit-item-product" onchange="recalculatePreviewTotal()" required style="padding:6px 12px; font-size:0.85rem;">
+                            ${activeProducts.map(p => `<option value="${p.id}" ${itemData && itemData.productId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem;">Sabor</label>
+                        <select class="form-control edit-item-flavor" onchange="recalculatePreviewTotal()" required style="padding:6px 12px; font-size:0.85rem;">
+                            ${activeFlavors.map(f => `<option value="${f.id}" ${itemData && itemData.flavorId === f.id ? 'selected' : ''}>${f.name} (+$${f.additionalPrice.toLocaleString('es-CO')})</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem;">Tamaño</label>
+                        <select class="form-control edit-item-size" onchange="recalculatePreviewTotal()" required style="padding:6px 12px; font-size:0.85rem;">
+                            <option value="SMALL" ${sizeValue === 'SMALL' ? 'selected' : ''}>SMALL</option>
+                            <option value="MEDIUM" ${sizeValue === 'MEDIUM' ? 'selected' : ''}>MEDIUM</option>
+                            <option value="LARGE" ${sizeValue === 'LARGE' ? 'selected' : ''}>LARGE</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem;">Cantidad</label>
+                        <input type="number" class="form-control edit-item-qty" value="${itemData ? itemData.quantity : 1}" min="1" required style="padding:6px 12px; font-size:0.85rem;" onchange="recalculatePreviewTotal()">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label" style="font-size:0.8rem; font-weight:700;">Complementos Adicionales</label>
+                    <div class="addons-grid">
+                        ${addonsHtml}
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(div);
+        }
+
+        function addEditItemRow() {
+            addItemRow();
+            recalculatePreviewTotal();
+        }
+
+        function removeEditItemRow(rowId) {
+            const card = document.getElementById(rowId);
+            if (card) {
+                card.remove();
+                recalculatePreviewTotal();
+            }
+        }
+
+        function recalculatePreviewTotal() {
+            let total = 0;
+            const itemCards = document.querySelectorAll('.edit-item-card');
+
+            itemCards.forEach(card => {
+                const productId = card.querySelector('.edit-item-product').value;
+                const flavorId = card.querySelector('.edit-item-flavor').value;
+                const size = card.querySelector('.edit-item-size').value;
+                const qty = parseInt(card.querySelector('.edit-item-qty').value) || 1;
+
+                // Find product price
+                const prod = activeProducts.find(p => p.id === productId);
+                let productBasePrice = 0;
+                if (prod && prod.sizePrices) {
+                    productBasePrice = prod.sizePrices[size] || 0;
+                }
+
+                // Flavor price
+                const flav = activeFlavors.find(f => f.id === flavorId);
+                let flavorExtra = 0;
+                if (flav) {
+                    flavorExtra = flav.additionalPrice || 0;
+                }
+
+                // Addons price
+                let addonsTotal = 0;
+                const cbs = card.querySelectorAll('.edit-item-addon-cb:checked');
+                cbs.forEach(cb => {
+                    const add = activeAddons.find(a => a.id === cb.value);
+                    if (add) {
+                        addonsTotal += add.additionalPrice || 0;
+                    }
+                });
+
+                total += (productBasePrice + flavorExtra + addonsTotal) * qty;
+            });
+
+            document.getElementById('editPreviewTotal').innerText = "$" + total.toLocaleString('es-CO');
+        }
+
+        function submitEditOrder(event) {
+            event.preventDefault();
+            const orderId = document.getElementById('editOrderId').value;
+            const customerName = document.getElementById('editCustomerName').value;
+            const customerPhone = document.getElementById('editCustomerPhone').value;
+            const priority = document.getElementById('editPriority').value;
+            const assignedAdvisor = document.getElementById('editAssignedAdvisor').value;
+            const reason = document.getElementById('editReason').value.trim();
+
+            if (!reason) {
+                alert('El motivo de la modificación es obligatorio.');
+                return;
+            }
+
+            // Build items JSON
+            const items = [];
+            const itemCards = document.querySelectorAll('.edit-item-card');
+            
+            if (itemCards.length === 0) {
+                alert('El pedido debe contener al menos un producto.');
+                return;
+            }
+
+            itemCards.forEach(card => {
+                const productId = card.querySelector('.edit-item-product').value;
+                const flavorId = card.querySelector('.edit-item-flavor').value;
+                const size = card.querySelector('.edit-item-size').value;
+                const quantity = parseInt(card.querySelector('.edit-item-qty').value) || 1;
+
+                const addonIds = [];
+                card.querySelectorAll('.edit-item-addon-cb:checked').forEach(cb => {
+                    addonIds.push(cb.value);
+                });
+
+                items.push({
+                    productId,
+                    flavorId,
+                    size,
+                    quantity,
+                    addonIds
+                });
+            });
+
+            const payload = {
+                customerName,
+                customerPhone,
+                priority,
+                assignedAdvisor,
+                reason,
+                items
+            };
+
+            fetch('/admin/api/pedidos/' + orderId + '/editar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert('Pedido modificado correctamente.');
+                    window.location.reload();
+                } else {
+                    res.json().then(data => alert('Error: ' + data.error));
+                }
+            })
+            .catch(err => {
+                alert('Error de conexión.');
+            });
+        }
+
+        // Quick Administrative actions
+        function togglePriorityAction() {
+            const nextPriority = currentOrder.priority === 'ALTA' ? 'NORMAL' : 'ALTA';
+            fetch('/admin/api/pedidos/' + currentOrder.id + '/prioridad?priority=' + nextPriority, {method: 'POST'})
+                .then(res => {
+                    if (res.ok) {
+                        alert('Prioridad cambiada con éxito.');
+                        window.location.reload();
+                    }
+                });
+        }
+
+        function reassignAdvisorAction() {
+            const advisorVal = document.getElementById('selectReassignAdvisor').value;
+            fetch('/admin/api/pedidos/' + currentOrder.id + '/reasignar?advisor=' + advisorVal, {method: 'POST'})
+                .then(res => {
+                    if (res.ok) {
+                        alert('Asesor reasignado con éxito.');
+                        window.location.reload();
+                    }
+                });
+        }
+
+        function changeStatusAction() {
+            const statusVal = document.getElementById('selectChangeStatus').value;
+            const reason = prompt("Ingrese justificación para el cambio de estado (Opcional):");
+            fetch('/admin/api/pedidos/' + currentOrder.id + '/estado?status=' + statusVal + '&notes=' + encodeURIComponent(reason || ""), {method: 'POST'})
+                .then(res => {
+                    if (res.ok) {
+                        alert('Estado del pedido actualizado.');
+                        window.location.reload();
+                    }
+                });
+        }
+
+        function cancelOrderAction() {
+            const reason = prompt("Ingrese el motivo de la cancelación:");
+            if (!reason) {
+                alert("El motivo de cancelación es obligatorio.");
+                return;
+            }
+            fetch('/admin/api/pedidos/' + currentOrder.id + '/cancelar?reason=' + encodeURIComponent(reason), {method: 'POST'})
+                .then(res => {
+                    if (res.ok) {
+                        alert('Pedido cancelado con éxito.');
+                        window.location.reload();
+                    }
+                });
+        }
+
+        function deleteOrderAction() {
+            const reason = prompt("Ingrese el motivo por el cual desea eliminar lógicamente este pedido:");
+            if (!reason) {
+                alert("El motivo de eliminación es obligatorio.");
+                return;
+            }
+            fetch('/admin/api/pedidos/' + currentOrder.id + '/eliminar?reason=' + encodeURIComponent(reason), {method: 'POST'})
+                .then(res => {
+                    if (res.ok) {
+                        alert('Pedido movido a la papelera.');
+                        window.location.reload();
+                    }
+                });
+        }
+
+        function toggleCloseAction() {
+            if (currentOrder.closed) {
+                const reason = prompt("Ingrese el motivo de reapertura del pedido:");
+                if (!reason) {
+                    alert("El motivo de reapertura es obligatorio.");
+                    return;
+                }
+                fetch('/admin/api/pedidos/' + currentOrder.id + '/reabrir?reason=' + encodeURIComponent(reason), {method: 'POST'})
+                    .then(res => {
+                        if (res.ok) {
+                            alert('Pedido reabierto con éxito.');
+                            window.location.reload();
+                        }
+                    });
+            } else {
+                if (confirm('¿Desea marcar como CERRADO este pedido? Esto impedirá su edición accidental.')) {
+                    fetch('/admin/api/pedidos/' + currentOrder.id + '/cerrar', {method: 'POST'})
+                        .then(res => {
+                            if (res.ok) {
+                                alert('Pedido cerrado con éxito.');
+                                window.location.reload();
+                            }
+                        });
+                }
+            }
         }
     </script>
 </body>

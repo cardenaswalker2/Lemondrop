@@ -20,5 +20,7 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
     List<Order> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
     List<Order> findAllByOrderByCreatedAtDesc();
+    List<Order> findByDeletedFalseOrderByCreatedAtDesc();
+    List<Order> findByDeletedTrueOrderByCreatedAtDesc();
     List<Order> findByUpdatedAtAfter(LocalDateTime since);
 }
