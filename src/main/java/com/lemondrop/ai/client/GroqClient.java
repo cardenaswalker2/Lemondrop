@@ -13,12 +13,20 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
 public class GroqClient {
 
     private static final Logger log = LoggerFactory.getLogger(GroqClient.class);
+
+    private static final List<String> FALLBACK_MODELS = java.util.List.of(
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant"
+    );
 
     private final RestTemplate restTemplate;
     private final GroqProperties groqProperties;
@@ -37,6 +45,16 @@ public class GroqClient {
 
     public boolean isAvailable() {
         return groqProperties.isConfigured();
+    }
+
+    private String getNextFallbackModel(String currentModel) {
+        if (currentModel == null) return "openai/gpt-oss-20b";
+        for (int i = 0; i < FALLBACK_MODELS.size() - 1; i++) {
+            if (FALLBACK_MODELS.get(i).equalsIgnoreCase(currentModel)) {
+                return FALLBACK_MODELS.get(i + 1);
+            }
+        }
+        return "openai/gpt-oss-20b";
     }
 
     public Optional<GroqChatResponse> sendChatCompletion(GroqChatRequest request) {
@@ -124,12 +142,11 @@ public class GroqClient {
                             }
                         } catch (Exception ignored) {}
                     }
-                    // Auto-fallback to llama-3.1-8b-instant which has a much higher rate limit allowance
-                    if (!"llama-3.1-8b-instant".equals(request.getModel())) {
-                        log.warn("Rate limit en Groq ({}) para modelo {}. Cambiando a 'llama-3.1-8b-instant'...",
-                                ex.getStatusCode(), request.getModel());
-                        request.setModel("llama-3.1-8b-instant");
-                    }
+                    String nextModel = getNextFallbackModel(request.getModel());
+                    log.warn("Rate limit en Groq ({}) para modelo {}. Cambiando a fallback '{}'...",
+                            ex.getStatusCode(), request.getModel(), nextModel);
+                    request.setModel(nextModel);
+
                     log.warn("Esperando {}ms antes de reintentar petición a Groq... (intento {}/{})", sleepMs, attempt, maxAttempts);
                     try {
                         Thread.sleep(sleepMs);
@@ -140,13 +157,11 @@ public class GroqClient {
                     continue;
                 }
                 if ((ex.getStatusCode() == HttpStatus.BAD_REQUEST || ex.getStatusCode() == HttpStatus.NOT_FOUND) && attempt < maxAttempts) {
-                    String body = ex.getResponseBodyAsString();
-                    if (body != null && body.contains("model")) {
-                        String fallback = request.getModel().contains("8b") ? "llama-3.3-70b-versatile" : "llama-3.1-8b-instant";
-                        log.warn("Modelo '{}' no disponible en Groq. Cambiando a fallback '{}'...", request.getModel(), fallback);
-                        request.setModel(fallback);
-                        continue;
-                    }
+                    String nextModel = getNextFallbackModel(request.getModel());
+                    log.warn("Modelo '{}' devolvió {} en Groq. Cambiando a fallback '{}'...",
+                            request.getModel(), ex.getStatusCode(), nextModel);
+                    request.setModel(nextModel);
+                    continue;
                 }
                 log.error("Error HTTP al comunicarse con Groq: {} - {}", ex.getStatusCode(), ex.getResponseBodyAsString());
                 return Optional.empty();
