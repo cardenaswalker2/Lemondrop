@@ -110,17 +110,9 @@ public class LemonDropAIService {
                 .build();
         conversation.addMessage(userMsg);
 
-        // 4. Fallback if Groq is not configured
+        // 4. If Groq is not configured, run deterministic conversation and order engine
         if (!groqClient.isAvailable()) {
-            String fallbackMsg = "¡Hola! 🍋 Bienvenido a Lemon Drop. Puedes explorar nuestro catálogo interactivo y armar tu pedido favorito directamente en la web.";
-            AIMessage assistantMsg = AIMessage.builder()
-                    .role("assistant")
-                    .content(fallbackMsg)
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            conversation.addMessage(assistantMsg);
-            conversationService.save(conversation);
-            return buildStandardResponse(conversation, fallbackMsg, startTime, false, false, false);
+            return handleDeterministicFlow(conversation, cleanMessage, startTime);
         }
 
         // 5. Agent Loop with Function Calling
@@ -142,9 +134,8 @@ public class LemonDropAIService {
             Optional<GroqChatResponse> optResponse = groqClient.sendChatCompletion(groqRequest);
 
             if (optResponse.isEmpty() || optResponse.get().getChoices() == null || optResponse.get().getChoices().isEmpty()) {
-                log.warn("Groq devolvió una respuesta vacía o con error en la iteración {}. Generando fallback conversacional cálido.", iterations);
-                finalAssistantMessage = generateConversationalFallback(cleanMessage, conversation);
-                break;
+                log.warn("Groq devolvió una respuesta vacía o con error en la iteración {}. Ejecutando motor conversacional y de pedidos determinístico.", iterations);
+                return handleDeterministicFlow(conversation, cleanMessage, startTime);
             }
 
             GroqChatResponse.GroqChoice choice = optResponse.get().getChoices().get(0);
@@ -563,29 +554,241 @@ public class LemonDropAIService {
                lower.contains("muéstrame") || lower.contains("puedo pedir") || lower.contains("que hay");
     }
 
-    private String generateConversationalFallback(String text, AIConversation conv) {
-        if (text == null || text.trim().isEmpty()) {
-            return "¡Hola! 🍋 Bienvenido a Lemon Drop. ¿Qué granizado te gustaría pedir hoy?";
+    private AIChatResponse handleDeterministicFlow(AIConversation conversation, String cleanMessage, long startTime) {
+        String lower = cleanMessage != null ? cleanMessage.toLowerCase().trim() : "";
+        extractAndPersistCustomerInfo(cleanMessage, conversation);
+
+        List<AIProductCardDto> collectedProducts = new ArrayList<>();
+        boolean cartUpdated = false;
+        boolean requiresConfirmation = false;
+        boolean orderConfirmed = false;
+        String finalAssistantMessage;
+        String orderCode = conversation.getConfirmedOrderCode();
+        String whatsAppUrl = null;
+
+        // 1. Check direct confirmation
+        if (lower.equals("si") || lower.equals("sí") || lower.contains("confirmo") || lower.contains("dale") || lower.contains("pídelo") || lower.contains("pidelo")) {
+            if (conversation.getCart() != null && !conversation.getCart().getItems().isEmpty()) {
+                if (conversation.getCustomerName() != null && !conversation.getCustomerName().isEmpty() &&
+                    conversation.getCustomerPhone() != null && !conversation.getCustomerPhone().isEmpty()) {
+                    AIToolResult confirmResult = toolRegistry.execute("confirmar_pedido", "{}", conversation);
+                    if (confirmResult.isOrderCreated() && confirmResult.getData() instanceof Map<?, ?> map) {
+                        orderConfirmed = true;
+                        orderCode = (String) map.get("orderCode");
+                        whatsAppUrl = (String) map.get("whatsAppUrl");
+                        finalAssistantMessage = "🎉 ¡Pedido recibido con éxito! Código: " + orderCode + ".\n\nYa lo estamos preparando en la cocina. Te notificaremos por WhatsApp cuando esté listo para recoger. 🍋💛";
+                    } else {
+                        finalAssistantMessage = confirmResult.getMessage() != null ? confirmResult.getMessage() : "Hubo un error al confirmar tu pedido.";
+                    }
+                } else {
+                    requiresConfirmation = true;
+                    finalAssistantMessage = "¡Listo! 🍋 Para enviar tu pedido a preparación en cocina, ¿a qué nombre y número de WhatsApp lo registramos? 📱";
+                }
+            } else {
+                finalAssistantMessage = "Tu carrito está vacío actualmente. ¿Qué granizado te gustaría que te preparemos? 🍋";
+            }
         }
-        String lower = text.toLowerCase().trim();
-        if (lower.contains("hola") || lower.contains("buenas") || lower.contains("buenos") || lower.contains("hey")) {
-            return "¡Hola! 🍋 ¿Qué granizado se te antoja hoy? Puedes elegir tu sabor favorito o pedirme recomendaciones.";
+        // 2. Check if user specifies size and/or toppings
+        else if (containsSizeKeyword(lower) || containsToppingKeyword(lower)) {
+            String flavor = findTargetFlavor(lower, conversation);
+            String size = extractSize(lower);
+            List<String> toppings = extractToppings(lower);
+
+            Map<String, Object> addArgs = new HashMap<>();
+            addArgs.put("productName", flavor != null ? flavor : "Granizado de Limón");
+            addArgs.put("size", size != null ? size : "MEDIUM");
+            if (!toppings.isEmpty()) {
+                addArgs.put("addons", toppings);
+            }
+            addArgs.put("quantity", 1);
+
+            try {
+                String argsJson = objectMapper.writeValueAsString(addArgs);
+                AIToolResult addResult = toolRegistry.execute("agregar_producto", argsJson, conversation);
+                cartUpdated = addResult.isCartModified();
+                requiresConfirmation = true;
+
+                finalAssistantMessage = "¡Listo! 🙌 Agregué al carrito:\n" +
+                        "• " + (flavor != null ? flavor : "Granizado de Limón") + " (" + (size != null ? size : "MEDIUM") + ")" +
+                        (!toppings.isEmpty() ? " con " + String.join(", ", toppings) : "") + "\n\n" +
+                        "Total del carrito: $" + (conversation.getCart() != null ? conversation.getCart().getTotal() : "7.000") + "\n\n" +
+                        "¿Confirmas este pedido tal cual o a qué nombre y número de WhatsApp lo registramos? 📱✨";
+            } catch (Exception ex) {
+                finalAssistantMessage = "¡Listo! Ya tomé nota de tu pedido. ¿A qué nombre y número de WhatsApp lo confirmamos? 📱";
+            }
         }
-        if (lower.contains("producto") || lower.contains("granizado") || lower.contains("sabor") || 
-            lower.contains("sabores") || lower.contains("carta") || lower.contains("menu") || 
-            lower.contains("menú") || lower.contains("tienes") || lower.contains("opcion") || 
-            lower.contains("catalogo") || lower.contains("catálogo")) {
-            return "¡Claro que sí! 🍋 Aquí te muestro nuestras opciones de granizados disponibles:";
+        // 3. Check if user is requesting a specific product/flavor (e.g. "Quiero un Granizado de Limón", "el de limón porfa")
+        else if (isSpecificProductOrder(lower)) {
+            String flavor = findTargetFlavor(lower, conversation);
+            if (flavor == null) flavor = "Granizado de Limón";
+
+            finalAssistantMessage = "¡De una! 🍋 Vamos a armar tu " + flavor + ".\n\n" +
+                    "Solo necesito que me confirmes:\n\n" +
+                    "1️⃣ Tamaño:\n" +
+                    "- SMALL (pequeño) – $5.000\n" +
+                    "- MEDIUM (mediano) – $7.000\n" +
+                    "- LARGE (grande) – $9.000\n\n" +
+                    "2️⃣ Toppings (opcionales, +$1.000 cada uno):\n" +
+                    "- Leche condensada\n" +
+                    "- Arequipe\n\n" +
+                    "¿Qué tamaño y qué toppings te gustaría? 🚀✨";
+
+            // Attach that specific product card
+            attachSingleProduct(flavor, collectedProducts);
         }
-        if (lower.contains("recomiend") || lower.contains("dulce") || lower.contains("acido") || lower.contains("ácido") || lower.contains("vendido")) {
-            return "¡Te recomiendo nuestro Granizado de Limón clásico o el de Maracuyá con leche condensada! 🍋✨";
+        // 4. Catalogue inquiry (e.g. "qué productos tienes", "muéstrame la carta")
+        else if (isProductInquiry(lower)) {
+            finalAssistantMessage = "¡Claro que sí! 🍋 Aquí te muestro nuestras opciones de granizados disponibles:";
+            attachAllActiveProducts(collectedProducts);
         }
-        if (lower.contains("precio") || lower.contains("cuesta") || lower.contains("cuanto") || lower.contains("cuánto")) {
-            return "Nuestros granizados vienen en tamaño Pequeño ($5.000), Mediano ($7.000) y Grande ($9.000), y puedes añadir toppings por $1.000 c/u. 🍋";
+        // 5. Greeting
+        else if (lower.contains("hola") || lower.contains("buenas") || lower.contains("hey")) {
+            finalAssistantMessage = "¡Hola! 🍋 ¿Qué granizado se te antoja hoy? Puedes elegir tu sabor favorito o pedirme recomendaciones.";
+            attachAllActiveProducts(collectedProducts);
         }
-        if (lower.equals("si") || lower.equals("sí") || lower.contains("confirmo") || lower.contains("dale") || lower.contains("listo")) {
-            return "¡De una! 🚀 Por favor indícame tu nombre y número de WhatsApp para registrar tu pedido.";
+        // 6. Recommendation
+        else if (lower.contains("recomiend") || lower.contains("dulce") || lower.contains("acido") || lower.contains("ácido")) {
+            finalAssistantMessage = "¡Te recomiendo nuestro Granizado de Limón clásico o el de Maracuyá con leche condensada! 🍋✨";
+            attachAllActiveProducts(collectedProducts);
         }
-        return "¡Con gusto te atiendo! 🍋 Cuéntame qué granizado deseas que te preparemos hoy.";
+        // 7. General fallback
+        else {
+            finalAssistantMessage = "¡Con gusto te atiendo! 🍋 Cuéntame qué sabor o tamaño de granizado deseas que te preparemos hoy.";
+            attachAllActiveProducts(collectedProducts);
+        }
+
+        AIMessage assistantMsg = AIMessage.builder()
+                .role("assistant")
+                .content(finalAssistantMessage)
+                .timestamp(LocalDateTime.now())
+                .build();
+        conversation.addMessage(assistantMsg);
+        conversationService.save(conversation);
+
+        AIChatResponse response = buildStandardResponse(conversation, finalAssistantMessage, startTime, cartUpdated, requiresConfirmation, orderConfirmed);
+        if (orderCode != null) response.setOrderCode(orderCode);
+        if (whatsAppUrl != null) response.setWhatsAppUrl(whatsAppUrl);
+        if (!collectedProducts.isEmpty()) response.setProducts(collectedProducts);
+        return response;
+    }
+
+    private boolean isSpecificProductOrder(String text) {
+        if (text == null) return false;
+        String lower = text.toLowerCase();
+        boolean hasOrderVerb = lower.contains("quiero") || lower.contains("pedir") || lower.contains("dame") ||
+                lower.contains("el de") || lower.contains("la de") || lower.contains("un ") || lower.contains("uno ") ||
+                lower.contains("porfa") || lower.contains("armar");
+        boolean hasFlavor = lower.contains("limon") || lower.contains("limón") || lower.contains("maracu") ||
+                lower.contains("cereza") || lower.contains("mango") || lower.contains("fresa") || lower.contains("naranja");
+        return (hasOrderVerb && hasFlavor) || (hasFlavor && !lower.contains("qué") && !lower.contains("que") && !lower.contains("mostrar") && !lower.contains("carta") && !lower.contains("menu"));
+    }
+
+    private boolean containsSizeKeyword(String text) {
+        if (text == null) return false;
+        String lower = text.toLowerCase();
+        return lower.contains("pequeñ") || lower.contains("pequeno") || lower.contains("small") || lower.contains("chico") ||
+               lower.contains("median") || lower.contains("medium") || lower.contains("grande") || lower.contains("large");
+    }
+
+    private boolean containsToppingKeyword(String text) {
+        if (text == null) return false;
+        String lower = text.toLowerCase();
+        return lower.contains("arequipe") || lower.contains("leche condensada") || lower.contains("topping") || lower.contains("toppings") || lower.contains("adicional");
+    }
+
+    private String extractSize(String text) {
+        if (text == null) return "MEDIUM";
+        String lower = text.toLowerCase();
+        if (lower.contains("pequeñ") || lower.contains("pequeno") || lower.contains("small") || lower.contains("chico")) return "SMALL";
+        if (lower.contains("grande") || lower.contains("large")) return "LARGE";
+        return "MEDIUM";
+    }
+
+    private List<String> extractToppings(String text) {
+        List<String> toppings = new ArrayList<>();
+        if (text == null) return toppings;
+        String lower = text.toLowerCase();
+        if (lower.contains("arequipe")) toppings.add("Arequipe");
+        if (lower.contains("leche condensada") || lower.contains("lecherita") || lower.contains("condensada")) toppings.add("Leche condensada");
+        return toppings;
+    }
+
+    private String findTargetFlavor(String text, AIConversation conversation) {
+        if (text != null) {
+            String lower = text.toLowerCase();
+            if (lower.contains("limon") || lower.contains("limón")) return "Granizado de Limón";
+            if (lower.contains("maracu")) return "Granizado de Maracuyá";
+            if (lower.contains("cereza")) return "Granizado de Cereza";
+            if (lower.contains("mango")) return "Granizado de Mango";
+            if (lower.contains("fresa")) return "Granizado de Fresa";
+        }
+        if (conversation != null && conversation.getMessages() != null) {
+            for (int i = conversation.getMessages().size() - 1; i >= 0; i--) {
+                String prev = conversation.getMessages().get(i).getContent();
+                if (prev != null) {
+                    String pLower = prev.toLowerCase();
+                    if (pLower.contains("limon") || pLower.contains("limón")) return "Granizado de Limón";
+                    if (pLower.contains("maracu")) return "Granizado de Maracuyá";
+                    if (pLower.contains("cereza")) return "Granizado de Cereza";
+                    if (pLower.contains("mango")) return "Granizado de Mango";
+                    if (pLower.contains("fresa")) return "Granizado de Fresa";
+                }
+            }
+        }
+        return "Granizado de Limón";
+    }
+
+    private void attachSingleProduct(String flavorName, List<AIProductCardDto> target) {
+        if (productService == null) return;
+        try {
+            List<Product> prods = productService.getAllActiveAndAvailable();
+            for (Product p : prods) {
+                if (p.getName() != null && (p.getName().equalsIgnoreCase(flavorName) || p.getName().toLowerCase().contains(flavorName.toLowerCase()))) {
+                    BigDecimal priceFrom = p.getSmallPrice();
+                    if (priceFrom == null || priceFrom.compareTo(BigDecimal.ZERO) <= 0) priceFrom = p.getMediumPrice();
+                    Map<String, BigDecimal> prices = new HashMap<>();
+                    if (p.getSizePrices() != null) p.getSizePrices().forEach((sz, pr) -> prices.put(sz.name(), pr));
+
+                    target.add(AIProductCardDto.builder()
+                            .id(p.getId())
+                            .name(p.getName())
+                            .description(p.getDescription() != null ? p.getDescription() : "")
+                            .image(p.getImage() != null ? p.getImage() : "")
+                            .category(p.getCategory() != null ? p.getCategory() : "Granizados")
+                            .badge(p.getBadge() != null ? p.getBadge() : "")
+                            .priceFrom(priceFrom != null ? priceFrom : BigDecimal.ZERO)
+                            .prices(prices)
+                            .available(p.isAvailable())
+                            .build());
+                    return;
+                }
+            }
+            attachAllActiveProducts(target);
+        } catch (Exception ignored) {}
+    }
+
+    private void attachAllActiveProducts(List<AIProductCardDto> target) {
+        if (productService == null) return;
+        try {
+            List<Product> prods = productService.getAllActiveAndAvailable();
+            for (Product p : prods) {
+                BigDecimal priceFrom = p.getSmallPrice();
+                if (priceFrom == null || priceFrom.compareTo(BigDecimal.ZERO) <= 0) priceFrom = p.getMediumPrice();
+                Map<String, BigDecimal> prices = new HashMap<>();
+                if (p.getSizePrices() != null) p.getSizePrices().forEach((sz, pr) -> prices.put(sz.name(), pr));
+
+                target.add(AIProductCardDto.builder()
+                        .id(p.getId())
+                        .name(p.getName())
+                        .description(p.getDescription() != null ? p.getDescription() : "")
+                        .image(p.getImage() != null ? p.getImage() : "")
+                        .category(p.getCategory() != null ? p.getCategory() : "Granizados")
+                        .badge(p.getBadge() != null ? p.getBadge() : "")
+                        .priceFrom(priceFrom != null ? priceFrom : BigDecimal.ZERO)
+                        .prices(prices)
+                        .available(p.isAvailable())
+                        .build());
+            }
+        } catch (Exception ignored) {}
     }
 }
