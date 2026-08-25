@@ -15,6 +15,7 @@ import com.lemondrop.ai.service.LemonDropAIService;
 import com.lemondrop.ai.service.SecurityAuditService;
 import com.lemondrop.ai.tools.AIToolDefinition;
 import com.lemondrop.ai.tools.AIToolRegistry;
+import com.lemondrop.ai.tools.impl.GeneralTools;
 import com.lemondrop.model.ProductSize;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +42,7 @@ class CustomerCollectionFlowTest {
     private SecurityAuditService auditService;
     private ObjectMapper objectMapper;
     private LemonDropAIService aiService;
+    private GeneralTools generalTools;
     private Map<String, AIConversation> memoryStore;
 
     @BeforeEach
@@ -94,6 +96,10 @@ class CustomerCollectionFlowTest {
                         .message("Pedido confirmado")
                         .build())
                 .build());
+
+        // Register GeneralTools
+        generalTools = new GeneralTools(toolRegistry);
+        generalTools.registerTools();
 
         memoryStore = new HashMap<>();
         when(conversationRepository.findByConversationId(anyString()))
@@ -164,7 +170,7 @@ class CustomerCollectionFlowTest {
     }
 
     @Test
-    @DisplayName("Caso 3 y 4: Manejo progresivo con preguntas intermedias del usuario")
+    @DisplayName("Caso 3: Manejo progresivo con preguntas intermedias del usuario")
     void testPartialDataOnlyNameFirstThenPhone() {
         when(groqClient.isAvailable()).thenReturn(false);
 
@@ -194,7 +200,7 @@ class CustomerCollectionFlowTest {
 
         assertEquals("COLLECTING_CUSTOMER", r3.getState());
         assertTrue(r3.getMessage().contains("número de WhatsApp") || r3.getMessage().contains("teléfono"));
-        assertNull(r3.getProducts()); // Does not flood catalogue
+        assertNull(r3.getProducts());
 
         // Turn 4: User gives phone
         AIChatResponse r4 = aiService.processMessage(AIChatRequest.builder()
@@ -221,7 +227,7 @@ class CustomerCollectionFlowTest {
     }
 
     @Test
-    @DisplayName("Caso 5: Solo teléfono primero, luego nombre")
+    @DisplayName("Caso 4: Solo teléfono primero, luego nombre")
     void testPhoneFirstThenName() {
         when(groqClient.isAvailable()).thenReturn(false);
 
@@ -254,7 +260,7 @@ class CustomerCollectionFlowTest {
     }
 
     @Test
-    @DisplayName("Caso 6: Confirmación con frase alternativa (ej. 'Dale pídelo')")
+    @DisplayName("Caso 5: Confirmación con frase alternativa (ej. 'Dale pídelo')")
     void testAlternativeConfirmationPhrases() {
         when(groqClient.isAvailable()).thenReturn(false);
 
@@ -277,5 +283,65 @@ class CustomerCollectionFlowTest {
         assertEquals("ORDER_CONFIRMED", r3.getState());
         assertTrue(r3.isOrderConfirmed());
         assertNotNull(r3.getOrderCode());
+    }
+
+    @Test
+    @DisplayName("Caso 6: Pregunta de fecha y hora no rompe el flujo del pedido")
+    void testDateTimeInquiryDoesNotBreakOrderState() {
+        when(groqClient.isAvailable()).thenReturn(false);
+
+        // Turn 1: Add product
+        AIChatResponse r1 = aiService.processMessage(AIChatRequest.builder()
+                .message("Granizado de Limón grande")
+                .build());
+        assertNotNull(r1.getCart());
+        assertEquals(1, r1.getCart().getItems().size());
+
+        // Turn 2: User asks "¿Qué día es hoy?"
+        AIChatResponse r2 = aiService.processMessage(AIChatRequest.builder()
+                .conversationId(r1.getConversationId())
+                .clientToken(r1.getClientToken())
+                .message("¿Qué día es hoy?")
+                .build());
+
+        assertTrue(r2.getMessage().contains("Hoy es") || r2.getMessage().contains("2026"));
+        // Cart is NOT lost!
+        assertNotNull(r2.getCart());
+        assertEquals(1, r2.getCart().getItems().size());
+
+        // Turn 3: User provides customer info
+        AIChatResponse r3 = aiService.processMessage(AIChatRequest.builder()
+                .conversationId(r1.getConversationId())
+                .clientToken(r1.getClientToken())
+                .message("Juan y el número es 3005722844")
+                .build());
+
+        assertEquals("WAITING_CONFIRMATION", r3.getState());
+        assertEquals("Juan", r3.getCustomerName());
+        assertEquals("3005722844", r3.getCustomerPhone());
+    }
+
+    @Test
+    @DisplayName("Caso 7: Extracción y persistencia de observaciones/notas del pedido")
+    void testOrderNotesExtractionAndPersistence() {
+        when(groqClient.isAvailable()).thenReturn(false);
+
+        // Turn 1: Add product
+        AIChatResponse r1 = aiService.processMessage(AIChatRequest.builder()
+                .message("Granizado de Limón mediano")
+                .build());
+
+        // Turn 2: User provides name, phone and notes in one message
+        AIChatResponse r2 = aiService.processMessage(AIChatRequest.builder()
+                .conversationId(r1.getConversationId())
+                .clientToken(r1.getClientToken())
+                .message("Soy Juan, mi número es 3005722844 y pon en la nota que no quiero mucho hielo")
+                .build());
+
+        assertEquals("Juan", r2.getCustomerName());
+        assertEquals("3005722844", r2.getCustomerPhone());
+        assertNotNull(r2.getObservations());
+        assertTrue(r2.getObservations().toLowerCase().contains("no quiero mucho hielo"));
+        assertEquals("WAITING_CONFIRMATION", r2.getState());
     }
 }

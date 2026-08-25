@@ -20,5 +20,6 @@ public class AICartDto {
     private BigDecimal subtotal;
     private BigDecimal total;
     private String status;
+    private String observations;
     private int totalItems;
 }

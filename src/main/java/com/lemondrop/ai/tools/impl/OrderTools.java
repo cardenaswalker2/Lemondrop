@@ -169,7 +169,19 @@ public class OrderTools {
         conv.setCustomerName(name);
         conv.setCustomerPhone(cleanPhone);
 
-        String obs = (String) args.get("observations");
+        String obs = null;
+        if (args != null) {
+            if (args.get("observations") instanceof String s && !s.trim().isEmpty()) obs = s.trim();
+            else if (args.get("notes") instanceof String s && !s.trim().isEmpty()) obs = s.trim();
+            else if (args.get("observaciones") instanceof String s && !s.trim().isEmpty()) obs = s.trim();
+            else if (args.get("nota") instanceof String s && !s.trim().isEmpty()) obs = s.trim();
+        }
+        if (obs == null || obs.isEmpty()) {
+            obs = conv.getObservations();
+        }
+        if ((obs == null || obs.isEmpty()) && conv.getCart() != null) {
+            obs = conv.getCart().getObservations();
+        }
 
         // Convert AICart to CreateOrderRequest
         List<OrderItemDto> itemDtos = conv.getCart().getItems().stream().map(item -> {

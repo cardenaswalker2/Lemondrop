@@ -24,6 +24,7 @@ public class AICart {
     private BigDecimal total = BigDecimal.ZERO;
     @Builder.Default
     private CartStatus status = CartStatus.DRAFT;
+    private String observations;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime expiresAt;

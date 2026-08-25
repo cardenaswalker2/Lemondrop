@@ -147,6 +147,7 @@ class AICartDto {
   final num subtotal;
   final num total;
   final String status;
+  final String? observations;
   final int totalItems;
 
   const AICartDto({
@@ -155,6 +156,7 @@ class AICartDto {
     required this.subtotal,
     required this.total,
     required this.status,
+    this.observations,
     required this.totalItems,
   });
 
@@ -168,6 +170,7 @@ class AICartDto {
       subtotal: (json['subtotal'] as num?) ?? 0,
       total: (json['total'] as num?) ?? 0,
       status: (json['status'] as String?) ?? 'DRAFT',
+      observations: json['observations'] as String?,
       totalItems: (json['totalItems'] as num?)?.toInt() ?? 0,
     );
   }
@@ -178,6 +181,7 @@ class AICartDto {
         'subtotal': subtotal,
         'total': total,
         'status': status,
+        'observations': observations,
         'totalItems': totalItems,
       };
 }
@@ -291,6 +295,7 @@ class AIChatResponse {
   final String? intent;
   final String? customerName;
   final String? customerPhone;
+  final String? observations;
   final List<String> pendingCustomerFields;
   final bool cartUpdated;
   final bool requiresConfirmation;
@@ -313,6 +318,7 @@ class AIChatResponse {
     this.intent,
     this.customerName,
     this.customerPhone,
+    this.observations,
     this.pendingCustomerFields = const [],
     this.cartUpdated = false,
     this.requiresConfirmation = false,
@@ -337,6 +343,7 @@ class AIChatResponse {
       intent: json['intent'] as String?,
       customerName: json['customerName'] as String?,
       customerPhone: json['customerPhone'] as String?,
+      observations: json['observations'] as String?,
       pendingCustomerFields: (json['pendingCustomerFields'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
@@ -367,6 +374,7 @@ class AIChatResponse {
         'intent': intent,
         'customerName': customerName,
         'customerPhone': customerPhone,
+        'observations': observations,
         'pendingCustomerFields': pendingCustomerFields,
         'cartUpdated': cartUpdated,
         'requiresConfirmation': requiresConfirmation,

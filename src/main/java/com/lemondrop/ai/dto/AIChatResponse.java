@@ -19,6 +19,7 @@ public class AIChatResponse {
     private String intent;
     private String customerName;
     private String customerPhone;
+    private String observations;
     private List<String> pendingCustomerFields;
     
     @Builder.Default

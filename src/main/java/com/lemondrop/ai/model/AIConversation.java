@@ -43,6 +43,7 @@ public class AIConversation {
 
     private String orderDraftId;
     private String confirmedOrderCode;
+    private String observations;
     @Builder.Default
     private List<String> pendingCustomerFields = new ArrayList<>();
 
