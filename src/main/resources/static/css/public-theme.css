@@ -1,6 +1,6 @@
 /* ============================================================
-   LEMON DROP - PREMIUM PUBLIC DESIGN SYSTEM
-   Modern, Summer Energy, Clean, App-Like, 3D Layers & Microinteractions
+   LEMON DROP - PREMIUM PUBLIC DESIGN SYSTEM (MOBILE FIRST)
+   Modern, Summer Energy, Clean, App-Like, 3D Layers & Responsive 320px - 4K
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
@@ -55,7 +55,9 @@
     --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Global Reset & Base */
+/* ============================================================
+   GLOBAL RESET & VIEWPORT SAFEGUARD
+   ============================================================ */
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -65,6 +67,9 @@
 html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 body.ld-public-body {
@@ -72,10 +77,13 @@ body.ld-public-body {
     background-color: var(--ld-cream);
     color: var(--ld-dark);
     line-height: 1.6;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100dvh;
     overflow-x: hidden;
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 a {
@@ -97,27 +105,30 @@ h1, h2, h3, h4, .ld-display {
     font-weight: 700;
     color: var(--ld-green-dark);
     line-height: 1.2;
+    word-break: break-word;
 }
 
 .ld-title-hero {
-    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    font-size: clamp(1.85rem, 5.5vw, 3.8rem);
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--ld-green-deepest);
+    line-height: 1.15;
 }
 
 .ld-title-section {
-    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-size: clamp(1.5rem, 3.8vw, 2.4rem);
     text-align: center;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .ld-subtitle-section {
-    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    font-size: clamp(0.88rem, 1.8vw, 1.05rem);
     color: var(--ld-text-muted);
     text-align: center;
     max-width: 620px;
-    margin: 0 auto 48px auto;
+    margin: 0 auto 36px auto;
+    padding: 0 12px;
 }
 
 /* ============================================================
@@ -127,11 +138,11 @@ h1, h2, h3, h4, .ld-display {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 14px 28px;
+    gap: 8px;
+    padding: 12px 24px;
     font-family: var(--font-body);
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.95rem;
     border-radius: var(--radius-pill);
     border: none;
     cursor: pointer;
@@ -139,22 +150,22 @@ h1, h2, h3, h4, .ld-display {
     transition: var(--transition-smooth);
     user-select: none;
     position: relative;
-    overflow: hidden;
+    text-align: center;
 }
 
 .ld-btn-lemon {
-    background: var(--ld-lemon-gradient, linear-gradient(135deg, #FFD91A 0%, #FFB703 100%));
+    background: linear-gradient(135deg, #FFD91A 0%, #FFB703 100%);
     color: var(--ld-green-deepest);
     box-shadow: var(--ld-shadow-lemon);
 }
 
 .ld-btn-lemon:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 30px rgba(255, 217, 26, 0.5);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(255, 217, 26, 0.45);
 }
 
 .ld-btn-lemon:active {
-    transform: translateY(-1px) scale(0.99);
+    transform: translateY(0) scale(0.99);
 }
 
 .ld-btn-green {
@@ -164,8 +175,8 @@ h1, h2, h3, h4, .ld-display {
 }
 
 .ld-btn-green:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 30px rgba(23, 59, 36, 0.35);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(23, 59, 36, 0.3);
 }
 
 .ld-btn-outline {
@@ -181,17 +192,17 @@ h1, h2, h3, h4, .ld-display {
 }
 
 .ld-btn-sm {
-    padding: 9px 18px;
-    font-size: 0.88rem;
+    padding: 8px 16px;
+    font-size: 0.85rem;
 }
 
 .ld-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 14px;
+    padding: 5px 12px;
     border-radius: var(--radius-pill);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
@@ -222,7 +233,7 @@ h1, h2, h3, h4, .ld-display {
     left: 0;
     width: 100%;
     z-index: 1000;
-    background: rgba(255, 253, 247, 0.88);
+    background: rgba(255, 253, 247, 0.92);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(47, 125, 50, 0.12);
@@ -230,9 +241,10 @@ h1, h2, h3, h4, .ld-display {
 }
 
 .ld-navbar-inner {
+    width: 100%;
     max-width: 1280px;
     margin: 0 auto;
-    padding: 14px 24px;
+    padding: 12px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -241,28 +253,25 @@ h1, h2, h3, h4, .ld-display {
 .ld-logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-family: var(--font-heading);
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 700;
     color: var(--ld-green-deepest);
     text-decoration: none;
+    flex-shrink: 0;
 }
 
 .ld-logo-icon {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     background: var(--ld-lemon);
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(255, 217, 26, 0.4);
-    transition: var(--transition-bounce);
-}
-
-.ld-logo:hover .ld-logo-icon {
-    transform: rotate(12deg) scale(1.08);
+    box-shadow: 0 4px 10px rgba(255, 217, 26, 0.4);
+    font-size: 1.2rem;
 }
 
 .ld-nav-links {
@@ -273,13 +282,12 @@ h1, h2, h3, h4, .ld-display {
 }
 
 .ld-nav-link {
-    padding: 8px 16px;
+    padding: 8px 14px;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     color: var(--ld-green-dark);
     border-radius: var(--radius-pill);
     transition: var(--transition-fast);
-    position: relative;
 }
 
 .ld-nav-link:hover {
@@ -294,52 +302,64 @@ h1, h2, h3, h4, .ld-display {
 
 .ld-nav-toggle {
     display: none;
-    background: none;
+    background: rgba(47, 125, 50, 0.08);
     border: none;
     padding: 8px;
+    border-radius: 10px;
     cursor: pointer;
     color: var(--ld-green-dark);
+    align-items: center;
+    justify-content: center;
 }
 
-/* Mobile Drawer Overlay */
+/* ============================================================
+   MOBILE DRAWER (OVERLAY ARCHITECTURE - NO LAYOUT SHIFT)
+   ============================================================ */
 .ld-drawer-overlay {
-    display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(15, 40, 24, 0.45);
-    backdrop-filter: blur(6px);
-    z-index: 1001;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    background: rgba(15, 40, 24, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 9998;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s;
 }
 
 .ld-drawer-overlay.active {
-    display: block;
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .ld-mobile-drawer {
     position: fixed;
     top: 0;
-    right: -100%;
-    width: 310px;
-    max-width: 85vw;
-    height: 100vh;
+    right: 0;
+    width: min(85vw, 340px);
+    height: 100dvh;
     background: var(--ld-cream);
-    z-index: 1002;
-    padding: 24px 20px;
+    z-index: 9999;
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px)) 20px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
-    transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.2);
+    transform: translateX(105%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
+    overflow-y: auto;
 }
 
 .ld-mobile-drawer.active {
-    right: 0;
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .ld-drawer-header {
@@ -347,14 +367,14 @@ h1, h2, h3, h4, .ld-display {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid rgba(47, 125, 50, 0.12);
-    padding-bottom: 16px;
+    padding-bottom: 14px;
 }
 
 .ld-drawer-close {
     background: rgba(47, 125, 50, 0.08);
     border: none;
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -366,18 +386,18 @@ h1, h2, h3, h4, .ld-display {
 .ld-drawer-links {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-top: 24px;
+    gap: 10px;
+    margin-top: 20px;
 }
 
 .ld-drawer-link {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 18px;
+    padding: 12px 16px;
     border-radius: var(--radius-md);
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 1rem;
     color: var(--ld-green-dark);
     background: var(--ld-white);
     border: 1px solid rgba(47, 125, 50, 0.08);
@@ -390,46 +410,50 @@ h1, h2, h3, h4, .ld-display {
 }
 
 /* ============================================================
-   HERO SECTION (3D STAGE & LAYERING)
+   HERO SECTION (3D STAGE & ADAPTIVE COMPOSITION)
    ============================================================ */
 .ld-hero {
     position: relative;
-    padding: 60px 24px 90px 24px;
+    padding: 48px 20px 64px 20px;
     overflow: hidden;
-    background: radial-gradient(circle at 75% 30%, rgba(255, 217, 26, 0.35) 0%, rgba(255, 253, 247, 0.2) 60%),
+    background: radial-gradient(circle at 75% 30%, rgba(255, 217, 26, 0.28) 0%, rgba(255, 253, 247, 0.2) 60%),
                 linear-gradient(180deg, var(--ld-cream) 0%, #FFF9EB 100%);
     border-bottom: 1px solid rgba(47, 125, 50, 0.08);
+    width: 100%;
 }
 
 .ld-hero-container {
+    width: 100%;
     max-width: 1280px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1.15fr 0.85fr;
     align-items: center;
-    gap: 48px;
+    gap: 36px;
 }
 
 .ld-hero-content {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     z-index: 2;
+    width: 100%;
 }
 
 .ld-hero-actions {
     display: flex;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
     align-items: center;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 .ld-hero-stats {
     display: flex;
-    gap: 28px;
-    margin-top: 24px;
-    padding-top: 24px;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding-top: 16px;
     border-top: 1px solid rgba(47, 125, 50, 0.12);
 }
 
@@ -440,13 +464,13 @@ h1, h2, h3, h4, .ld-display {
 
 .ld-hero-stat-num {
     font-family: var(--font-heading);
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     font-weight: 700;
     color: var(--ld-green-primary);
 }
 
 .ld-hero-stat-label {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--ld-text-muted);
 }
@@ -458,40 +482,37 @@ h1, h2, h3, h4, .ld-display {
     align-items: center;
     justify-content: center;
     z-index: 2;
+    width: 100%;
 }
 
 .ld-hero-glow {
     position: absolute;
-    width: 380px;
-    height: 380px;
-    background: radial-gradient(circle, rgba(255, 217, 26, 0.5) 0%, rgba(78, 159, 61, 0.2) 50%, transparent 70%);
-    filter: blur(40px);
+    width: min(340px, 90vw);
+    height: min(340px, 90vw);
+    background: radial-gradient(circle, rgba(255, 217, 26, 0.45) 0%, rgba(78, 159, 61, 0.15) 50%, transparent 70%);
+    filter: blur(35px);
     z-index: 1;
-    animation: pulseGlow 5s infinite ease-in-out;
+    pointer-events: none;
 }
 
 .ld-hero-card-3d {
     position: relative;
     z-index: 2;
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.8);
     border-radius: var(--radius-xl);
-    padding: 24px;
+    padding: 20px;
     box-shadow: var(--ld-shadow-xl);
     width: 100%;
-    max-width: 420px;
-    transition: transform 0.4s ease;
-}
-
-.ld-hero-card-3d:hover {
-    transform: translateY(-6px) rotate(1deg);
+    max-width: 390px;
+    margin: 0 auto;
 }
 
 .ld-hero-img-box {
     position: relative;
     width: 100%;
-    height: 320px;
+    height: 260px;
     border-radius: var(--radius-lg);
     overflow: hidden;
     background: linear-gradient(135deg, #FFF9D2 0%, #E2F0D9 100%);
@@ -504,62 +525,42 @@ h1, h2, h3, h4, .ld-display {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ld-hero-card-3d:hover .ld-hero-img-box img {
-    transform: scale(1.06);
-}
-
-/* Floating Badges on Hero Stage */
+/* Floating Badges on Hero Stage (Contained & Safe) */
 .ld-float-pill {
     position: absolute;
     background: var(--ld-white);
-    padding: 10px 16px;
+    padding: 8px 14px;
     border-radius: var(--radius-pill);
     box-shadow: var(--ld-shadow-md);
-    border: 1px solid rgba(47, 125, 50, 0.1);
+    border: 1px solid rgba(47, 125, 50, 0.12);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     z-index: 3;
+    max-width: 90%;
+    white-space: nowrap;
 }
 
 .ld-float-pill-1 {
-    top: -16px;
-    left: -20px;
-    animation: floatSlow 4s infinite ease-in-out;
+    top: 10px;
+    left: 10px;
 }
 
 .ld-float-pill-2 {
-    bottom: -16px;
-    right: -20px;
-    animation: floatReverse 4.5s infinite ease-in-out;
-}
-
-/* Keyframe Animations */
-@keyframes floatSlow {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-10px) rotate(2deg); }
-}
-
-@keyframes floatReverse {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(10px) rotate(-2deg); }
-}
-
-@keyframes pulseGlow {
-    0%, 100% { opacity: 0.6; transform: scale(0.95); }
-    50% { opacity: 0.9; transform: scale(1.05); }
+    bottom: 10px;
+    right: 10px;
 }
 
 /* ============================================================
-   VALUE PROPOSITION SECTION (CARACTERÍSTICAS)
+   SECTIONS, GRIDS & PRODUCT CARDS
    ============================================================ */
 .ld-section {
-    padding: 70px 24px;
+    padding: 50px 20px;
+    width: 100%;
     max-width: 1280px;
     margin: 0 auto;
 }
@@ -572,33 +573,24 @@ h1, h2, h3, h4, .ld-display {
 
 .ld-features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 24px;
-    margin-top: 40px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 20px;
+    margin-top: 30px;
 }
 
 .ld-feature-card {
     background: var(--ld-cream);
     border: 1px solid rgba(47, 125, 50, 0.1);
     border-radius: var(--radius-lg);
-    padding: 30px 24px;
-    text-align: left;
-    transition: var(--transition-smooth);
+    padding: 24px 20px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-}
-
-.ld-feature-card:hover {
-    transform: translateY(-6px);
-    background: var(--ld-white);
-    box-shadow: var(--ld-shadow-lg);
-    border-color: var(--ld-lemon);
+    gap: 12px;
 }
 
 .ld-feature-icon {
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
     border-radius: var(--radius-md);
     background: var(--ld-lemon-light);
     color: var(--ld-green-dark);
@@ -608,24 +600,20 @@ h1, h2, h3, h4, .ld-display {
 }
 
 .ld-feature-card h3 {
-    font-size: 1.25rem;
-    color: var(--ld-green-dark);
+    font-size: 1.15rem;
 }
 
 .ld-feature-card p {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--ld-text-muted);
-    line-height: 1.5;
 }
 
-/* ============================================================
-   PRODUCT CARDS & CATALOG GRID
-   ============================================================ */
+/* Product Catalog Grid */
 .ld-products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 28px;
-    margin-top: 36px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 24px;
+    margin-top: 28px;
 }
 
 .ld-product-card {
@@ -636,19 +624,12 @@ h1, h2, h3, h4, .ld-display {
     box-shadow: var(--ld-shadow-sm);
     display: flex;
     flex-direction: column;
-    transition: var(--transition-smooth);
-}
-
-.ld-product-card:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--ld-shadow-lg);
-    border-color: rgba(47, 125, 50, 0.3);
 }
 
 .ld-product-media {
     position: relative;
     width: 100%;
-    height: 220px;
+    height: 200px;
     background: var(--ld-lemon-light);
     overflow: hidden;
 }
@@ -657,35 +638,30 @@ h1, h2, h3, h4, .ld-display {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
-}
-
-.ld-product-card:hover .ld-product-media img {
-    transform: scale(1.08);
 }
 
 .ld-product-badge {
     position: absolute;
-    top: 14px;
-    left: 14px;
+    top: 12px;
+    left: 12px;
     z-index: 2;
 }
 
 .ld-product-body {
-    padding: 22px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    gap: 12px;
+    gap: 10px;
 }
 
 .ld-product-title {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: var(--ld-green-deepest);
 }
 
 .ld-product-desc {
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     color: var(--ld-text-muted);
     line-height: 1.45;
     flex-grow: 1;
@@ -695,142 +671,123 @@ h1, h2, h3, h4, .ld-display {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-top: 16px;
+    padding-top: 14px;
     border-top: 1px solid rgba(47, 125, 50, 0.1);
     margin-top: auto;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .ld-product-price {
     font-family: var(--font-heading);
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: var(--ld-green-primary);
 }
 
-/* ============================================================
-   SABORES & TOPPINGS PILLS
-   ============================================================ */
+/* Sabores & Toppings */
 .ld-chips-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 14px;
 }
 
 .ld-chip-card {
     background: var(--ld-white);
     border: 1px solid rgba(47, 125, 50, 0.12);
     border-radius: var(--radius-md);
-    padding: 20px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    transition: var(--transition-fast);
-}
-
-.ld-chip-card:hover {
-    border-color: var(--ld-green-primary);
-    background: var(--ld-cream-card);
-    transform: translateY(-2px);
+    gap: 6px;
 }
 
 .ld-chip-name {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--ld-green-dark);
 }
 
 .ld-chip-desc {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: var(--ld-text-muted);
 }
 
 .ld-chip-price {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 700;
     color: var(--ld-green-primary);
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
-/* ============================================================
-   HOW IT WORKS (PASOS)
-   ============================================================ */
+/* How it works */
 .ld-steps-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 24px;
-    margin-top: 40px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 20px;
+    margin-top: 30px;
 }
 
 .ld-step-item {
     background: var(--ld-white);
     border-radius: var(--radius-lg);
-    padding: 28px 20px;
+    padding: 24px 16px;
     text-align: center;
     border: 1px solid rgba(47, 125, 50, 0.1);
     box-shadow: var(--ld-shadow-sm);
-    position: relative;
-    transition: var(--transition-smooth);
-}
-
-.ld-step-item:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--ld-shadow-md);
-    border-color: var(--ld-lemon);
 }
 
 .ld-step-num {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: var(--ld-lemon);
     color: var(--ld-green-deepest);
     font-family: var(--font-heading);
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 16px auto;
-    box-shadow: 0 4px 12px rgba(255, 217, 26, 0.35);
+    margin: 0 auto 12px auto;
 }
 
 .ld-step-item h3 {
-    font-size: 1.15rem;
-    margin-bottom: 8px;
+    font-size: 1.05rem;
+    margin-bottom: 6px;
 }
 
 .ld-step-item p {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: var(--ld-text-muted);
 }
 
-/* ============================================================
-   CTA FINAL BANNER
-   ============================================================ */
+/* CTA Final Banner */
 .ld-cta-banner {
     background: linear-gradient(135deg, var(--ld-green-deepest) 0%, var(--ld-green-dark) 100%);
     border-radius: var(--radius-xl);
-    padding: 60px 40px;
+    padding: 44px 24px;
     color: var(--ld-white);
     text-align: center;
     position: relative;
     overflow: hidden;
     box-shadow: var(--ld-shadow-xl);
-    margin: 40px auto 80px auto;
+    margin: 30px auto 60px auto;
+    width: calc(100% - 32px);
     max-width: 1200px;
 }
 
 .ld-cta-banner h2 {
     color: var(--ld-lemon);
-    font-size: clamp(2rem, 4vw, 3rem);
-    margin-bottom: 16px;
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+    margin-bottom: 12px;
 }
 
 .ld-cta-banner p {
     color: var(--ld-green-mint);
     max-width: 540px;
-    margin: 0 auto 32px auto;
-    font-size: 1.05rem;
+    margin: 0 auto 24px auto;
+    font-size: 0.95rem;
 }
 
 /* ============================================================
@@ -839,13 +796,13 @@ h1, h2, h3, h4, .ld-display {
 .ld-modal-overlay {
     display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
     background: rgba(15, 40, 24, 0.55);
     backdrop-filter: blur(8px);
-    z-index: 2000;
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 9998;
     align-items: center;
     justify-content: center;
     padding: 16px;
@@ -861,34 +818,27 @@ h1, h2, h3, h4, .ld-display {
 .ld-modal-card {
     background: var(--ld-white);
     border-radius: var(--radius-xl);
-    width: 100%;
-    max-width: 520px;
-    max-height: 90vh;
+    width: min(94vw, 500px);
+    max-height: min(90dvh, 720px);
     overflow-y: auto;
-    padding: 32px 28px;
+    padding: 24px 20px;
     box-shadow: var(--ld-shadow-xl);
     border: 1px solid rgba(255, 255, 255, 0.8);
     position: relative;
-    animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes modalIn {
-    from { opacity: 0; transform: translateY(20px) scale(0.96); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .ld-modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .ld-modal-close {
     background: rgba(47, 125, 50, 0.08);
     border: none;
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     font-size: 1.2rem;
     cursor: pointer;
@@ -898,18 +848,17 @@ h1, h2, h3, h4, .ld-display {
     color: var(--ld-green-dark);
 }
 
-/* Customizer Size Radios (Cards) */
 .ld-size-selector {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 8px;
     margin-top: 8px;
 }
 
 .ld-size-option {
     border: 2px solid rgba(47, 125, 50, 0.15);
     border-radius: var(--radius-md);
-    padding: 14px 8px;
+    padding: 12px 6px;
     text-align: center;
     cursor: pointer;
     transition: var(--transition-fast);
@@ -928,41 +877,35 @@ h1, h2, h3, h4, .ld-display {
 
 .ld-size-name {
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--ld-green-dark);
     display: block;
 }
 
 .ld-size-price {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--ld-green-primary);
-    margin-top: 4px;
+    margin-top: 2px;
     display: block;
 }
 
-/* Customizer Toppings Checkboxes */
 .ld-toppings-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 8px;
+    margin-top: 8px;
 }
 
 .ld-topping-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 10px 14px;
     border-radius: var(--radius-md);
     background: var(--ld-cream);
     border: 1.5px solid rgba(47, 125, 50, 0.1);
     cursor: pointer;
-    transition: var(--transition-fast);
-}
-
-.ld-topping-item:hover {
-    border-color: var(--ld-green-primary);
 }
 
 .ld-topping-item:has(input:checked) {
@@ -973,38 +916,37 @@ h1, h2, h3, h4, .ld-display {
 .ld-topping-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-weight: 600;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
 }
 
 .ld-topping-price {
     font-weight: 700;
     color: var(--ld-green-dark);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
-/* Form Controls */
 .ld-form-group {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
 }
 
 .ld-form-label {
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     color: var(--ld-green-deepest);
 }
 
 .ld-input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 10px 14px;
     border-radius: var(--radius-md);
     border: 1.5px solid rgba(47, 125, 50, 0.2);
     font-family: var(--font-body);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     color: var(--ld-dark);
     background: var(--ld-white);
     transition: var(--transition-fast);
@@ -1013,44 +955,37 @@ h1, h2, h3, h4, .ld-display {
 .ld-input:focus {
     outline: none;
     border-color: var(--ld-green-primary);
-    box-shadow: 0 0 0 4px rgba(47, 125, 50, 0.12);
+    box-shadow: 0 0 0 3px rgba(47, 125, 50, 0.12);
 }
 
-/* ============================================================
-   CART DRAWER & FLOATING BADGE
-   ============================================================ */
+/* Floating Cart Trigger Button */
 .ld-cart-float-btn {
     position: fixed;
-    bottom: 24px;
-    left: 24px;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    left: 20px;
     z-index: 1500;
     background: var(--ld-green-deepest);
     color: var(--ld-white);
-    padding: 14px 20px;
+    padding: 12px 18px;
     border-radius: var(--radius-pill);
     box-shadow: var(--ld-shadow-lg);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     border: 2px solid var(--ld-lemon);
     transition: var(--transition-bounce);
-}
-
-.ld-cart-float-btn:hover {
-    transform: translateY(-4px) scale(1.04);
-    box-shadow: var(--ld-shadow-xl);
 }
 
 .ld-cart-count-badge {
     background: var(--ld-lemon);
     color: var(--ld-green-deepest);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 800;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1063,33 +998,34 @@ h1, h2, h3, h4, .ld-display {
 .ld-footer {
     background: var(--ld-green-deepest);
     color: var(--ld-white);
-    padding: 60px 24px 30px 24px;
+    padding: 48px 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px;
     margin-top: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
 }
 
 .ld-footer-inner {
+    width: 100%;
     max-width: 1280px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 28px;
+    gap: 20px;
 }
 
 .ld-footer-links {
     display: flex;
-    gap: 24px;
+    gap: 16px 20px;
     flex-wrap: wrap;
     justify-content: center;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .ld-footer-links a {
     color: var(--ld-green-mint);
-    transition: var(--transition-fast);
 }
 
 .ld-footer-links a:hover {
@@ -1097,21 +1033,21 @@ h1, h2, h3, h4, .ld-display {
 }
 
 .ld-footer-bottom {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: rgba(255, 255, 255, 0.5);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     width: 100%;
-    padding-top: 24px;
+    padding-top: 18px;
 }
 
 /* ============================================================
-   RESPONSIVE OPTIMIZATIONS (MOBILE FIRST)
+   RESPONSIVE BREAKPOINTS (TABLET & MOBILE)
    ============================================================ */
 @media (max-width: 900px) {
     .ld-hero-container {
         grid-template-columns: 1fr;
         text-align: center;
-        gap: 40px;
+        gap: 32px;
     }
 
     .ld-hero-content {
@@ -1131,40 +1067,71 @@ h1, h2, h3, h4, .ld-display {
     }
 
     .ld-nav-toggle {
-        display: block;
+        display: flex;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
     .ld-hero {
-        padding: 40px 16px 60px 16px;
-    }
-
-    .ld-hero-stats {
-        gap: 16px;
+        padding: 32px 16px 48px 16px;
     }
 
     .ld-hero-card-3d {
         padding: 16px;
+        max-width: 100%;
     }
 
     .ld-hero-img-box {
-        height: 240px;
+        height: 220px;
+    }
+
+    .ld-float-pill {
+        font-size: 0.72rem;
+        padding: 6px 10px;
+    }
+
+    .ld-section {
+        padding: 40px 16px;
+    }
+
+    .ld-products-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .ld-features-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ld-steps-grid {
+        grid-template-columns: 1fr;
     }
 
     .ld-cta-banner {
-        padding: 40px 20px;
-        margin: 20px 12px 60px 12px;
+        padding: 32px 18px;
+        width: calc(100% - 24px);
+        margin: 20px auto 40px auto;
     }
 
+    .ld-cart-float-btn {
+        bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        left: 14px;
+        padding: 10px 14px;
+        font-size: 0.82rem;
+    }
+}
+
+@media (max-width: 380px) {
     .ld-size-selector {
         grid-template-columns: 1fr;
     }
 
-    .ld-cart-float-btn {
-        bottom: 16px;
-        left: 16px;
-        padding: 10px 16px;
-        font-size: 0.88rem;
+    .ld-hero-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .ld-hero-actions .ld-btn {
+        width: 100%;
     }
 }

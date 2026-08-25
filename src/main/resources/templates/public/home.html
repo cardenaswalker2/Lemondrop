@@ -2,7 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Lemon Drop - Granizados que saben a verano 🍋🍧</title>
     <link rel="stylesheet" th:href="@{/css/public-theme.css}">
 </head>
@@ -22,13 +22,13 @@
                 <h1 class="ld-title-hero">
                     Granizados que saben a <span style="color: var(--ld-green-primary); text-decoration: underline decoration-wavy decoration-yellow-400;">verano</span>. 🍧✨
                 </h1>
-                <p style="font-size: 1.1rem; color: var(--ld-text-muted); max-width: 520px; line-height: 1.6;">
+                <p style="font-size: clamp(0.95rem, 2vw, 1.1rem); color: var(--ld-text-muted); max-width: 520px; line-height: 1.55;">
                     Bebidas artesanales refrescantes preparadas con fruta natural, hielo cristalino y los complementos más deliciosos.
                 </p>
                 <div class="ld-hero-actions">
                     <a href="/catalogo" class="ld-btn ld-btn-lemon">
                         <span>Haz tu Pedido</span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M5 12h14"></path>
                             <path d="m12 5 7 7-7 7"></path>
                         </svg>
@@ -48,7 +48,7 @@
                     </div>
                     <div class="ld-hero-stat-item">
                         <span class="ld-hero-stat-num">Instantáneo</span>
-                        <span class="ld-hero-stat-label">Preparado al Momento</span>
+                        <span class="ld-hero-stat-label">Al Momento</span>
                     </div>
                 </div>
             </div>
@@ -60,7 +60,7 @@
                 <div class="ld-hero-card-3d">
                     <!-- Floating Badge 1 -->
                     <div class="ld-float-pill ld-float-pill-1">
-                        <span style="font-size: 1.2rem;">🍋</span>
+                        <span style="font-size: 1.1rem;">🍋</span>
                         <span>Sabor Cítrico Único</span>
                     </div>
 
@@ -69,17 +69,17 @@
                         <img src="https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&q=80&w=650" alt="Granizado Artesanal Lemon Drop">
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 8px;">
                         <div>
-                            <span class="ld-badge ld-badge-green" style="font-size: 0.7rem;">Favorito del Stand</span>
-                            <h3 style="font-size: 1.2rem; margin-top: 4px;">Granizado Lemon Drop</h3>
+                            <span class="ld-badge ld-badge-green" style="font-size: 0.68rem;">Favorito del Stand</span>
+                            <h3 style="font-size: 1.15rem; margin-top: 2px;">Granizado Lemon Drop</h3>
                         </div>
-                        <span style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: var(--ld-green-primary);">$6.000</span>
+                        <span style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; color: var(--ld-green-primary);">$6.000</span>
                     </div>
 
                     <!-- Floating Badge 2 -->
                     <div class="ld-float-pill ld-float-pill-2">
-                        <span style="font-size: 1.2rem;">🧊</span>
+                        <span style="font-size: 1.1rem;">🧊</span>
                         <span>Hielo Cristalino</span>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
         </div>
     </section>
 
-    <!-- Value Proposition Section (Iconos SVG Limpios) -->
+    <!-- Value Proposition Section -->
     <section class="ld-section ld-section-white">
         <h2 class="ld-title-section">¿Por qué elegir Lemon Drop? 🌟</h2>
         <p class="ld-subtitle-section">Cada vaso se prepara con dedicación para ofrecerte la experiencia más refrescante de la feria escolar.</p>
@@ -95,7 +95,7 @@
         <div class="ld-features-grid">
             <div class="ld-feature-card">
                 <div class="ld-feature-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
                         <path d="M12 6v6l4 2"></path>
                     </svg>
@@ -106,17 +106,17 @@
 
             <div class="ld-feature-card">
                 <div class="ld-feature-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
                 </div>
                 <h3>Hielo Cristalino</h3>
-                <p>Hielo de agua filtrada triturado finamente para darte esa textura ligera inigualable.</p>
+                <p>Hielo de agua purificada triturado finamente para darte esa textura ligera inigualable.</p>
             </div>
 
             <div class="ld-feature-card">
                 <div class="ld-feature-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
                         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                     </svg>
@@ -127,7 +127,7 @@
 
             <div class="ld-feature-card">
                 <div class="ld-feature-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
                 </div>
@@ -176,8 +176,8 @@
             </div>
         </div>
 
-        <h3 style="font-size: 1.6rem; text-align: center; margin: 48px 0 12px 0;">Toppings & Complementos 🍯</h3>
-        <p class="ld-subtitle-section" style="margin-bottom: 28px;">Agrega un toque extra de cremosidad y sabor a tu vaso.</p>
+        <h3 style="font-size: 1.4rem; text-align: center; margin: 36px 0 10px 0;">Toppings & Complementos 🍯</h3>
+        <p class="ld-subtitle-section" style="margin-bottom: 24px;">Agrega un toque extra de cremosidad y sabor a tu vaso.</p>
 
         <div class="ld-chips-grid">
             <div class="ld-chip-card" th:each="addon : ${addons}" style="background: var(--ld-cream-card);">
@@ -202,17 +202,17 @@
             <div class="ld-step-item">
                 <div class="ld-step-num">2</div>
                 <h3>Personaliza</h3>
-                <p>Selecciona tu tamaño favorito (Pequeño, Mediano, Grande) y toppings.</p>
+                <p>Selecciona tu tamaño favorito y toppings.</p>
             </div>
             <div class="ld-step-item">
                 <div class="ld-step-num">3</div>
                 <h3>Recibe tu Código</h3>
-                <p>Indica tu nombre y WhatsApp para generar tu código único LD-2026-XXXXX.</p>
+                <p>Ingresa tus datos para generar tu código único LD-2026-XXXXX.</p>
             </div>
             <div class="ld-step-item">
                 <div class="ld-step-num">4</div>
                 <h3>Retira sin Filas</h3>
-                <p>Sigue el avance en pantalla y recoge tu granizado listo en el stand.</p>
+                <p>Sigue el avance en pantalla y recoge tu pedido en el stand.</p>
             </div>
         </div>
     </section>
@@ -221,9 +221,9 @@
     <div class="ld-cta-banner">
         <h2>¿Listo para disfrutar un Lemon Drop? 🍋</h2>
         <p>Arma tu combinación personalizada ahora mismo o déjate asesorar por nuestra Inteligencia Artificial.</p>
-        <a href="/catalogo" class="ld-btn ld-btn-lemon" style="font-size: 1.1rem; padding: 16px 36px;">
+        <a href="/catalogo" class="ld-btn ld-btn-lemon" style="font-size: 1.05rem; padding: 14px 32px;">
             <span>Haz tu Pedido Ahora</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12h14"></path>
                 <path d="m12 5 7 7-7 7"></path>
             </svg>

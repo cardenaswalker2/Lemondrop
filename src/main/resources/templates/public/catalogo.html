@@ -2,39 +2,64 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <!-- CSRF Meta Tags -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Catálogo de Granizados - Lemon Drop 🍋🍧</title>
     <link rel="stylesheet" th:href="@{/css/public-theme.css}">
     <style>
-        /* Cart Slide-Over Styles */
+        /* Cart Slide-Over Styles (Overlay Architecture - No Width Spill) */
+        #cartOverlay {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100dvh;
+            background: rgba(15, 40, 24, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9998;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.3s ease, visibility 0.3s;
+        }
+
+        #cartOverlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
         .ld-cart-drawer {
             position: fixed;
             top: 0;
-            right: -100%;
-            width: 440px;
-            max-width: 92vw;
-            height: 100vh;
+            right: 0;
+            width: min(92vw, 420px);
+            height: 100dvh;
             background: var(--ld-white);
-            z-index: 2500;
+            z-index: 9999;
             box-shadow: -15px 0 40px rgba(15, 40, 24, 0.2);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            padding: 24px;
+            transform: translateX(105%);
+            visibility: hidden;
+            pointer-events: none;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
+            padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px)) 20px;
         }
 
         .ld-cart-drawer.active {
-            right: 0;
+            transform: translateX(0);
+            visibility: visible;
+            pointer-events: auto;
         }
 
         .ld-cart-items-scroll {
             flex-grow: 1;
             overflow-y: auto;
-            margin: 20px 0;
+            margin: 16px 0;
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -45,7 +70,7 @@
             background: var(--ld-cream);
             border: 1px solid rgba(47, 125, 50, 0.12);
             border-radius: var(--radius-md);
-            padding: 14px 16px;
+            padding: 12px 14px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -56,16 +81,17 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            gap: 8px;
         }
 
         .ld-cart-item-name {
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: var(--ld-green-deepest);
         }
 
         .ld-cart-item-details {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: var(--ld-text-muted);
         }
 
@@ -73,7 +99,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 6px;
+            margin-top: 4px;
         }
 
         .ld-qty-control {
@@ -99,7 +125,7 @@
         .ld-item-subtotal {
             font-family: var(--font-heading);
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             color: var(--ld-green-primary);
         }
 
@@ -107,28 +133,39 @@
         #loadingOverlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(255, 253, 247, 0.95);
+            inset: 0;
+            width: 100%;
+            height: 100dvh;
+            background: rgba(255, 253, 247, 0.96);
             backdrop-filter: blur(8px);
-            z-index: 9000;
+            z-index: 10000;
             align-items: center;
             justify-content: center;
             flex-direction: column;
             text-align: center;
-            padding: 24px;
+            padding: 20px;
         }
 
         .lemon-pulse-anim {
-            font-size: 4.5rem;
+            font-size: 4rem;
             animation: pulseLemon 1.6s infinite ease-in-out;
         }
 
         @keyframes pulseLemon {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2) rotate(8deg); }
+            50% { transform: scale(1.15) rotate(8deg); }
+        }
+
+        .ld-modal-row-2col {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 440px) {
+            .ld-modal-row-2col {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -138,16 +175,16 @@
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
     <!-- Header Section -->
-    <section style="text-align: center; padding: 50px 24px 20px 24px; max-width: 800px; margin: 0 auto;">
-        <span class="ld-badge ld-badge-lemon" style="margin-bottom: 12px;">Menú Oficial 2026</span>
-        <h1 class="ld-title-section" style="font-size: 2.8rem;">Arma tu Granizado 🍧</h1>
+    <section style="text-align: center; padding: 36px 16px 12px 16px; max-width: 800px; margin: 0 auto; width: 100%;">
+        <span class="ld-badge ld-badge-lemon" style="margin-bottom: 10px;">Menú Oficial 2026</span>
+        <h1 class="ld-title-section" style="font-size: clamp(1.8rem, 5vw, 2.6rem);">Arma tu Granizado 🍧</h1>
         <p class="ld-subtitle-section" style="margin-bottom: 0;">
             Elige tu base favorita, selecciona el tamaño del vaso, sabor y complementos a tu gusto.
         </p>
     </section>
 
     <!-- Product Grid -->
-    <section class="ld-section" style="padding-top: 20px;">
+    <section class="ld-section" style="padding-top: 10px;">
         <div class="ld-products-grid">
             <div class="ld-product-card" th:each="prod : ${products}">
                 <div class="ld-product-media">
@@ -180,13 +217,13 @@
         <div class="ld-modal-card">
             <div class="ld-modal-header">
                 <div>
-                    <span class="ld-badge ld-badge-green" style="font-size: 0.72rem;">Personalizador</span>
-                    <h2 id="modalProdName" style="font-size: 1.5rem; margin-top: 4px;">Personaliza tu Pedido</h2>
+                    <span class="ld-badge ld-badge-green" style="font-size: 0.7rem;">Personalizador</span>
+                    <h2 id="modalProdName" style="font-size: 1.35rem; margin-top: 4px;">Personaliza tu Pedido</h2>
                 </div>
                 <button class="ld-modal-close" onclick="closeModal('customizerModal')">&times;</button>
             </div>
             
-            <p id="modalProdDesc" style="color: var(--ld-text-muted); font-size: 0.88rem; margin-bottom: 20px;"></p>
+            <p id="modalProdDesc" style="color: var(--ld-text-muted); font-size: 0.85rem; margin-bottom: 16px;"></p>
             <input type="hidden" id="modalProdId">
 
             <!-- 1. Sabor Base -->
@@ -197,7 +234,7 @@
                 </select>
             </div>
 
-            <!-- 2. Tamaño del Vaso (Tarjetas de Selección Rápida) -->
+            <!-- 2. Tamaño del Vaso -->
             <div class="ld-form-group">
                 <label class="ld-form-label">2. Tamaño del Vaso 📏</label>
                 <div class="ld-size-selector">
@@ -234,7 +271,7 @@
             </div>
 
             <!-- 4. Cantidad & Observaciones -->
-            <div style="display: grid; grid-template-columns: 100px 1fr; gap: 14px;">
+            <div class="ld-modal-row-2col">
                 <div class="ld-form-group">
                     <label class="ld-form-label">Cantidad</label>
                     <input type="number" id="modalQty" class="ld-input" value="1" min="1" onchange="calculateModalTotal()">
@@ -246,10 +283,10 @@
             </div>
 
             <!-- Action & Price Footer -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(47, 125, 50, 0.12); padding-top: 20px; margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(47, 125, 50, 0.12); padding-top: 16px; margin-top: 10px; flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <span style="font-size: 0.8rem; color: var(--ld-text-muted); font-weight: 600; display: block;">Total del Ítem:</span>
-                    <h3 id="modalTotalDisplay" style="color: var(--ld-green-primary); font-size: 1.8rem;">$0</h3>
+                    <span style="font-size: 0.75rem; color: var(--ld-text-muted); font-weight: 600; display: block;">Total del Ítem:</span>
+                    <h3 id="modalTotalDisplay" style="color: var(--ld-green-primary); font-size: 1.6rem;">$0</h3>
                 </div>
                 <button class="ld-btn ld-btn-lemon" onclick="addItemToCart()">Agregar al Pedido 🛍️</button>
             </div>
@@ -257,14 +294,14 @@
     </div>
 
     <!-- App-Like Slide-Over Cart Drawer -->
-    <div id="cartOverlay" class="ld-drawer-overlay" onclick="closeCartDrawer()"></div>
+    <div id="cartOverlay" onclick="closeCartDrawer()"></div>
     <aside id="cartDrawer" class="ld-cart-drawer">
         <div style="display: flex; flex-direction: column; height: 100%;">
             <!-- Drawer Header -->
-            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid rgba(47, 125, 50, 0.12);">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(47, 125, 50, 0.12);">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 1.4rem;">🛒</span>
-                    <h2 style="font-size: 1.4rem;">Tu Pedido</h2>
+                    <span style="font-size: 1.3rem;">🛒</span>
+                    <h2 style="font-size: 1.3rem;">Tu Pedido</h2>
                 </div>
                 <button class="ld-drawer-close" onclick="closeCartDrawer()">&times;</button>
             </div>
@@ -275,24 +312,24 @@
             </div>
 
             <!-- Cart Summary & Checkout Form -->
-            <div style="border-top: 1px solid rgba(47, 125, 50, 0.12); padding-top: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <span style="font-weight: 700; font-size: 1.05rem;">Total a Pagar:</span>
-                    <h2 id="cartTotalDisplay" style="font-size: 1.8rem; color: var(--ld-green-primary);">$0</h2>
+            <div style="border-top: 1px solid rgba(47, 125, 50, 0.12); padding-top: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-weight: 700; font-size: 1rem;">Total a Pagar:</span>
+                    <h2 id="cartTotalDisplay" style="font-size: 1.6rem; color: var(--ld-green-primary);">$0</h2>
                 </div>
 
                 <!-- Checkout Form -->
-                <form id="checkoutForm" onsubmit="submitCheckout(event)" style="display: flex; flex-direction: column; gap: 10px;">
+                <form id="checkoutForm" onsubmit="submitCheckout(event)" style="display: flex; flex-direction: column; gap: 8px;">
                     <div class="ld-form-group" style="margin-bottom: 0;">
-                        <input type="text" id="custName" class="ld-input" placeholder="Tu Nombre *" required style="padding: 10px 14px;">
+                        <input type="text" id="custName" class="ld-input" placeholder="Tu Nombre *" required style="padding: 10px 12px;">
                     </div>
                     <div class="ld-form-group" style="margin-bottom: 0;">
-                        <input type="tel" id="custPhone" class="ld-input" placeholder="WhatsApp (Ej: 3001234567) *" required style="padding: 10px 14px;">
+                        <input type="tel" id="custPhone" class="ld-input" placeholder="WhatsApp (Ej: 3001234567) *" required style="padding: 10px 12px;">
                     </div>
-                    <div class="ld-form-group" style="margin-bottom: 8px;">
-                        <input type="text" id="custObs" class="ld-input" placeholder="Observaciones de entrega (opcional)" style="padding: 10px 14px;">
+                    <div class="ld-form-group" style="margin-bottom: 4px;">
+                        <input type="text" id="custObs" class="ld-input" placeholder="Observaciones de entrega (opcional)" style="padding: 10px 12px;">
                     </div>
-                    <button type="submit" id="btnSubmitOrder" class="ld-btn ld-btn-lemon" style="width: 100%; font-size: 1.05rem; padding: 14px;">
+                    <button type="submit" id="btnSubmitOrder" class="ld-btn ld-btn-lemon" style="width: 100%; font-size: 1rem; padding: 12px;">
                         Confirmar y Crear Pedido 🍨🔥
                     </button>
                 </form>
@@ -303,9 +340,9 @@
     <!-- Loading Screen Overlay during Order Creation -->
     <div id="loadingOverlay">
         <div class="lemon-pulse-anim">🍋</div>
-        <h2 style="font-size: 1.8rem; margin: 16px 0 8px 0; color: var(--ld-green-deepest);">Estamos creando tu pedido...</h2>
-        <p style="color: var(--ld-text-muted); max-width: 380px; font-size: 0.95rem; line-height: 1.5;">
-            Tu pedido está siendo enviado a la cocina de Lemon Drop. Por favor no cierres esta ventana.
+        <h2 style="font-size: 1.6rem; margin: 14px 0 6px 0; color: var(--ld-green-deepest);">Estamos creando tu pedido...</h2>
+        <p style="color: var(--ld-text-muted); max-width: 360px; font-size: 0.9rem; line-height: 1.4;">
+            Tu pedido está siendo enviado a la cocina de Lemon Drop.
         </p>
     </div>
 
@@ -346,6 +383,7 @@
             selectSize('MEDIUM');
             calculateModalTotal();
             document.getElementById('customizerModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
         function selectSize(size) {
@@ -385,6 +423,7 @@
         function closeModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
 
         function openCartDrawer() {
@@ -461,10 +500,10 @@
             const container = document.getElementById('cartItemsList');
             if (cart.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 40px 20px; color: var(--ld-text-muted);">
-                        <span style="font-size: 3rem; display: block; margin-bottom: 12px;">🍧</span>
-                        <p style="font-weight: 700; font-size: 1.1rem; color: var(--ld-green-dark);">Tu carrito está vacío</p>
-                        <p style="font-size: 0.88rem; margin-top: 4px;">Explora nuestros granizados y agrega tu favorito.</p>
+                    <div style="text-align: center; padding: 36px 16px; color: var(--ld-text-muted);">
+                        <span style="font-size: 2.6rem; display: block; margin-bottom: 10px;">🍧</span>
+                        <p style="font-weight: 700; font-size: 1.05rem; color: var(--ld-green-dark);">Tu carrito está vacío</p>
+                        <p style="font-size: 0.85rem; margin-top: 4px;">Explora nuestros granizados y agrega tu favorito.</p>
                     </div>
                 `;
                 document.getElementById('cartTotalDisplay').innerText = '$0';

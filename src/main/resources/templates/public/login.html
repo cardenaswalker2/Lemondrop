@@ -2,20 +2,21 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Ingreso al Sistema - Lemon Drop 🍋</title>
     <link rel="stylesheet" th:href="@{/css/public-theme.css}">
     <style>
         .ld-login-layout {
             display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            min-height: 100vh;
+            grid-template-columns: 1fr 1fr;
+            min-height: 100dvh;
+            width: 100%;
         }
 
         .ld-login-brand {
             background: linear-gradient(135deg, #173B24 0%, #0F2818 100%);
             color: var(--ld-white);
-            padding: 80px 60px;
+            padding: 60px 40px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -23,34 +24,24 @@
             overflow: hidden;
         }
 
-        .ld-login-brand::before {
-            content: '';
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(255, 217, 26, 0.25) 0%, transparent 70%);
-            top: 10%;
-            left: -100px;
-            filter: blur(50px);
-        }
-
         .ld-login-form-side {
             background: var(--ld-cream);
-            padding: 80px 60px;
+            padding: 40px 20px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            width: 100%;
         }
 
         .ld-login-card {
             background: var(--ld-white);
             border-radius: var(--radius-xl);
-            padding: 44px 36px;
+            padding: 36px 28px;
             box-shadow: var(--ld-shadow-lg);
             border: 1px solid rgba(47, 125, 50, 0.12);
             width: 100%;
-            max-width: 440px;
+            max-width: 420px;
         }
 
         @media (max-width: 900px) {
@@ -58,47 +49,47 @@
                 grid-template-columns: 1fr;
             }
             .ld-login-brand {
-                padding: 50px 24px;
+                padding: 36px 20px;
                 text-align: center;
                 align-items: center;
             }
             .ld-login-form-side {
-                padding: 40px 20px;
+                padding: 24px 16px;
             }
             .ld-login-card {
-                padding: 30px 20px;
+                padding: 28px 20px;
             }
         }
     </style>
 </head>
-<body style="background: var(--ld-cream); margin: 0; padding: 0;">
+<body style="background: var(--ld-cream); margin: 0; padding: 0; min-height: 100dvh;">
 
     <div class="ld-login-layout">
         <!-- Brand Side -->
         <div class="ld-login-brand">
-            <div style="width: 54px; height: 54px; background: var(--ld-lemon); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 24px; box-shadow: var(--ld-shadow-lemon);">
+            <div style="width: 48px; height: 48px; background: var(--ld-lemon); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; box-shadow: var(--ld-shadow-lemon);">
                 🍋
             </div>
-            <h1 style="font-size: 3rem; color: var(--ld-white); margin-bottom: 12px; font-family: var(--font-heading);">LEMON DROP</h1>
-            <h3 style="color: var(--ld-lemon); font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">Plataforma de Gestión & Control</h3>
-            <p style="color: var(--ld-green-mint); max-width: 480px; font-size: 1rem; line-height: 1.6;">
-                Acceso exclusivo para administradores y asesores del stand de granizados en la Feria Escolar 2026.
+            <h1 style="font-size: clamp(2rem, 4vw, 2.6rem); color: var(--ld-white); margin-bottom: 8px; font-family: var(--font-heading);">LEMON DROP</h1>
+            <h3 style="color: var(--ld-lemon); font-size: 1.05rem; font-weight: 600; margin-bottom: 12px;">Portal de Gestión</h3>
+            <p style="color: var(--ld-green-mint); max-width: 440px; font-size: 0.92rem; line-height: 1.5;">
+                Acceso exclusivo para administradores y asesores del stand de la Feria Escolar 2026.
             </p>
         </div>
 
         <!-- Form Side -->
         <div class="ld-login-form-side">
             <div class="ld-login-card">
-                <span class="ld-badge ld-badge-lemon" style="font-size: 0.72rem; margin-bottom: 8px;">Portal Seguro</span>
-                <h2 style="font-size: 1.8rem; margin-bottom: 6px; color: var(--ld-green-deepest);">Ingreso al Sistema 🚪</h2>
-                <p style="font-size: 0.88rem; color: var(--ld-text-muted); margin-bottom: 24px;">Ingresa tus credenciales autorizadas.</p>
+                <span class="ld-badge ld-badge-lemon" style="font-size: 0.7rem; margin-bottom: 8px;">Portal Seguro</span>
+                <h2 style="font-size: 1.5rem; margin-bottom: 4px; color: var(--ld-green-deepest);">Ingreso al Sistema 🚪</h2>
+                <p style="font-size: 0.85rem; color: var(--ld-text-muted); margin-bottom: 20px;">Ingresa tus credenciales autorizadas.</p>
 
                 <!-- Error Warning if invalid credentials -->
-                <div th:if="${param.error}" style="background: var(--ld-strawberry-light); border-left: 4px solid var(--ld-strawberry); padding: 12px 16px; border-radius: var(--radius-md); color: #B91C1C; font-size: 0.88rem; font-weight: 600; margin-bottom: 20px;">
+                <div th:if="${param.error}" style="background: var(--ld-strawberry-light); border-left: 4px solid var(--ld-strawberry); padding: 10px 14px; border-radius: var(--radius-md); color: #B91C1C; font-size: 0.85rem; font-weight: 600; margin-bottom: 16px;">
                     ❌ Usuario o contraseña incorrectos.
                 </div>
 
-                <form th:action="@{/login}" method="post" style="display: flex; flex-direction: column; gap: 18px;">
+                <form th:action="@{/login}" method="post" style="display: flex; flex-direction: column; gap: 14px;">
                     <div class="ld-form-group" style="margin-bottom: 0;">
                         <label class="ld-form-label">Usuario</label>
                         <input type="text" name="username" class="ld-input" placeholder="Ej: asesor" required autofocus>
@@ -109,14 +100,14 @@
                         <input type="password" name="password" class="ld-input" placeholder="••••••••" required>
                     </div>
 
-                    <button type="submit" class="ld-btn ld-btn-lemon" style="width: 100%; font-size: 1.05rem; padding: 14px; margin-top: 8px;">
+                    <button type="submit" class="ld-btn ld-btn-lemon" style="width: 100%; font-size: 1rem; padding: 12px; margin-top: 4px;">
                         Ingresar al Panel 🍧
                     </button>
                 </form>
 
-                <div style="text-align: center; margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(47, 125, 50, 0.12);">
-                    <a href="/" style="font-weight: 700; font-size: 0.9rem; color: var(--ld-green-primary); transition: var(--transition-fast);">
-                        ← Volver a la Tienda Pública
+                <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(47, 125, 50, 0.12);">
+                    <a href="/" style="font-weight: 700; font-size: 0.88rem; color: var(--ld-green-primary);">
+                        ← Volver a la Tienda
                     </a>
                 </div>
             </div>

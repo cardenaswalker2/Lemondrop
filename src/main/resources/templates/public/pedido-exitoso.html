@@ -2,7 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>¡Pedido Confirmado! - Lemon Drop 🍋🎉</title>
     <link rel="stylesheet" th:href="@{/css/public-theme.css}">
     <style>
@@ -11,41 +11,41 @@
             border-radius: var(--radius-xl);
             box-shadow: var(--ld-shadow-xl);
             border: 1px solid rgba(47, 125, 50, 0.15);
-            max-width: 620px;
-            margin: 50px auto 70px auto;
-            padding: 44px 36px;
+            max-width: 580px;
+            width: calc(100% - 32px);
+            margin: 36px auto 60px auto;
+            padding: 36px 24px;
             text-align: center;
         }
 
         .ld-code-pill {
             background: var(--ld-lemon-light);
             border: 2px dashed var(--ld-lemon-deep);
-            padding: 16px 28px;
-            font-size: 2.2rem;
+            padding: 12px 20px;
+            font-size: clamp(1.4rem, 4.5vw, 2rem);
             font-weight: 800;
             letter-spacing: 2px;
             border-radius: var(--radius-md);
             color: var(--ld-green-deepest);
             font-family: var(--font-heading);
-            margin: 20px 0;
+            margin: 16px 0;
             display: inline-block;
             cursor: pointer;
             transition: var(--transition-fast);
+            max-width: 100%;
+            word-break: break-all;
         }
 
         .ld-code-pill:hover {
-            transform: scale(1.03);
+            transform: scale(1.02);
             background: #FFF5B8;
         }
 
         @media (max-width: 640px) {
             .ld-success-card {
-                margin: 24px 16px;
-                padding: 28px 18px;
-            }
-            .ld-code-pill {
-                font-size: 1.6rem;
-                padding: 12px 18px;
+                margin: 20px auto 40px auto;
+                padding: 24px 16px;
+                border-radius: var(--radius-lg);
             }
         }
     </style>
@@ -56,13 +56,13 @@
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
     <div class="ld-success-card">
-        <span style="font-size: 3.5rem; display: block; margin-bottom: 8px;">🍧💛</span>
-        <span class="ld-badge ld-badge-green" style="font-size: 0.78rem;">¡Pedido Registrado con Éxito!</span>
+        <span style="font-size: 3rem; display: block; margin-bottom: 6px;">🍧💛</span>
+        <span class="ld-badge ld-badge-green" style="font-size: 0.72rem;">¡Pedido Registrado con Éxito!</span>
         
-        <h1 style="font-size: 2.2rem; margin-top: 14px; color: var(--ld-green-deepest);">
+        <h1 style="font-size: clamp(1.5rem, 4.5vw, 2rem); margin-top: 10px; color: var(--ld-green-deepest);">
             ¡TU GRANIZADO YA ESTÁ EN CAMINO!
         </h1>
-        <p style="color: var(--ld-text-muted); margin-top: 10px; font-size: 0.95rem;">
+        <p style="color: var(--ld-text-muted); margin-top: 6px; font-size: 0.88rem;">
             Tu orden ha sido recibida por nuestro equipo en el stand de la feria escolar.
         </p>
 
@@ -71,29 +71,29 @@
             <span class="ld-code-pill" id="orderCodePill" onclick="copyOrderCode()" th:text="${order.orderCode}" title="Clic para copiar">
                 LD-2026-00001
             </span>
-            <div style="font-size: 0.8rem; color: var(--ld-text-muted); margin-top: -10px; margin-bottom: 20px;">
+            <div style="font-size: 0.78rem; color: var(--ld-text-muted); margin-top: -8px; margin-bottom: 16px;">
                 👆 Toca el código para copiarlo
             </div>
         </div>
 
         <!-- Summary Details -->
-        <div style="background: var(--ld-cream); border-radius: var(--radius-md); padding: 20px; text-align: left; margin-bottom: 28px; border: 1px solid rgba(47, 125, 50, 0.1);">
-            <h4 style="font-size: 1rem; border-bottom: 1px solid rgba(47, 125, 50, 0.12); padding-bottom: 8px; margin-bottom: 12px;">Resumen de tu Orden</h4>
-            <div th:each="item : ${order.items}" style="display: flex; justify-content: space-between; font-size: 0.92rem; margin-bottom: 8px;">
+        <div style="background: var(--ld-cream); border-radius: var(--radius-md); padding: 16px; text-align: left; margin-bottom: 20px; border: 1px solid rgba(47, 125, 50, 0.1);">
+            <h4 style="font-size: 0.95rem; border-bottom: 1px solid rgba(47, 125, 50, 0.12); padding-bottom: 6px; margin-bottom: 10px;">Resumen de tu Orden</h4>
+            <div th:each="item : ${order.items}" style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 6px;">
                 <span th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado x1</span>
                 <span style="font-weight: 700;" th:text="${'$' + #numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
             </div>
-            <div style="border-top: 1px solid rgba(47, 125, 50, 0.12); padding-top: 10px; margin-top: 10px; display: flex; justify-content: space-between; font-weight: 800; font-size: 1.15rem; color: var(--ld-green-primary); font-family: var(--font-heading);">
+            <div style="border-top: 1px solid rgba(47, 125, 50, 0.12); padding-top: 8px; margin-top: 8px; display: flex; justify-content: space-between; font-weight: 800; font-size: 1.05rem; color: var(--ld-green-primary); font-family: var(--font-heading);">
                 <span>Total a Pagar:</span>
                 <span th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
             </div>
         </div>
 
         <!-- Actions -->
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
             <a th:href="@{/pedido/seguimiento/{code}(code=${order.orderCode},phone=${order.customerPhone})}" class="ld-btn ld-btn-lemon">
                 <span>Rastrear Pedido</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>

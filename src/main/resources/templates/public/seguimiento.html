@@ -2,7 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Seguimiento de Pedido - Lemon Drop 🍋📦</title>
     <link rel="stylesheet" th:href="@{/css/public-theme.css}">
     <style>
@@ -11,16 +11,18 @@
             border-radius: var(--radius-xl);
             box-shadow: var(--ld-shadow-lg);
             border: 1px solid rgba(47, 125, 50, 0.12);
-            padding: 36px 32px;
+            padding: 32px 24px;
             max-width: 860px;
-            margin: 0 auto 60px auto;
+            width: 100%;
+            margin: 0 auto 48px auto;
         }
 
+        /* Desktop Timeline (Horizontal) */
         .ld-timeline {
             display: flex;
             justify-content: space-between;
             position: relative;
-            margin: 48px 0;
+            margin: 40px 0;
             padding: 0 10px;
         }
 
@@ -30,7 +32,7 @@
             top: 24px;
             left: 20px;
             right: 20px;
-            height: 5px;
+            height: 4px;
             background-color: #E2E8F0;
             z-index: 1;
             border-radius: 4px;
@@ -40,7 +42,7 @@
             position: absolute;
             top: 24px;
             left: 20px;
-            height: 5px;
+            height: 4px;
             background: var(--ld-green-primary);
             z-index: 2;
             transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -57,8 +59,8 @@
         }
 
         .ld-step-dot {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background-color: #E2E8F0;
             color: #64748B;
@@ -66,9 +68,9 @@
             align-items: center;
             justify-content: center;
             font-weight: 800;
-            font-size: 1.1rem;
+            font-size: 1rem;
             transition: var(--transition-bounce);
-            border: 4px solid var(--ld-white);
+            border: 3px solid var(--ld-white);
             box-shadow: var(--ld-shadow-sm);
         }
 
@@ -80,13 +82,12 @@
         .ld-timeline-step.active .ld-step-dot {
             background-color: var(--ld-lemon);
             color: var(--ld-green-deepest);
-            transform: scale(1.15);
-            box-shadow: 0 0 0 6px rgba(255, 217, 26, 0.35);
-            animation: pulseRing 1.8s infinite;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 5px rgba(255, 217, 26, 0.4);
         }
 
         .ld-step-text {
-            margin-top: 12px;
+            margin-top: 10px;
             font-size: 0.78rem;
             font-weight: 700;
             text-align: center;
@@ -102,21 +103,56 @@
             color: var(--ld-green-primary);
         }
 
+        /* Mobile Timeline (Vertical App-Style) */
         @media (max-width: 640px) {
             .ld-tracking-card {
-                padding: 24px 16px;
+                padding: 20px 16px;
                 border-radius: var(--radius-lg);
+                margin-bottom: 32px;
             }
+
+            .ld-timeline {
+                flex-direction: column;
+                gap: 16px;
+                margin: 24px 0;
+                padding-left: 20px;
+            }
+
+            .ld-timeline::before {
+                top: 15px;
+                bottom: 15px;
+                left: 36px;
+                right: auto;
+                width: 4px;
+                height: auto;
+            }
+
+            .ld-timeline-progress {
+                top: 15px;
+                left: 36px;
+                width: 4px;
+                height: 0%;
+                transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+
+            .ld-timeline-step {
+                flex-direction: row;
+                align-items: center;
+                gap: 14px;
+                width: 100%;
+            }
+
             .ld-step-dot {
                 width: 36px;
                 height: 36px;
                 font-size: 0.85rem;
+                flex-shrink: 0;
             }
-            .ld-timeline::before, .ld-timeline-progress {
-                top: 18px;
-            }
+
             .ld-step-text {
-                font-size: 0.68rem;
+                margin-top: 0;
+                font-size: 0.9rem;
+                text-align: left;
             }
         }
     </style>
@@ -127,79 +163,78 @@
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
     <!-- Title Header -->
-    <section style="text-align: center; padding: 50px 24px 20px 24px;">
-        <span class="ld-badge ld-badge-lemon" style="margin-bottom: 12px;">Estado en Tiempo Real</span>
-        <h1 class="ld-title-section" style="font-size: 2.6rem;">Seguimiento de tu Granizado 📦</h1>
+    <section style="text-align: center; padding: 36px 16px 12px 16px; width: 100%;">
+        <span class="ld-badge ld-badge-lemon" style="margin-bottom: 10px;">Estado en Tiempo Real</span>
+        <h1 class="ld-title-section" style="font-size: clamp(1.8rem, 5vw, 2.5rem);">Seguimiento de tu Granizado 📦</h1>
         <p class="ld-subtitle-section" style="margin-bottom: 0;">Consulta el avance de tu orden desde nuestra cocina hasta la entrega en el stand.</p>
     </section>
 
     <!-- Search Box -->
-    <section class="ld-section" style="padding-top: 20px; padding-bottom: 30px;">
-        <div style="background: var(--ld-white); border-radius: var(--radius-xl); padding: 32px 24px; max-width: 540px; margin: 0 auto; box-shadow: var(--ld-shadow-md); border: 1px solid rgba(47, 125, 50, 0.12); text-align: center;">
-            <h3 style="font-size: 1.3rem; margin-bottom: 8px;">Consultar Estado</h3>
-            <p style="font-size: 0.88rem; color: var(--ld-text-muted); margin-bottom: 20px;">Ingresa el código único (LD-2026-XXXXX) o tu número de WhatsApp.</p>
+    <section class="ld-section" style="padding-top: 16px; padding-bottom: 24px;">
+        <div style="background: var(--ld-white); border-radius: var(--radius-xl); padding: 24px 20px; max-width: 500px; margin: 0 auto; box-shadow: var(--ld-shadow-md); border: 1px solid rgba(47, 125, 50, 0.12); text-align: center; width: 100%;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 6px;">Consultar Estado</h3>
+            <p style="font-size: 0.85rem; color: var(--ld-text-muted); margin-bottom: 16px;">Ingresa el código (LD-2026-XXXXX) o tu WhatsApp.</p>
             
-            <form action="/pedido/seguimiento" method="get" style="display: flex; flex-direction: column; gap: 12px;">
-                <input type="text" name="code" class="ld-input" placeholder="Código de Pedido (Ej: LD-2026-00001)" th:value="${searchedCode}" style="text-align: center; font-weight: 700; text-transform: uppercase;">
+            <form action="/pedido/seguimiento" method="get" style="display: flex; flex-direction: column; gap: 10px;">
+                <input type="text" name="code" class="ld-input" placeholder="Código (Ej: LD-2026-00001)" th:value="${searchedCode}" style="text-align: center; font-weight: 700; text-transform: uppercase;">
                 <input type="tel" name="phone" class="ld-input" placeholder="WhatsApp (Ej: 3001234567)" th:value="${searchedPhone}" style="text-align: center; font-weight: 600;">
-                <button type="submit" class="ld-btn ld-btn-lemon" style="width: 100%; margin-top: 6px;">Consultar Avance 🔎</button>
+                <button type="submit" class="ld-btn ld-btn-lemon" style="width: 100%; margin-top: 4px;">Consultar Avance 🔎</button>
             </form>
         </div>
     </section>
 
     <!-- Error Alert if any -->
-    <div th:if="${error}" style="max-width: 540px; margin: 0 auto 30px auto; padding: 14px 20px; background: var(--ld-strawberry-light); border-left: 4px solid var(--ld-strawberry); border-radius: var(--radius-md); color: #B91C1C; font-weight: 600; font-size: 0.9rem;">
+    <div th:if="${error}" style="max-width: 500px; width: calc(100% - 32px); margin: 0 auto 24px auto; padding: 12px 16px; background: var(--ld-strawberry-light); border-left: 4px solid var(--ld-strawberry); border-radius: var(--radius-md); color: #B91C1C; font-weight: 600; font-size: 0.88rem;">
         <span th:text="${error}">Mensaje de error</span>
     </div>
 
     <!-- Multiple Orders Found Area -->
-    <div th:if="${orders != null}" class="ld-tracking-card">
-        <h2 style="font-size: 1.6rem; text-align: center; margin-bottom: 8px;">Pedidos Encontrados 📋</h2>
-        <p style="text-align: center; color: var(--ld-text-muted); font-size: 0.9rem; margin-bottom: 28px;">Se encontraron varias órdenes para tu número. Selecciona la que deseas rastrear:</p>
+    <div th:if="${orders != null}" class="ld-tracking-card" style="width: calc(100% - 32px);">
+        <h2 style="font-size: 1.4rem; text-align: center; margin-bottom: 6px;">Pedidos Encontrados 📋</h2>
+        <p style="text-align: center; color: var(--ld-text-muted); font-size: 0.85rem; margin-bottom: 20px;">Selecciona la orden que deseas consultar:</p>
         
-        <div style="display: flex; flex-direction: column; gap: 14px;">
-            <div th:each="o : ${orders}" style="display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: var(--ld-cream); border-radius: var(--radius-md); border: 1px solid rgba(47, 125, 50, 0.12); flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div th:each="o : ${orders}" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--ld-cream); border-radius: var(--radius-md); border: 1px solid rgba(47, 125, 50, 0.12); flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <h3 style="font-size: 1.15rem; color: var(--ld-green-deepest);" th:text="${o.orderCode}">LD-2026-00001</h3>
-                    <span style="font-size: 0.82rem; color: var(--ld-text-muted);" th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}">25/08/2026 10:30</span>
+                    <h3 style="font-size: 1.05rem; color: var(--ld-green-deepest);" th:text="${o.orderCode}">LD-2026-00001</h3>
+                    <span style="font-size: 0.78rem; color: var(--ld-text-muted);" th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}">25/08/2026 10:30</span>
                 </div>
                 <div>
-                    <span style="font-weight: 700; font-size: 0.95rem;" th:text="${o.items.size() + (o.items.size() == 1 ? ' producto' : ' productos')}">1 producto</span>
-                    <span style="font-family: var(--font-heading); font-weight: 800; font-size: 1.1rem; color: var(--ld-green-primary); display: block;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+                    <span style="font-family: var(--font-heading); font-weight: 800; font-size: 1.05rem; color: var(--ld-green-primary); display: block;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
                 </div>
                 <div>
                     <span class="ld-badge ld-badge-green" th:text="${o.status.displayName}">Recibido</span>
                 </div>
                 <div>
-                    <a th:href="@{/pedido/seguimiento(code=${o.orderCode},phone=${o.customerPhone})}" class="ld-btn ld-btn-lemon ld-btn-sm">Seguir Pedido 🔎</a>
+                    <a th:href="@{/pedido/seguimiento(code=${o.orderCode},phone=${o.customerPhone})}" class="ld-btn ld-btn-lemon ld-btn-sm">Seguir 🔎</a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Single Order Tracking Area -->
-    <div th:if="${order != null}" class="ld-tracking-card">
+    <div th:if="${order != null}" class="ld-tracking-card" style="width: calc(100% - 32px);">
         <!-- Order Header Header Info -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(47, 125, 50, 0.12); padding-bottom: 20px; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(47, 125, 50, 0.12); padding-bottom: 16px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <div>
-                <span class="ld-badge ld-badge-lemon" style="font-size: 0.72rem; margin-bottom: 4px;">Código de Orden</span>
-                <h2 style="font-size: 1.8rem; color: var(--ld-green-deepest);" th:text="${order.orderCode}">LD-2026-00001</h2>
+                <span class="ld-badge ld-badge-lemon" style="font-size: 0.7rem; margin-bottom: 4px;">Código de Orden</span>
+                <h2 style="font-size: 1.5rem; color: var(--ld-green-deepest);" th:text="${order.orderCode}">LD-2026-00001</h2>
             </div>
             <div style="text-align: right;">
-                <span style="font-size: 0.82rem; color: var(--ld-text-muted); font-weight: 600;">Cliente:</span>
-                <h3 style="font-size: 1.2rem;" th:text="${order.customerName}">Juan Pérez</h3>
+                <span style="font-size: 0.78rem; color: var(--ld-text-muted); font-weight: 600;">Cliente:</span>
+                <h3 style="font-size: 1.1rem;" th:text="${order.customerName}">Juan Pérez</h3>
             </div>
         </div>
 
         <!-- Cancellation Notice if applies -->
-        <div th:if="${order.status.name() == 'CANCELLED'}" style="background: var(--ld-strawberry-light); border-left: 4px solid var(--ld-strawberry); padding: 18px 20px; border-radius: var(--radius-md); margin-bottom: 24px;">
-            <h3 style="color: var(--ld-strawberry); font-size: 1.15rem;">❌ Pedido Cancelado</h3>
-            <p style="margin-top: 4px; font-size: 0.9rem; color: #991B1B;" th:text="${'Motivo: ' + (order.cancellationReason != null ? order.cancellationReason : 'Cancelado por solicitud del cliente')}">Motivo de cancelación</p>
+        <div th:if="${order.status.name() == 'CANCELLED'}" style="background: var(--ld-strawberry-light); border-left: 4px solid var(--ld-strawberry); padding: 14px 16px; border-radius: var(--radius-md); margin-bottom: 20px;">
+            <h3 style="color: var(--ld-strawberry); font-size: 1.05rem;">❌ Pedido Cancelado</h3>
+            <p style="margin-top: 4px; font-size: 0.85rem; color: #991B1B;" th:text="${'Motivo: ' + (order.cancellationReason != null ? order.cancellationReason : 'Cancelado por solicitud del cliente')}">Motivo de cancelación</p>
         </div>
 
         <!-- Animated Progress Timeline (If not cancelled) -->
         <div th:if="${order.status.name() != 'CANCELLED'}" class="ld-timeline" id="trackingTimeline">
-            <div class="ld-timeline-progress" id="progressLine" style="width: 0%;"></div>
+            <div class="ld-timeline-progress" id="progressLine"></div>
 
             <!-- Steps matching OrderStatus -->
             <div class="ld-timeline-step" id="step-RECEIVED">
@@ -229,28 +264,27 @@
         </div>
 
         <!-- Order Items Detail List -->
-        <div style="background: var(--ld-cream); border-radius: var(--radius-md); padding: 24px; border: 1px solid rgba(47, 125, 50, 0.12); margin-top: 30px;">
-            <h4 style="font-size: 1.1rem; border-bottom: 1px solid rgba(47, 125, 50, 0.12); padding-bottom: 10px; margin-bottom: 16px;">Detalle de Preparación</h4>
-            <div th:each="item : ${order.items}" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed rgba(47, 125, 50, 0.12);">
+        <div style="background: var(--ld-cream); border-radius: var(--radius-md); padding: 18px; border: 1px solid rgba(47, 125, 50, 0.12); margin-top: 24px;">
+            <h4 style="font-size: 1rem; border-bottom: 1px solid rgba(47, 125, 50, 0.12); padding-bottom: 8px; margin-bottom: 12px;">Detalle de Preparación</h4>
+            <div th:each="item : ${order.items}" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(47, 125, 50, 0.12); flex-wrap: wrap; gap: 8px;">
                 <div>
-                    <span style="font-weight: 700; font-size: 1rem; color: var(--ld-green-deepest);" th:text="${item.productName + ' (' + item.flavorName + ')'}">Granizado de Limón</span>
-                    <span style="font-size: 0.85rem; color: var(--ld-text-muted); display: block;" th:text="${'Tamaño: ' + item.size + ' | Cantidad: ' + item.quantity}">Tamaño: MEDIUM | Cantidad: 1</span>
-                    <span th:if="${item.addons.size() > 0}" style="font-size: 0.82rem; color: var(--ld-green-primary); font-weight: 600; display: block;" th:text="${'Toppings: ' + #strings.listJoin(item.addons.![addonName], ', ')}">Toppings: Leche Condensada</span>
-                    <span th:if="${item.observations != null && !item.observations.empty}" style="font-size: 0.82rem; color: var(--ld-text-muted); font-style: italic; display: block;" th:text="${'Nota: ' + item.observations}">Nota: Sin azúcar</span>
+                    <span style="font-weight: 700; font-size: 0.92rem; color: var(--ld-green-deepest);" th:text="${item.productName + ' (' + item.flavorName + ')'}">Granizado de Limón</span>
+                    <span style="font-size: 0.8rem; color: var(--ld-text-muted); display: block;" th:text="${'Tamaño: ' + item.size + ' | Cantidad: ' + item.quantity}">Tamaño: MEDIUM | Cantidad: 1</span>
+                    <span th:if="${item.addons.size() > 0}" style="font-size: 0.78rem; color: var(--ld-green-primary); font-weight: 600; display: block;" th:text="${'Toppings: ' + #strings.listJoin(item.addons.![addonName], ', ')}">Toppings: Leche Condensada</span>
                 </div>
-                <span style="font-family: var(--font-heading); font-weight: 700; font-size: 1.15rem; color: var(--ld-green-primary);" th:text="${'$' + #numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
+                <span style="font-family: var(--font-heading); font-weight: 700; font-size: 1.05rem; color: var(--ld-green-primary);" th:text="${'$' + #numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
             </div>
             
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1.25rem; font-weight: 800; color: var(--ld-green-deepest); margin-top: 18px; padding-top: 12px; border-top: 2px solid rgba(47, 125, 50, 0.15);">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1.15rem; font-weight: 800; color: var(--ld-green-deepest); margin-top: 14px; padding-top: 10px; border-top: 2px solid rgba(47, 125, 50, 0.15);">
                 <span>Total:</span>
                 <span style="color: var(--ld-green-primary); font-family: var(--font-heading);" th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
             </div>
         </div>
 
         <!-- WhatsApp Support Link -->
-        <div style="text-align: center; margin-top: 28px;">
-            <a href="https://wa.me/573001234567" target="_blank" class="ld-btn ld-btn-outline" style="font-size: 0.92rem;">
-                ¿Tienes dudas sobre tu pedido? Escríbenos por WhatsApp 💬
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="https://wa.me/573001234567" target="_blank" class="ld-btn ld-btn-outline" style="font-size: 0.85rem;">
+                ¿Dudas sobre tu pedido? Escríbenos por WhatsApp 💬
             </a>
         </div>
     </div>
@@ -271,7 +305,15 @@
 
             if (currentIdx !== -1) {
                 const percent = (currentIdx / (steps.length - 1)) * 100;
-                document.getElementById('progressLine').style.width = percent + '%';
+                const isMobile = window.innerWidth <= 640;
+                const progressLine = document.getElementById('progressLine');
+                if (progressLine) {
+                    if (isMobile) {
+                        progressLine.style.height = percent + '%';
+                    } else {
+                        progressLine.style.width = percent + '%';
+                    }
+                }
 
                 steps.forEach((step, idx) => {
                     const el = document.getElementById('step-' + step);
