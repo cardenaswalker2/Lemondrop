@@ -41,46 +41,70 @@ public class GroqClient {
             return Optional.empty();
         }
 
-        try {
-            if (request.getModel() == null || request.getModel().trim().isEmpty()) {
-                request.setModel(groqProperties.getApi().getModel());
-            }
+        if (request.getModel() == null || request.getModel().trim().isEmpty()) {
+            request.setModel(groqProperties.getApi().getModel());
+        }
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(groqProperties.getApi().getKey());
+        int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(groqProperties.getApi().getKey());
 
-            HttpEntity<GroqChatRequest> entity = new HttpEntity<>(request, headers);
+                HttpEntity<GroqChatRequest> entity = new HttpEntity<>(request, headers);
 
-            log.info("Enviando petición a Groq Chat Completions (modelo: {}, mensajes: {}, tools: {})",
-                    request.getModel(),
-                    request.getMessages() != null ? request.getMessages().size() : 0,
-                    request.getTools() != null ? request.getTools().size() : 0);
+                log.info("Enviando petición a Groq Chat Completions (intento {}/{}, modelo: {}, mensajes: {}, tools: {})",
+                        attempt, maxAttempts, request.getModel(),
+                        request.getMessages() != null ? request.getMessages().size() : 0,
+                        request.getTools() != null ? request.getTools().size() : 0);
 
-            ResponseEntity<GroqChatResponse> response = restTemplate.exchange(
-                    groqProperties.getApi().getUrl(),
-                    HttpMethod.POST,
-                    entity,
-                    GroqChatResponse.class
-            );
+                ResponseEntity<GroqChatResponse> response = restTemplate.exchange(
+                        groqProperties.getApi().getUrl(),
+                        HttpMethod.POST,
+                        entity,
+                        GroqChatResponse.class
+                );
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                log.info("Respuesta de Groq recibida exitosamente (id: {})", response.getBody().getId());
-                return Optional.of(response.getBody());
-            } else {
-                log.error("Respuesta no exitosa de Groq: código {}", response.getStatusCode());
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    log.info("Respuesta de Groq recibida exitosamente (id: {})", response.getBody().getId());
+                    return Optional.of(response.getBody());
+                } else {
+                    log.error("Respuesta no exitosa de Groq: código {}", response.getStatusCode());
+                    return Optional.empty();
+                }
+
+            } catch (HttpStatusCodeException ex) {
+                if (ex.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS && attempt < maxAttempts) {
+                    log.warn("Rate limit temporal en Groq (429). Reintentando en 1000ms... (intento {}/{})", attempt, maxAttempts);
+                    try {
+                        Thread.sleep(1000L * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return Optional.empty();
+                    }
+                    continue;
+                }
+                log.error("Error HTTP al comunicarse con Groq: {} - {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+                return Optional.empty();
+            } catch (ResourceAccessException ex) {
+                if (attempt < maxAttempts) {
+                    log.warn("Timeout de conexión en Groq. Reintentando... (intento {}/{})", attempt, maxAttempts);
+                    try {
+                        Thread.sleep(500L);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return Optional.empty();
+                    }
+                    continue;
+                }
+                log.error("Timeout o error de conexión al comunicarse con Groq: {}", ex.getMessage());
+                return Optional.empty();
+            } catch (Exception ex) {
+                log.error("Error inesperado en GroqClient: {}", ex.getMessage(), ex);
                 return Optional.empty();
             }
-
-        } catch (HttpStatusCodeException ex) {
-            log.error("Error HTTP al comunicarse con Groq: {} - {}", ex.getStatusCode(), ex.getResponseBodyAsString());
-            return Optional.empty();
-        } catch (ResourceAccessException ex) {
-            log.error("Timeout o error de conexión al comunicarse con Groq: {}", ex.getMessage());
-            return Optional.empty();
-        } catch (Exception ex) {
-            log.error("Error inesperado en GroqClient: {}", ex.getMessage(), ex);
-            return Optional.empty();
         }
+        return Optional.empty();
     }
 }
