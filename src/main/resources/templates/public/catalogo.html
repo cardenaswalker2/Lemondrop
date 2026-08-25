@@ -6,287 +6,318 @@
     <!-- CSRF Meta Tags -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <title>Catálogo de Granizados - Lemon Drop</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <title>Catálogo de Granizados - Lemon Drop 🍋🍧</title>
+    <link rel="stylesheet" th:href="@{/css/public-theme.css}">
     <style>
-        .catalog-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 30px;
-            padding: 40px 10%;
-        }
-        .product-card {
-            background-color: var(--bg-white);
-            border-radius: var(--border-radius-md);
-            overflow: hidden;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid rgba(164, 208, 164, 0.15);
-            transition: var(--transition-smooth);
+        /* Cart Slide-Over Styles */
+        .ld-cart-drawer {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 440px;
+            max-width: 92vw;
+            height: 100vh;
+            background: var(--ld-white);
+            z-index: 2500;
+            box-shadow: -15px 0 40px rgba(15, 40, 24, 0.2);
             display: flex;
             flex-direction: column;
-        }
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-medium);
-        }
-        .product-img-wrapper {
-            position: relative;
-            height: 200px;
-            overflow: hidden;
-        }
-        .product-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: var(--transition-smooth);
-        }
-        .product-card:hover .product-img {
-            transform: scale(1.05);
-        }
-        .product-badge {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 10;
-        }
-        .product-info {
+            justify-content: space-between;
+            transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
             padding: 24px;
+        }
+
+        .ld-cart-drawer.active {
+            right: 0;
+        }
+
+        .ld-cart-items-scroll {
             flex-grow: 1;
+            overflow-y: auto;
+            margin: 20px 0;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            padding-right: 4px;
         }
-        .product-price {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--green-dark);
-            font-family: 'Outfit', sans-serif;
-        }
-        .addon-selection-list {
+
+        .ld-cart-item-card {
+            background: var(--ld-cream);
+            border: 1px solid rgba(47, 125, 50, 0.12);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 8px;
+            position: relative;
         }
-        .addon-item {
+
+        .ld-cart-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .ld-cart-item-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--ld-green-deepest);
+        }
+
+        .ld-cart-item-details {
+            font-size: 0.82rem;
+            color: var(--ld-text-muted);
+        }
+
+        .ld-cart-item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        .ld-qty-control {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 10px 15px;
-            border-radius: var(--border-radius-sm);
-            background-color: var(--bg-cream);
-            border: 1px solid rgba(164, 208, 164, 0.2);
-            cursor: pointer;
-            transition: var(--transition-smooth);
+            gap: 8px;
+            background: var(--ld-white);
+            border: 1px solid rgba(47, 125, 50, 0.2);
+            border-radius: var(--radius-pill);
+            padding: 2px 8px;
         }
-        .addon-item input {
+
+        .ld-qty-btn {
+            background: none;
+            border: none;
             cursor: pointer;
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--ld-green-dark);
+            padding: 2px 6px;
         }
-        
-        /* Loading Overlay & Animations */
+
+        .ld-item-subtotal {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--ld-green-primary);
+        }
+
+        /* Loading Spinner */
         #loadingOverlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 253, 246, 0.96);
-            z-index: 2000;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 253, 247, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 9000;
             align-items: center;
             justify-content: center;
             flex-direction: column;
             text-align: center;
-            padding: 20px;
-            font-family: 'Inter', sans-serif;
+            padding: 24px;
         }
-        @keyframes pulseLim {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-            100% { transform: scale(1); }
-        }
-        @keyframes rotateHourglass {
-            0% { transform: rotate(0deg); }
-            50% { transform: rotate(180deg); }
-            100% { transform: rotate(180deg); }
-        }
-        .animate-pulse-lemon {
+
+        .lemon-pulse-anim {
             font-size: 4.5rem;
-            margin-bottom: 20px;
-            animation: pulseLim 1.8s infinite ease-in-out;
-            display: inline-block;
+            animation: pulseLemon 1.6s infinite ease-in-out;
         }
-        .animate-rotate-hourglass {
-            font-size: 2rem;
-            margin-top: 15px;
-            animation: rotateHourglass 2s infinite ease-in-out;
-            display: inline-block;
-            color: var(--green-dark);
+
+        @keyframes pulseLemon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(8deg); }
         }
     </style>
 </head>
-<body>
+<body class="ld-public-body">
 
     <!-- Public Navbar -->
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <section style="text-align: center; padding: 50px 10% 10px 10%;">
-        <h1 style="font-size: 2.8rem; margin-bottom: 10px;">🍧 Arma tu Granizado</h1>
-        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
-            Elige tu base favorita, escoge tu sabor, el tamaño y combínalo con los complementos que desees.
+    <!-- Header Section -->
+    <section style="text-align: center; padding: 50px 24px 20px 24px; max-width: 800px; margin: 0 auto;">
+        <span class="ld-badge ld-badge-lemon" style="margin-bottom: 12px;">Menú Oficial 2026</span>
+        <h1 class="ld-title-section" style="font-size: 2.8rem;">Arma tu Granizado 🍧</h1>
+        <p class="ld-subtitle-section" style="margin-bottom: 0;">
+            Elige tu base favorita, selecciona el tamaño del vaso, sabor y complementos a tu gusto.
         </p>
     </section>
 
     <!-- Product Grid -->
-    <div class="catalog-grid">
-        <div class="product-card" th:each="prod : ${products}">
-            <div class="product-img-wrapper">
-                <span th:if="${prod.badge != null && !prod.badge.empty}" th:text="${prod.badge}" class="badge-custom badge-fav product-badge">Destacado</span>
-                <img th:src="${prod.image}" class="product-img" th:alt="${prod.name}">
-            </div>
-            <div class="product-info">
-                <h3 th:text="${prod.name}">Granizado</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; flex-grow: 1;" th:text="${prod.description}">Descripción</p>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div class="product-price" th:text="${'$' + #numbers.formatDecimal(prod.mediumPrice, 0, 'POINT', 0, 'COMMA') + ' (Mediano)'}">$8.000</div>
-                    <button class="btn-custom btn-lemon" style="padding: 8px 20px; font-size: 0.9rem;" 
-                            th:attr="onclick=|openCustomizerModal('${prod.id}', '${prod.name}', '${prod.description}', ${prod.smallPrice}, ${prod.mediumPrice}, ${prod.largePrice})|">
-                        Personalizar 🍧
-                    </button>
+    <section class="ld-section" style="padding-top: 20px;">
+        <div class="ld-products-grid">
+            <div class="ld-product-card" th:each="prod : ${products}">
+                <div class="ld-product-media">
+                    <span th:if="${prod.badge != null && !prod.badge.empty}" th:text="${prod.badge}" class="ld-badge ld-badge-lemon ld-product-badge">Destacado</span>
+                    <img th:src="${prod.image != null ? prod.image : 'https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&q=80&w=450'}" th:alt="${prod.name}">
+                </div>
+                <div class="ld-product-body">
+                    <h3 class="ld-product-title" th:text="${prod.name}">Granizado</h3>
+                    <p class="ld-product-desc" th:text="${prod.description}">Descripción</p>
+                    <div class="ld-product-footer">
+                        <div class="ld-product-price" th:text="${'$' + #numbers.formatDecimal(prod.mediumPrice, 0, 'POINT', 0, 'COMMA') + ' (Mediano)'}">$6.000</div>
+                        <button class="ld-btn ld-btn-lemon ld-btn-sm" 
+                                th:attr="onclick=|openCustomizerModal('${prod.id}', '${prod.name}', '${prod.description}', ${prod.smallPrice}, ${prod.mediumPrice}, ${prod.largePrice})|">
+                            Personalizar 🍧
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
+    </section>
+
+    <!-- Floating Shopping Cart Trigger Button -->
+    <div class="ld-cart-float-btn" onclick="openCartDrawer()">
+        <span>🛒 Mi Carrito</span>
+        <span class="ld-cart-count-badge" id="cartCount">0</span>
     </div>
 
-    <!-- Floating Shopping Cart Trigger -->
-    <div class="cart-float" onclick="openCartModal()">
-        🛒
-        <span class="cart-badge" id="cartCount">0</span>
-    </div>
-
-    <!-- Customize Modal -->
-    <div class="modal-overlay" id="customizerModal">
-        <div class="modal-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 id="modalProdName">Personaliza tu Pedido</h2>
-                <button onclick="closeModal('customizerModal')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+    <!-- Product Customizer Modal -->
+    <div class="ld-modal-overlay" id="customizerModal">
+        <div class="ld-modal-card">
+            <div class="ld-modal-header">
+                <div>
+                    <span class="ld-badge ld-badge-green" style="font-size: 0.72rem;">Personalizador</span>
+                    <h2 id="modalProdName" style="font-size: 1.5rem; margin-top: 4px;">Personaliza tu Pedido</h2>
+                </div>
+                <button class="ld-modal-close" onclick="closeModal('customizerModal')">&times;</button>
             </div>
             
-            <p id="modalProdDesc" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px;"></p>
-            
+            <p id="modalProdDesc" style="color: var(--ld-text-muted); font-size: 0.88rem; margin-bottom: 20px;"></p>
             <input type="hidden" id="modalProdId">
 
-            <div class="form-group">
-                <label class="form-label">1. Selecciona el Sabor Base 🍇🍋</label>
-                <select id="modalFlavorId" class="form-control" onchange="calculateModalTotal()">
-                    <option th:each="flv : ${flavors}" th:value="${flv.id}" th:attr="data-price=${flv.additionalPrice}" th:text="${flv.name + ' (+' + (flv.additionalPrice == 0 ? 'Gratis' : '$' + #numbers.formatDecimal(flv.additionalPrice, 0, 'POINT', 0, 'COMMA')) + ')'}"></option>
+            <!-- 1. Sabor Base -->
+            <div class="ld-form-group">
+                <label class="ld-form-label">1. Sabor Base 🍓🍋</label>
+                <select id="modalFlavorId" class="ld-input" onchange="calculateModalTotal()">
+                    <option th:each="flv : ${flavors}" th:value="${flv.id}" th:attr="data-price=${flv.additionalPrice}" th:text="${flv.name + (flv.additionalPrice == 0 ? ' (Gratis)' : ' (+$' + #numbers.formatDecimal(flv.additionalPrice, 0, 'POINT', 0, 'COMMA') + ')') }"></option>
                 </select>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">2. Escoge el Tamaño 📏</label>
-                <div class="size-options-container" style="display: flex; gap: 10px;">
-                    <label class="addon-item" style="flex: 1; text-align: center;">
-                        <input type="radio" name="modalSize" value="SMALL" onchange="calculateModalTotal()"> Pequeño
+            <!-- 2. Tamaño del Vaso (Tarjetas de Selección Rápida) -->
+            <div class="ld-form-group">
+                <label class="ld-form-label">2. Tamaño del Vaso 📏</label>
+                <div class="ld-size-selector">
+                    <label class="ld-size-option" id="sizeOptSmall" onclick="selectSize('SMALL')">
+                        <input type="radio" name="modalSize" value="SMALL" onchange="calculateModalTotal()">
+                        <span class="ld-size-name">Pequeño</span>
+                        <span class="ld-size-price" id="sizePriceSmall">$4.000</span>
                     </label>
-                    <label class="addon-item" style="flex: 1; text-align: center;">
-                        <input type="radio" name="modalSize" value="MEDIUM" checked onchange="calculateModalTotal()"> Mediano
+                    <label class="ld-size-option selected" id="sizeOptMedium" onclick="selectSize('MEDIUM')">
+                        <input type="radio" name="modalSize" value="MEDIUM" checked onchange="calculateModalTotal()">
+                        <span class="ld-size-name">Mediano</span>
+                        <span class="ld-size-price" id="sizePriceMedium">$6.000</span>
                     </label>
-                    <label class="addon-item" style="flex: 1; text-align: center;">
-                        <input type="radio" name="modalSize" value="LARGE" onchange="calculateModalTotal()"> Grande
+                    <label class="ld-size-option" id="sizeOptLarge" onclick="selectSize('LARGE')">
+                        <input type="radio" name="modalSize" value="LARGE" onchange="calculateModalTotal()">
+                        <span class="ld-size-name">Grande</span>
+                        <span class="ld-size-price" id="sizePriceLarge">$8.000</span>
                     </label>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">3. Agrega Complementos 🥛</label>
-                <div class="addon-selection-list">
-                    <label class="addon-item" th:each="addon : ${addons}">
-                        <span>
+            <!-- 3. Complementos / Toppings -->
+            <div class="ld-form-group">
+                <label class="ld-form-label">3. Toppings & Complementos 🥛🍯</label>
+                <div class="ld-toppings-list">
+                    <label class="ld-topping-item" th:each="addon : ${addons}">
+                        <div class="ld-topping-left">
                             <input type="checkbox" name="modalAddons" th:value="${addon.id}" th:attr="data-price=${addon.additionalPrice},data-name=${addon.name}" onchange="calculateModalTotal()">
-                            <span th:text="${' ' + addon.name}">Leche Condensada</span>
-                        </span>
-                        <span th:text="${'+ $' + #numbers.formatDecimal(addon.additionalPrice, 0, 'POINT', 0, 'COMMA')}">+$1.000</span>
+                            <span th:text="${addon.name}">Leche Condensada</span>
+                        </div>
+                        <span class="ld-topping-price" th:text="${'+ $' + #numbers.formatDecimal(addon.additionalPrice, 0, 'POINT', 0, 'COMMA')}">+$1.000</span>
                     </label>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">4. Cantidad</label>
-                <input type="number" id="modalQty" class="form-control" value="1" min="1" onchange="calculateModalTotal()" style="max-width: 100px;">
+            <!-- 4. Cantidad & Observaciones -->
+            <div style="display: grid; grid-template-columns: 100px 1fr; gap: 14px;">
+                <div class="ld-form-group">
+                    <label class="ld-form-label">Cantidad</label>
+                    <input type="number" id="modalQty" class="ld-input" value="1" min="1" onchange="calculateModalTotal()">
+                </div>
+                <div class="ld-form-group">
+                    <label class="ld-form-label">Notas Especiales</label>
+                    <input type="text" id="modalObservations" class="ld-input" placeholder="Ej: Poca azúcar...">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">5. Observaciones especiales</label>
-                <input type="text" id="modalObservations" class="form-control" placeholder="Ej: Sin tanta azúcar, más arequipe...">
-            </div>
-
-            <div class="modal-footer-action" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(164, 208, 164, 0.2); padding-top: 20px; margin-top: 20px;">
+            <!-- Action & Price Footer -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(47, 125, 50, 0.12); padding-top: 20px; margin-top: 14px;">
                 <div>
-                    <span style="font-size: 0.9rem; color: var(--text-secondary);">Total Unitario:</span>
-                    <h3 id="modalTotalDisplay" style="color: var(--green-dark); font-size: 1.8rem;">$0</h3>
+                    <span style="font-size: 0.8rem; color: var(--ld-text-muted); font-weight: 600; display: block;">Total del Ítem:</span>
+                    <h3 id="modalTotalDisplay" style="color: var(--ld-green-primary); font-size: 1.8rem;">$0</h3>
                 </div>
-                <button class="btn-custom btn-lemon" onclick="addItemToCart()">Agregar al Pedido 🛍️</button>
+                <button class="ld-btn ld-btn-lemon" onclick="addItemToCart()">Agregar al Pedido 🛍️</button>
             </div>
         </div>
     </div>
 
-    <!-- Shopping Cart Modal -->
-    <div class="modal-overlay" id="cartModal">
-        <div class="modal-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Mi Carrito 🛒</h2>
-                <button onclick="closeModal('cartModal')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+    <!-- App-Like Slide-Over Cart Drawer -->
+    <div id="cartOverlay" class="ld-drawer-overlay" onclick="closeCartDrawer()"></div>
+    <aside id="cartDrawer" class="ld-cart-drawer">
+        <div style="display: flex; flex-direction: column; height: 100%;">
+            <!-- Drawer Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid rgba(47, 125, 50, 0.12);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">🛒</span>
+                    <h2 style="font-size: 1.4rem;">Tu Pedido</h2>
+                </div>
+                <button class="ld-drawer-close" onclick="closeCartDrawer()">&times;</button>
             </div>
 
-            <div id="cartItemsList" style="max-height: 250px; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px;">
-                <!-- Cart items load here dynamically -->
+            <!-- Cart Items List (Scrollable) -->
+            <div id="cartItemsList" class="ld-cart-items-scroll">
+                <!-- Loaded dynamically by JavaScript -->
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(164, 208, 164, 0.2); padding: 15px 0; margin-bottom: 20px;">
-                <h3>Total a Pagar:</h3>
-                <h2 id="cartTotalDisplay" style="color: var(--green-dark); font-size: 2rem;">$0</h2>
-            </div>
+            <!-- Cart Summary & Checkout Form -->
+            <div style="border-top: 1px solid rgba(47, 125, 50, 0.12); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <span style="font-weight: 700; font-size: 1.05rem;">Total a Pagar:</span>
+                    <h2 id="cartTotalDisplay" style="font-size: 1.8rem; color: var(--ld-green-primary);">$0</h2>
+                </div>
 
-            <!-- Client Info form -->
-            <form id="checkoutForm" onsubmit="submitCheckout(event)">
-                <div class="form-group">
-                    <label class="form-label">Tu Nombre *</label>
-                    <input type="text" id="custName" class="form-control" placeholder="Ej: Juan Pérez" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Teléfono de contacto *</label>
-                    <input type="tel" id="custPhone" class="form-control" placeholder="Ej: 3001234567" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Observaciones generales</label>
-                    <input type="text" id="custObs" class="form-control" placeholder="Ej: Entregar en la entrada de la feria">
-                </div>
-                <button type="submit" class="btn-custom btn-lemon" style="width: 100%; font-size: 1.1rem; padding: 14px;">Confirmar y Crear Pedido 🍨🔥</button>
-            </form>
+                <!-- Checkout Form -->
+                <form id="checkoutForm" onsubmit="submitCheckout(event)" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="ld-form-group" style="margin-bottom: 0;">
+                        <input type="text" id="custName" class="ld-input" placeholder="Tu Nombre *" required style="padding: 10px 14px;">
+                    </div>
+                    <div class="ld-form-group" style="margin-bottom: 0;">
+                        <input type="tel" id="custPhone" class="ld-input" placeholder="WhatsApp (Ej: 3001234567) *" required style="padding: 10px 14px;">
+                    </div>
+                    <div class="ld-form-group" style="margin-bottom: 8px;">
+                        <input type="text" id="custObs" class="ld-input" placeholder="Observaciones de entrega (opcional)" style="padding: 10px 14px;">
+                    </div>
+                    <button type="submit" id="btnSubmitOrder" class="ld-btn ld-btn-lemon" style="width: 100%; font-size: 1.05rem; padding: 14px;">
+                        Confirmar y Crear Pedido 🍨🔥
+                    </button>
+                </form>
+            </div>
         </div>
-    </div>
+    </aside>
 
-    <!-- Loading Overlay Modal -->
+    <!-- Loading Screen Overlay during Order Creation -->
     <div id="loadingOverlay">
-        <div class="animate-pulse-lemon">🍋</div>
-        <h2 style="color: var(--dark); margin-bottom: 10px; font-family: 'Outfit';">Estamos creando tu pedido...</h2>
-        <p style="color: var(--text-secondary); max-width: 400px; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px;">
-            Estamos enviando tu pedido al equipo de Lemon Drop. Por favor espera un momento.
-        </p>
-        <div class="animate-rotate-hourglass">⏳</div>
-        <p style="color: var(--strawberry); font-weight: 700; font-size: 0.85rem; margin-top: 25px;">
-            No presiones nuevamente el botón ni cierres esta ventana.
+        <div class="lemon-pulse-anim">🍋</div>
+        <h2 style="font-size: 1.8rem; margin: 16px 0 8px 0; color: var(--ld-green-deepest);">Estamos creando tu pedido...</h2>
+        <p style="color: var(--ld-text-muted); max-width: 380px; font-size: 0.95rem; line-height: 1.5;">
+            Tu pedido está siendo enviado a la cocina de Lemon Drop. Por favor no cierres esta ventana.
         </p>
     </div>
 
     <!-- Footer -->
     <div th:replace="~{fragments/footer :: footer}"></div>
 
+    <!-- Interactive Cart & Catalog JS Logic -->
     <script th:inline="javascript">
         document.getElementById('nav-catalog').classList.add('active');
+        const drawerCat = document.getElementById('drawer-catalog');
+        if (drawerCat) drawerCat.classList.add('active');
 
-        // Cart state
         let cart = [];
         let activeProductPrices = {};
 
@@ -295,34 +326,48 @@
             document.getElementById('modalProdName').innerText = name;
             document.getElementById('modalProdDesc').innerText = desc;
             
-            // Save prices temporarily for live calculations
             activeProductPrices = {
                 SMALL: priceSmall,
                 MEDIUM: priceMedium,
                 LARGE: priceLarge
             };
 
-            // Reset inputs
+            document.getElementById('sizePriceSmall').innerText = '$' + priceSmall.toLocaleString('es-CO');
+            document.getElementById('sizePriceMedium').innerText = '$' + priceMedium.toLocaleString('es-CO');
+            document.getElementById('sizePriceLarge').innerText = '$' + priceLarge.toLocaleString('es-CO');
+
             document.getElementById('modalFlavorId').selectedIndex = 0;
             document.getElementById('modalQty').value = 1;
             document.getElementById('modalObservations').value = "";
             
-            // Reset checkboxes
             const cbs = document.getElementsByName('modalAddons');
             cbs.forEach(cb => cb.checked = false);
 
+            selectSize('MEDIUM');
             calculateModalTotal();
             document.getElementById('customizerModal').classList.add('active');
+        }
+
+        function selectSize(size) {
+            document.querySelectorAll('.ld-size-option').forEach(el => el.classList.remove('selected'));
+            const radio = document.querySelector(`input[name="modalSize"][value="${size}"]`);
+            if (radio) {
+                radio.checked = true;
+                const parent = radio.closest('.ld-size-option');
+                if (parent) parent.classList.add('selected');
+            }
+            calculateModalTotal();
         }
 
         function calculateModalTotal() {
             if (!activeProductPrices.MEDIUM) return;
             
-            const size = document.querySelector('input[name="modalSize"]:checked').value;
-            const basePrice = activeProductPrices[size];
+            const sizeRadio = document.querySelector('input[name="modalSize"]:checked');
+            const size = sizeRadio ? sizeRadio.value : 'MEDIUM';
+            const basePrice = activeProductPrices[size] || 0;
             
             const flavorSelect = document.getElementById('modalFlavorId');
-            const flavorPrice = parseFloat(flavorSelect.options[flavorSelect.selectedIndex].getAttribute('data-price') || 0);
+            const flavorPrice = parseFloat(flavorSelect.options[flavorSelect.selectedIndex]?.getAttribute('data-price') || 0);
             
             let addonsPrice = 0;
             const cbs = document.getElementsByName('modalAddons');
@@ -333,13 +378,26 @@
             });
             
             const qty = parseInt(document.getElementById('modalQty').value || 1);
-            
-            const total = (basePrice + flavorPrice + addonsPrice) * qty;
+            const total = (basePrice + flavorPrice + addonsPrice) * Math.max(1, qty);
             document.getElementById('modalTotalDisplay').innerText = '$' + total.toLocaleString('es-CO');
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.remove('active');
+        }
+
+        function openCartDrawer() {
+            document.getElementById('cartOverlay').classList.add('active');
+            document.getElementById('cartDrawer').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            renderCartItems();
+        }
+
+        function closeCartDrawer() {
+            document.getElementById('cartOverlay').classList.remove('active');
+            document.getElementById('cartDrawer').classList.remove('active');
+            document.body.style.overflow = '';
         }
 
         function addItemToCart() {
@@ -348,228 +406,183 @@
             const flavorSelect = document.getElementById('modalFlavorId');
             const flavorId = flavorSelect.value;
             const flavorName = flavorSelect.options[flavorSelect.selectedIndex].text.split(' (')[0];
-            const size = document.querySelector('input[name="modalSize"]:checked').value;
-            const qty = parseInt(document.getElementById('modalQty').value || 1);
-            const obs = document.getElementById('modalObservations').value;
+            
+            const sizeRadio = document.querySelector('input[name="modalSize"]:checked');
+            const size = sizeRadio ? sizeRadio.value : 'MEDIUM';
+            const basePrice = activeProductPrices[size];
+            const flavorPrice = parseFloat(flavorSelect.options[flavorSelect.selectedIndex]?.getAttribute('data-price') || 0);
 
-            const addonIds = [];
-            const addonNames = [];
+            let selectedAddons = [];
+            let addonsTotal = 0;
             const cbs = document.getElementsByName('modalAddons');
             cbs.forEach(cb => {
                 if (cb.checked) {
-                    addonIds.push(cb.value);
-                    addonNames.push(cb.getAttribute('data-name'));
+                    const addPrice = parseFloat(cb.getAttribute('data-price') || 0);
+                    addonsTotal += addPrice;
+                    selectedAddons.push({
+                        addonId: cb.value,
+                        addonName: cb.getAttribute('data-name'),
+                        unitPrice: addPrice,
+                        quantity: 1
+                    });
                 }
             });
 
-            // Calculate local snapshot pricing
-            const basePrice = activeProductPrices[size];
-            const flavorPrice = parseFloat(flavorSelect.options[flavorSelect.selectedIndex].getAttribute('data-price') || 0);
-            let addonSum = 0;
-            cbs.forEach(cb => {
-                if (cb.checked) addonSum += parseFloat(cb.getAttribute('data-price'));
-            });
-
+            const qty = parseInt(document.getElementById('modalQty').value || 1);
+            const obs = document.getElementById('modalObservations').value;
             const unitPrice = basePrice + flavorPrice;
-            const itemTotal = (unitPrice + addonSum) * qty;
+            const subtotal = (unitPrice + addonsTotal) * qty;
 
-            const item = {
+            cart.push({
                 productId,
                 productName,
                 flavorId,
                 flavorName,
                 size,
+                unitPrice,
+                addons: selectedAddons,
+                addonTotal: addonsTotal,
                 quantity: qty,
-                addonIds,
-                addonNames,
-                observations: obs,
-                subtotal: itemTotal
-            };
+                subtotal,
+                observations: obs
+            });
 
-            cart.push(item);
-            updateCartCounter();
             closeModal('customizerModal');
+            updateCartBadge();
+            openCartDrawer();
         }
 
-        function updateCartCounter() {
-            document.getElementById('cartCount').innerText = cart.length;
+        function updateCartBadge() {
+            const totalCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+            document.getElementById('cartCount').innerText = totalCount;
         }
 
-        function openCartModal() {
-            const list = document.getElementById('cartItemsList');
-            list.innerHTML = "";
-            
+        function renderCartItems() {
+            const container = document.getElementById('cartItemsList');
             if (cart.length === 0) {
-                list.innerHTML = `<p style="color: var(--text-secondary); text-align: center; padding: 20px;">Tu carrito está vacío.</p>`;
-                document.getElementById('cartTotalDisplay').innerText = "$0";
-                document.getElementById('cartModal').classList.add('active');
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--ld-text-muted);">
+                        <span style="font-size: 3rem; display: block; margin-bottom: 12px;">🍧</span>
+                        <p style="font-weight: 700; font-size: 1.1rem; color: var(--ld-green-dark);">Tu carrito está vacío</p>
+                        <p style="font-size: 0.88rem; margin-top: 4px;">Explora nuestros granizados y agrega tu favorito.</p>
+                    </div>
+                `;
+                document.getElementById('cartTotalDisplay').innerText = '$0';
+                document.getElementById('btnSubmitOrder').disabled = true;
                 return;
             }
 
+            document.getElementById('btnSubmitOrder').disabled = false;
+            let html = '';
             let total = 0;
+
             cart.forEach((item, index) => {
                 total += item.subtotal;
-                const addonsStr = item.addonNames.length > 0 ? ` + ${item.addonNames.join(', ')}` : "";
-                
-                list.innerHTML += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px; background-color: var(--bg-cream); border-radius: var(--border-radius-sm);">
-                        <div>
-                            <h4 style="margin:0;">${item.productName}</h4>
-                            <p style="font-size:0.8rem; color:var(--text-secondary); margin: 2px 0;">
-                                Sabor: ${item.flavorName} | Tamaño: ${item.size} | Cantidad: ${item.quantity} ${addonsStr}
-                            </p>
-                            ${item.observations ? `<p style="font-size:0.8rem; font-style:italic; color:var(--green-dark);">"${item.observations}"</p>` : ""}
+                const addonsStr = item.addons && item.addons.length > 0 
+                    ? item.addons.map(a => a.addonName).join(', ') 
+                    : 'Sin toppings';
+
+                html += `
+                    <div class="ld-cart-item-card">
+                        <div class="ld-cart-item-header">
+                            <div>
+                                <div class="ld-cart-item-name">${item.productName}</div>
+                                <div class="ld-cart-item-details">${item.flavorName} • Tamaño ${item.size}</div>
+                                <div class="ld-cart-item-details" style="color: var(--ld-green-primary); font-weight: 600;">+ ${addonsStr}</div>
+                            </div>
+                            <button onclick="removeCartItem(${index})" style="background:none; border:none; color: var(--ld-strawberry); cursor:pointer; font-size: 1.1rem;">&times;</button>
                         </div>
-                        <div style="display:flex; align-items:center; gap: 15px;">
-                            <span style="font-weight:700;">$${item.subtotal.toLocaleString('es-CO')}</span>
-                            <button onclick="removeItem(${index})" style="background:none; border:none; color:var(--strawberry); font-size:1.2rem; cursor:pointer;" title="Eliminar">&times;</button>
+                        <div class="ld-cart-item-footer">
+                            <div class="ld-qty-control">
+                                <button type="button" class="ld-qty-btn" onclick="changeItemQty(${index}, -1)">-</button>
+                                <span style="font-weight: 700; font-size: 0.9rem;">${item.quantity}</span>
+                                <button type="button" class="ld-qty-btn" onclick="changeItemQty(${index}, 1)">+</button>
+                            </div>
+                            <div class="ld-item-subtotal">$${item.subtotal.toLocaleString('es-CO')}</div>
                         </div>
                     </div>
                 `;
             });
 
+            container.innerHTML = html;
             document.getElementById('cartTotalDisplay').innerText = '$' + total.toLocaleString('es-CO');
-            document.getElementById('cartModal').classList.add('active');
         }
 
-        function removeItem(index) {
+        function changeItemQty(index, delta) {
+            if (!cart[index]) return;
+            cart[index].quantity += delta;
+            if (cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            } else {
+                const singlePrice = cart[index].unitPrice + cart[index].addonTotal;
+                cart[index].subtotal = singlePrice * cart[index].quantity;
+            }
+            updateCartBadge();
+            renderCartItems();
+        }
+
+        function removeCartItem(index) {
             cart.splice(index, 1);
-            updateCartCounter();
-            openCartModal();
+            updateCartBadge();
+            renderCartItems();
         }
 
-        // Idempotency and submission flags
-        let isSubmittingOrder = false;
-        let checkoutRequestId = (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).substring(2));
-
-        function hideLoadingState() {
-            isSubmittingOrder = false;
-            document.getElementById('loadingOverlay').style.display = 'none';
-            const btn = document.querySelector('#checkoutForm button[type="submit"]');
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = "Confirmar y Crear Pedido 🍨🔥";
-            }
-        }
-
-        function submitCheckout(event) {
+        async function submitCheckout(event) {
             event.preventDefault();
-
-            // Client-side cart validation
             if (cart.length === 0) {
-                alert("Tu carrito está vacío. Agrega productos antes de confirmar.");
+                alert('Agrega al menos un granizado a tu pedido.');
                 return;
             }
 
-            if (isSubmittingOrder) {
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            const obs = document.getElementById('custObs').value.trim();
+
+            if (!name || !phone) {
+                alert('Por favor ingresa tu nombre y número de WhatsApp.');
                 return;
             }
-            
-            isSubmittingOrder = true;
 
-            // Block button and change text immediately
-            const submitBtn = document.querySelector('#checkoutForm button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerText = "⏳ Creando tu pedido...";
-            }
-
-            // Show Loading Overlay
-            document.getElementById('loadingOverlay').style.display = 'flex';
-            
-            const customerName = document.getElementById('custName').value;
-            const customerPhone = document.getElementById('custPhone').value;
-            const observations = document.getElementById('custObs').value;
-
-            // Build request payload with idempotency requestId
             const payload = {
-                customerName,
-                customerPhone,
-                observations,
-                requestId: checkoutRequestId,
-                items: cart.map(i => ({
-                    productId: i.productId,
-                    flavorId: i.flavorId,
-                    size: i.size,
-                    quantity: i.quantity,
-                    addonIds: i.addonIds,
-                    observations: i.observations
+                customerName: name,
+                customerPhone: phone,
+                observations: obs,
+                items: cart.map(item => ({
+                    productId: item.productId,
+                    flavorId: item.flavorId,
+                    size: item.size,
+                    quantity: item.quantity,
+                    addons: item.addons,
+                    observations: item.observations
                 }))
             };
 
-            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
-            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
 
-            const headers = {
-                'Content-Type': 'application/json'
-            };
-            if (csrfHeader && csrfToken) {
-                headers[csrfHeader] = csrfToken;
-            }
+            document.getElementById('loadingOverlay').style.display = 'flex';
 
-            let checkAttempts = 0;
-            const maxCheckAttempts = 3;
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
-            function verifyOrderCreated() {
-                checkAttempts++;
-                document.querySelector('#loadingOverlay h2').innerText = "Verificando respuesta del servidor (" + checkAttempts + ")...";
-                
-                fetch('/api/public/pedidos/check-request/' + checkoutRequestId)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.found) {
-                            // Successfully created!
-                            cart = [];
-                            updateCartCounter();
-                            closeModal('cartModal');
-                            window.location.href = '/pedido/exitoso/' + data.orderCode;
-                        } else if (checkAttempts < maxCheckAttempts) {
-                            setTimeout(verifyOrderCreated, 3000);
-                        } else {
-                            // Not created, release block
-                            hideLoadingState();
-                            alert("No pudimos confirmar la respuesta del servidor. Por seguridad, verifica tu conexión e inténtalo nuevamente.");
-                        }
-                    })
-                    .catch(err => {
-                        if (checkAttempts < maxCheckAttempts) {
-                            setTimeout(verifyOrderCreated, 3000);
-                        } else {
-                            hideLoadingState();
-                            alert("Error de red persistente. No pudimos confirmar la creación del pedido.");
-                        }
-                    });
-            }
+                const res = await fetch('/api/public/pedidos', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
 
-            fetch('/api/public/pedidos', {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(payload)
-            })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error("HTTP error " + res.status);
-                }
-                return res.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Empty cart & redirect
-                    cart = [];
-                    updateCartCounter();
-                    closeModal('cartModal');
+                const data = await res.json();
+                if (res.ok && data.success) {
                     window.location.href = '/pedido/exitoso/' + data.orderCode;
                 } else {
-                    // Actual logical validation error, release state immediately
-                    hideLoadingState();
-                    alert('Error al crear el pedido: ' + data.message);
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    alert('Error al crear el pedido: ' + (data.message || 'Inténtalo nuevamente.'));
                 }
-            })
-            .catch(err => {
-                console.error("Network or timeout error occurred:", err);
-                // Start status verification loop to check if request made it to DB
-                verifyOrderCreated();
-            });
+            } catch (err) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert('Hubo un error de conexión al enviar el pedido.');
+            }
         }
     </script>
 </body>

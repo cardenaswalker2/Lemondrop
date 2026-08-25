@@ -21,7 +21,6 @@
             if (!this.synth) return;
             const updateVoices = () => {
                 const voices = this.synth.getVoices();
-                // Prefer Colombian or Spanish voice
                 this.selectedVoice = voices.find(v => v.lang.includes('es-CO')) ||
                                      voices.find(v => v.lang.includes('es-419')) ||
                                      voices.find(v => v.lang.startsWith('es')) ||
@@ -36,11 +35,13 @@
         speak(text) {
             if (!this.enabled || !this.synth || !text) return;
             try {
-                this.synth.cancel(); // Cancel any previous speech
-                // Strip emojis and URLs for cleaner pronunciation
-                const cleanText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '')
-                                      .replace(/https?:\/\/\S+/g, '')
-                                      .trim();
+                this.synth.cancel();
+                // Strip markdown tables, emojis and URLs for cleaner pronunciation
+                let cleanText = text.replace(/\|.*?\|/g, '')
+                                    .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '')
+                                    .replace(/https?:\/\/\S+/g, '')
+                                    .replace(/[*_#`~]/g, '')
+                                    .trim();
                 if (!cleanText) return;
 
                 const utterance = new SpeechSynthesisUtterance(cleanText);
@@ -50,7 +51,7 @@
                 utterance.pitch = 1.0;
                 this.synth.speak(utterance);
             } catch (e) {
-                console.warn('TTS not supported or failed:', e);
+                console.warn('TTS warning:', e);
             }
         }
 
@@ -81,13 +82,12 @@
         }
 
         initDOM() {
-            // Check if widget already exists
             if (document.getElementById('lemon-ai-widget')) return;
 
             const container = document.createElement('div');
             container.id = 'lemon-ai-widget';
             container.innerHTML = `
-                <!-- Launcher Button -->
+                <!-- Floating Mascot Launcher -->
                 <div class="lemon-ai-launcher" id="lemon-ai-launcher" title="Abrir asistente Lemon AI">
                     <span class="launcher-icon">🍋</span>
                     <span>Lemon AI</span>
@@ -103,22 +103,22 @@
                             <div>
                                 <div class="lemon-ai-header-title">Lemon Drop AI ✨</div>
                                 <div class="lemon-ai-header-subtitle">
-                                    <span style="color: #10B981;">●</span> Asesor en línea
+                                    <span style="color: #10B981; font-size: 0.9rem;">●</span> Asesor inteligente en línea
                                 </div>
                             </div>
                         </div>
                         <div class="lemon-ai-header-actions">
                             <button class="lemon-ai-btn-icon" id="lemon-ai-tts-toggle" title="Activar/Desactivar Voz">🔊</button>
-                            <button class="lemon-ai-btn-icon" id="lemon-ai-close" title="Cerrar">✕</button>
+                            <button class="lemon-ai-btn-icon" id="lemon-ai-close" title="Cerrar ventana">✕</button>
                         </div>
                     </div>
 
-                    <!-- Suggestion Chips -->
-                    <div class="lemon-ai-chips">
+                    <!-- Suggestion Chips Bar -->
+                    <div class="lemon-ai-chips-bar">
                         <button class="lemon-ai-chip" data-prompt="🍓 Recomiéndame algo dulce">🍓 Algo dulce</button>
-                        <button class="lemon-ai-chip" data-prompt="🥭 ¿Qué granizados tienen disponibles?">🥭 Menú disponible</button>
+                        <button class="lemon-ai-chip" data-prompt="🥭 ¿Qué sabores tienen disponibles?">🥭 Menú disponible</button>
                         <button class="lemon-ai-chip" data-prompt="🔥 ¿Cuál es el más vendido?">🔥 Lo más vendido</button>
-                        <button class="lemon-ai-chip" data-prompt="🛒 ¿Qué tengo en mi carrito?">🛒 Ver mi pedido</button>
+                        <button class="lemon-ai-chip" data-prompt="🛒 ¿Qué tengo en mi carrito?">🛒 Mi pedido</button>
                         <button class="lemon-ai-chip" data-prompt="🕒 ¿Cuáles son sus horarios?">🕒 Horarios</button>
                     </div>
 
@@ -127,29 +127,42 @@
                         <!-- Welcome message -->
                         <div class="lemon-ai-msg assistant">
                             <div class="lemon-ai-msg-bubble">
-                                ¡Hola! 👋🍋 Soy tu asesor de **Lemon Drop**.
+                                ¡Hola! 👋🍋 Soy tu asesor de <strong>Lemon Drop</strong>.
                                 <br><br>
-                                Pídeme lo que quieras por texto o pulsa el 🎙️ micrófono. Por ejemplo:
+                                Pídeme lo que quieras por texto o pulsa el micrófono 🎙️. Por ejemplo:
                                 <br>
-                                <i>"Quiero un granizado de mango grande con gomitas"</i>
+                                <em>"Quiero un granizado de mango grande con gomitas"</em>
                             </div>
-                            <span class="lemon-ai-msg-time">Ahora</span>
                         </div>
                     </div>
 
-                    <!-- Status indicator for voice / thinking -->
-                    <div class="lemon-ai-status-indicator" id="lemon-ai-status" style="display: none;">
-                        <div class="lemon-ai-soundwave" id="lemon-ai-wave" style="display: none;">
-                            <span></span><span></span><span></span><span></span>
+                    <!-- Voice Waveform Overlay -->
+                    <div class="lemon-ai-voice-overlay" id="lemon-ai-voice-overlay">
+                        <div style="font-size: 2rem;">🍋</div>
+                        <div style="font-weight: 700; font-size: 1.1rem;" id="lemon-ai-voice-status">Escuchando tu voz...</div>
+                        <div class="lemon-ai-waveform">
+                            <div class="lemon-ai-wave-bar"></div>
+                            <div class="lemon-ai-wave-bar"></div>
+                            <div class="lemon-ai-wave-bar"></div>
+                            <div class="lemon-ai-wave-bar"></div>
+                            <div class="lemon-ai-wave-bar"></div>
+                            <div class="lemon-ai-wave-bar"></div>
                         </div>
-                        <span id="lemon-ai-status-text">🧠 Pensando...</span>
+                        <button class="lemon-ai-chip" id="lemon-ai-voice-stop-btn" style="background: #FFD91A; color: #0F2818; margin-top: 10px;">
+                            ⏹️ Terminar y Procesar
+                        </button>
                     </div>
 
                     <!-- Input Footer -->
-                    <div class="lemon-ai-footer">
-                        <button class="lemon-ai-btn-mic" id="lemon-ai-mic" title="Hablar por micrófono">🎙️</button>
-                        <input type="text" class="lemon-ai-input" id="lemon-ai-input" placeholder="Escribe tu pedido o pregunta..." maxlength="500">
-                        <button class="lemon-ai-btn-send" id="lemon-ai-send" title="Enviar">➤</button>
+                    <div class="lemon-ai-input-area">
+                        <button class="lemon-ai-mic-btn" id="lemon-ai-mic" title="Hablar por voz">🎙️</button>
+                        <input type="text" class="lemon-ai-text-input" id="lemon-ai-input" placeholder="Escribe tu pedido o pregunta..." maxlength="500">
+                        <button class="lemon-ai-send-btn" id="lemon-ai-send" title="Enviar mensaje">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             `;
@@ -164,7 +177,8 @@
             const input = document.getElementById('lemon-ai-input');
             const micBtn = document.getElementById('lemon-ai-mic');
             const ttsBtn = document.getElementById('lemon-ai-tts-toggle');
-            const chips = document.querySelectorAll('.lemon-ai-chip');
+            const voiceStopBtn = document.getElementById('lemon-ai-voice-stop-btn');
+            const chips = document.querySelectorAll('.lemon-ai-chip[data-prompt]');
 
             launcher.addEventListener('click', () => {
                 modal.classList.add('open');
@@ -192,6 +206,9 @@
             });
 
             micBtn.addEventListener('click', () => this.handleToggleVoice());
+            if (voiceStopBtn) {
+                voiceStopBtn.addEventListener('click', () => this.stopRecording());
+            }
 
             chips.forEach(chip => {
                 chip.addEventListener('click', () => {
@@ -215,7 +232,7 @@
                 input.value = '';
             }
 
-            this.showStatus(true, false, '🧠 Preparando...');
+            this.showTypingIndicator(true);
 
             try {
                 const payload = {
@@ -234,7 +251,7 @@
                 });
 
                 const data = await response.json();
-                this.showStatus(false);
+                this.showTypingIndicator(false);
 
                 if (data.success) {
                     this.updateSession(data.conversationId, data.clientToken);
@@ -244,87 +261,91 @@
                 }
             } catch (err) {
                 console.error('Error in chat request:', err);
-                this.showStatus(false);
-                this.appendMessage('assistant', 'No logré conectarme con el servidor 😅. Por favor verifica tu conexión a internet.');
+                this.showTypingIndicator(false);
+                this.appendMessage('assistant', 'No logré conectarme con el servidor 😅. Por favor verifica tu conexión.');
             }
         }
 
         handleAIResponse(data) {
-            // Render text message
+            // Render text message with Markdown formatting & table-to-card conversion
             if (data.message) {
                 this.appendMessage('assistant', data.message);
                 this.tts.speak(data.message);
             }
 
-            // Render interactive order review card if requiresConfirmation or order ready
+            // If structured cart data is present and confirmation is required, render order card
             if ((data.requiresConfirmation || data.orderReadyForConfirmation) && data.cart && data.cart.items && data.cart.items.length > 0) {
-                this.renderOrderCard(data.cart);
+                this.renderStructuredOrderCard(data.cart);
             }
 
-            // Render success order code and WhatsApp link if order confirmed
+            // If order was confirmed, render success banner with WhatsApp button
             if (data.orderConfirmed && data.orderCode) {
                 this.renderSuccessBanner(data.orderCode, data.whatsAppUrl);
             }
 
-            // Dispatch global event for other components on page
             if (data.cartUpdated) {
                 window.dispatchEvent(new CustomEvent('lemon:cartUpdated', { detail: data.cart }));
             }
         }
 
-        renderOrderCard(cart) {
+        renderStructuredOrderCard(cart) {
             const container = document.getElementById('lemon-ai-messages');
-            const card = document.createElement('div');
-            card.className = 'lemon-ai-msg assistant';
+            const cardWrapper = document.createElement('div');
+            cardWrapper.className = 'lemon-ai-msg assistant';
 
             let itemsHtml = '';
             cart.items.forEach(item => {
-                const toppingsStr = item.addonNames && item.addonNames.length > 0 ? ` + ${item.addonNames.join(', ')}` : '';
+                const toppingsStr = item.addonNames && item.addonNames.length > 0 
+                    ? `<div style="font-size: 0.8rem; color: #2F7D32; font-weight: 600;">+ ${item.addonNames.join(', ')}</div>` 
+                    : '';
+
                 itemsHtml += `
-                    <div class="lemon-ai-order-item">
+                    <div class="lemon-ai-order-item-row">
                         <div>
-                            <strong>${item.quantity}x ${item.productName} (${item.flavorName || ''})</strong>
-                            <div class="lemon-ai-order-item-desc">Tamaño: ${item.size}${toppingsStr}</div>
+                            <strong>${item.quantity}x ${item.productName}</strong>
+                            <div style="font-size: 0.82rem; color: #64748B;">Sabor: ${item.flavorName || 'Tradicional'} • Tamaño: ${item.size}</div>
+                            ${toppingsStr}
                         </div>
-                        <div><strong>$${Number(item.subtotal).toLocaleString('es-CO')}</strong></div>
+                        <div style="font-weight: 700; color: #173B24;">$${Number(item.subtotal).toLocaleString('es-CO')}</div>
                     </div>
                 `;
             });
 
-            card.innerHTML = `
+            cardWrapper.innerHTML = `
                 <div class="lemon-ai-order-card">
                     <div class="lemon-ai-order-card-header">
                         <span>🛒 Resumen de tu Pedido</span>
-                        <span style="color: #4E9F3D;">${cart.items.length} producto(s)</span>
+                        <span style="color: #2F7D32; font-size: 0.85rem;">${cart.items.length} producto(s)</span>
                     </div>
-                    <div class="lemon-ai-order-items-list">
+                    <div>
                         ${itemsHtml}
                     </div>
-                    <div class="lemon-ai-order-total">
-                        <span>Total a pagar:</span>
+                    <div class="lemon-ai-order-card-total">
+                        <span>Total:</span>
                         <span>$${Number(cart.total).toLocaleString('es-CO')}</span>
                     </div>
-                    <button class="lemon-ai-btn-confirm" id="btn-confirm-order-${Date.now()}">
-                        ✅ CONFIRMAR PEDIDO
-                    </button>
-                    <button class="lemon-ai-btn-modify" id="btn-modify-order-${Date.now()}">
-                        ✏️ Seguir modificando
-                    </button>
+                    <div class="lemon-ai-order-card-actions">
+                        <button class="lemon-ai-order-card-btn lemon-ai-btn-confirm" id="btn-confirm-ai-${Date.now()}">
+                            ✅ Confirmar Pedido
+                        </button>
+                        <button class="lemon-ai-order-card-btn lemon-ai-btn-cancel" id="btn-modify-ai-${Date.now()}">
+                            ✏️ Modificar
+                        </button>
+                    </div>
                 </div>
             `;
 
-            container.appendChild(card);
+            container.appendChild(cardWrapper);
             this.scrollToBottom();
 
-            // Bind confirm click
-            const confirmBtn = card.querySelector('.lemon-ai-btn-confirm');
+            const confirmBtn = cardWrapper.querySelector('.lemon-ai-btn-confirm');
             confirmBtn.addEventListener('click', () => {
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = '⏳ Confirmando pedido...';
                 this.handleSendMessage('CONFIRM_ORDER');
             });
 
-            const modifyBtn = card.querySelector('.lemon-ai-btn-modify');
+            const modifyBtn = cardWrapper.querySelector('.lemon-ai-btn-cancel');
             modifyBtn.addEventListener('click', () => {
                 document.getElementById('lemon-ai-input').focus();
             });
@@ -336,22 +357,26 @@
             banner.className = 'lemon-ai-msg assistant';
 
             const waButton = whatsAppUrl ? `
-                <div>
-                    <a href="${whatsAppUrl}" target="_blank" class="lemon-ai-btn-whatsapp">
-                        📱 Ver en WhatsApp
+                <div style="margin-top: 10px;">
+                    <a href="${whatsAppUrl}" target="_blank" class="ld-btn ld-btn-lemon ld-btn-sm" style="width: 100%;">
+                        📱 Enviar Pedido por WhatsApp
                     </a>
                 </div>
             ` : '';
 
             banner.innerHTML = `
-                <div class="lemon-ai-success-banner">
-                    <div style="font-size: 1.3rem;">🎉 ¡PEDIDO CONFIRMADO!</div>
-                    <div style="margin: 6px 0; font-size: 1.1rem; color: #1E293B;">
-                        Código: <strong>${orderCode}</strong>
+                <div class="lemon-ai-order-card" style="border-color: #2F7D32; background: #FFFDF7;">
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #173B24; text-align: center;">
+                        🎉 ¡PEDIDO CONFIRMADO!
                     </div>
-                    <div style="font-size: 0.85rem; font-weight: normal; color: #334155;">
-                        Ya estamos preparando tu pedido con toda la frescura de Lemon Drop 🍋💛
+                    <div style="text-align: center; margin: 8px 0;">
+                        <span class="ld-badge ld-badge-lemon" style="font-size: 1.1rem; padding: 6px 16px;">
+                            ${orderCode}
+                        </span>
                     </div>
+                    <p style="font-size: 0.88rem; color: #64748B; text-align: center; line-height: 1.4;">
+                        Tu orden ha sido registrada en el sistema. Puedes rastrearla en la sección de seguimiento o enviarla por WhatsApp.
+                    </p>
                     ${waButton}
                 </div>
             `;
@@ -365,32 +390,100 @@
             const msgEl = document.createElement('div');
             msgEl.className = `lemon-ai-msg ${sender}`;
 
-            // Convert simple markdown bold to html bold
-            const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                      .replace(/\n/g, '<br>');
-
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            // Parse markdown tables and formatting
+            const formattedContent = this.formatContent(text);
 
             msgEl.innerHTML = `
-                <div class="lemon-ai-msg-bubble">${formattedText}</div>
-                <span class="lemon-ai-msg-time">${timeStr}</span>
+                <div class="lemon-ai-msg-bubble">${formattedContent}</div>
             `;
 
             container.appendChild(msgEl);
             this.scrollToBottom();
         }
 
-        showStatus(show, isRecording = false, text = '🧠 Pensando...') {
-            const statusEl = document.getElementById('lemon-ai-status');
-            const waveEl = document.getElementById('lemon-ai-wave');
-            const textEl = document.getElementById('lemon-ai-status-text');
+        formatContent(text) {
+            if (!text) return '';
 
+            // Check if text contains a markdown table
+            if (text.includes('|') && text.includes('---')) {
+                return this.parseMarkdownTableToHtml(text);
+            }
+
+            // Standard Markdown formatting
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        parseMarkdownTableToHtml(text) {
+            const lines = text.split('\n');
+            let beforeTable = [];
+            let tableLines = [];
+            let afterTable = [];
+            let inTable = false;
+
+            for (let line of lines) {
+                if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+                    inTable = true;
+                    tableLines.push(line.trim());
+                } else if (inTable) {
+                    afterTable.push(line);
+                } else {
+                    beforeTable.push(line);
+                }
+            }
+
+            let html = '';
+            if (beforeTable.length > 0) {
+                html += beforeTable.join('<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') + '<br>';
+            }
+
+            if (tableLines.length >= 2) {
+                const headers = tableLines[0].split('|').map(s => s.trim()).filter(s => s.length > 0);
+                const rows = tableLines.slice(2); // skip header and separator
+
+                html += '<div class="lemon-ai-order-card" style="margin: 10px 0;">';
+                rows.forEach(rowStr => {
+                    const cols = rowStr.split('|').map(s => s.trim()).filter(s => s.length > 0);
+                    if (cols.length >= 2) {
+                        html += `
+                            <div class="lemon-ai-order-item-row">
+                                <div>
+                                    <strong>${cols[0]}x ${cols[1] || 'Granizado'}</strong>
+                                    <div style="font-size: 0.8rem; color: #64748B;">${cols[2] || ''} ${cols[4] ? '• ' + cols[4] : ''}</div>
+                                </div>
+                                <div style="font-weight: 700; color: #173B24;">${cols[cols.length - 1] || ''}</div>
+                            </div>
+                        `;
+                    }
+                });
+                html += '</div>';
+            }
+
+            if (afterTable.length > 0) {
+                html += afterTable.join('<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            }
+
+            return html;
+        }
+
+        showTypingIndicator(show) {
+            let typingEl = document.getElementById('lemon-ai-typing-indicator');
             if (show) {
-                statusEl.style.display = 'flex';
-                waveEl.style.display = isRecording ? 'inline-flex' : 'none';
-                textEl.textContent = text;
+                if (!typingEl) {
+                    typingEl = document.createElement('div');
+                    typingEl.id = 'lemon-ai-typing-indicator';
+                    typingEl.className = 'lemon-ai-typing';
+                    typingEl.innerHTML = `
+                        <span class="lemon-ai-typing-dot"></span>
+                        <span class="lemon-ai-typing-dot"></span>
+                        <span class="lemon-ai-typing-dot"></span>
+                    `;
+                    document.getElementById('lemon-ai-messages').appendChild(typingEl);
+                }
             } else {
-                statusEl.style.display = 'none';
+                if (typingEl) typingEl.remove();
             }
             this.scrollToBottom();
         }
@@ -417,8 +510,6 @@
         // 3. Audio Recording & Whisper STT
         // ==========================================
         async handleToggleVoice() {
-            const micBtn = document.getElementById('lemon-ai-mic');
-
             if (this.isRecording) {
                 this.stopRecording();
             } else {
@@ -447,10 +538,8 @@
                 this.mediaRecorder.start();
                 this.isRecording = true;
 
-                const micBtn = document.getElementById('lemon-ai-mic');
-                micBtn.classList.add('recording');
-                micBtn.title = 'Pulsar para terminar grabación';
-                this.showStatus(true, true, '🔴 Escuchando...');
+                const overlay = document.getElementById('lemon-ai-voice-overlay');
+                if (overlay) overlay.classList.add('active');
 
             } catch (err) {
                 console.error('Microphone access denied or error:', err);
@@ -462,16 +551,13 @@
             if (this.mediaRecorder && this.isRecording) {
                 this.mediaRecorder.stop();
                 this.isRecording = false;
-                const micBtn = document.getElementById('lemon-ai-mic');
-                micBtn.classList.remove('recording');
-                micBtn.title = 'Hablar por micrófono';
-                this.showStatus(true, false, '🧠 Transcribiendo con Whisper...');
+
+                const statusText = document.getElementById('lemon-ai-voice-status');
+                if (statusText) statusText.textContent = '🧠 Procesando tu voz...';
             }
         }
 
         async sendVoiceAudio(audioBlob) {
-            this.showStatus(true, false, '🧠 Procesando tu voz...');
-
             try {
                 const formData = new FormData();
                 formData.append('audio', audioBlob, 'voice_command.webm');
@@ -486,7 +572,13 @@
                 });
 
                 const data = await response.json();
-                this.showStatus(false);
+                
+                const overlay = document.getElementById('lemon-ai-voice-overlay');
+                if (overlay) {
+                    overlay.classList.remove('active');
+                    const statusText = document.getElementById('lemon-ai-voice-status');
+                    if (statusText) statusText.textContent = 'Escuchando tu voz...';
+                }
 
                 if (data.success) {
                     if (data.transcription) {
@@ -502,13 +594,13 @@
 
             } catch (err) {
                 console.error('Error sending voice audio:', err);
-                this.showStatus(false);
+                const overlay = document.getElementById('lemon-ai-voice-overlay');
+                if (overlay) overlay.classList.remove('active');
                 this.appendMessage('assistant', 'Ocurrió un error al enviar el audio.');
             }
         }
     }
 
-    // Initialize Lemon AI on DOMContentLoaded
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => new LemonAIAssistant());
     } else {

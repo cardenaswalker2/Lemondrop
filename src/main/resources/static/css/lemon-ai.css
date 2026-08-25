@@ -1,5 +1,6 @@
 /* ============================================================
-   LEMON DROP AI - FLOATING AGENT STYLING
+   LEMON DROP AI - NEXT-GEN ORDER ASSISTANT STYLING
+   Glassmorphism, Waveforms, Interactive Order Cards & Pill Chips
    ============================================================ */
 
 /* Floating Launcher Button */
@@ -10,44 +11,42 @@
     z-index: 9999;
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: linear-gradient(135deg, #4E9F3D 0%, #2C3E2B 100%);
+    gap: 12px;
+    background: linear-gradient(135deg, #173B24 0%, #0F2818 100%);
     color: #FFFFFF;
-    padding: 14px 22px;
+    padding: 12px 22px;
     border-radius: 50px;
-    box-shadow: 0 10px 25px rgba(78, 159, 61, 0.4), 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 12px 30px rgba(15, 40, 24, 0.35), 0 0 0 2px rgba(255, 217, 26, 0.4);
     cursor: pointer;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 700;
-    font-size: 1rem;
-    border: 2px solid rgba(252, 226, 42, 0.6);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.95rem;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     user-select: none;
 }
 
 .lemon-ai-launcher:hover {
-    transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 14px 30px rgba(78, 159, 61, 0.5), 0 6px 14px rgba(0, 0, 0, 0.15);
-    border-color: #FCE22A;
+    transform: translateY(-4px) scale(1.04);
+    box-shadow: 0 16px 36px rgba(15, 40, 24, 0.45), 0 0 0 3px #FFD91A;
 }
 
 .lemon-ai-launcher .launcher-icon {
-    font-size: 1.35rem;
-    animation: lemonBounce 2s infinite ease-in-out;
+    font-size: 1.4rem;
+    animation: lemonBounce 2.5s infinite ease-in-out;
 }
 
 @keyframes lemonBounce {
     0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-3px) rotate(6deg); }
+    50% { transform: translateY(-3px) rotate(8deg); }
 }
 
 .lemon-ai-launcher .pulse-indicator {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
     background-color: #10B981;
     border-radius: 50%;
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-    animation: pulseRing 1.8s infinite;
+    animation: pulseRing 2s infinite;
 }
 
 @keyframes pulseRing {
@@ -67,7 +66,7 @@
     max-height: calc(100vh - 48px);
     background: #FFFFFF;
     border-radius: 24px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(164, 208, 164, 0.25);
+    box-shadow: 0 24px 60px rgba(15, 40, 24, 0.25), 0 0 0 1px rgba(47, 125, 50, 0.15);
     display: flex;
     flex-direction: column;
     z-index: 10000;
@@ -75,7 +74,7 @@
     opacity: 0;
     pointer-events: none;
     transform: translateY(20px) scale(0.96);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .lemon-ai-modal.open {
@@ -86,7 +85,7 @@
 
 /* Modal Header */
 .lemon-ai-header {
-    background: linear-gradient(135deg, #2C3E2B 0%, #1e2c1d 100%);
+    background: linear-gradient(135deg, #173B24 0%, #0F2818 100%);
     color: #FFFFFF;
     padding: 16px 20px;
     display: flex;
@@ -105,29 +104,31 @@
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: rgba(252, 226, 42, 0.2);
-    border: 1.5px solid #FCE22A;
+    background: rgba(255, 217, 26, 0.18);
+    border: 1.5px solid #FFD91A;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.35rem;
 }
 
 .lemon-ai-header-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.1rem;
+    font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.15rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     gap: 6px;
+    color: #FFFFFF;
 }
 
 .lemon-ai-header-subtitle {
     font-size: 0.78rem;
-    color: #D8EBB5;
+    color: #A4D0A4;
     display: flex;
     align-items: center;
     gap: 5px;
+    margin-top: 2px;
 }
 
 .lemon-ai-header-actions {
@@ -137,84 +138,89 @@
 }
 
 .lemon-ai-btn-icon {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
     border: none;
     color: #FFFFFF;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    transition: background 0.2s;
+    font-size: 0.95rem;
+    transition: background 0.2s ease;
 }
 
 .lemon-ai-btn-icon:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.22);
 }
 
-/* Quick Suggestion Chips */
-.lemon-ai-chips {
+/* Quick Suggestion Chips (Pill Buttons) */
+.lemon-ai-chips-bar {
+    background: #FAF6EA;
+    padding: 10px 16px;
     display: flex;
     gap: 8px;
-    padding: 10px 16px;
-    background: #FFFDF6;
-    border-bottom: 1px solid rgba(164, 208, 164, 0.2);
     overflow-x: auto;
     white-space: nowrap;
+    border-bottom: 1px solid rgba(47, 125, 50, 0.08);
     scrollbar-width: none;
 }
 
-.lemon-ai-chips::-webkit-scrollbar {
+.lemon-ai-chips-bar::-webkit-scrollbar {
     display: none;
 }
 
 .lemon-ai-chip {
     background: #FFFFFF;
-    border: 1px solid #A4D0A4;
-    color: #2C3E2B;
-    padding: 6px 12px;
+    color: #173B24;
+    border: 1px solid rgba(47, 125, 50, 0.18);
+    padding: 6px 14px;
     border-radius: 20px;
     font-size: 0.8rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .lemon-ai-chip:hover {
-    background: #D8EBB5;
-    border-color: #4E9F3D;
+    background: #FFD91A;
+    color: #0F2818;
+    border-color: #F5C500;
     transform: translateY(-1px);
 }
 
-/* Chat Messages Container */
+/* Messages Container */
 .lemon-ai-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 20px 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    background: #FAF8F2;
+    gap: 16px;
+    background: #FFFDF7;
 }
 
+/* Message Bubbles */
 .lemon-ai-msg {
     display: flex;
-    flex-direction: column;
-    max-width: 85%;
-    animation: fadeInMsg 0.25s ease-out;
+    gap: 10px;
+    max-width: 88%;
+    animation: msgFadeIn 0.3s ease-out;
 }
 
-@keyframes fadeInMsg {
-    from { opacity: 0; transform: translateY(6px); }
+@keyframes msgFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .lemon-ai-msg.user {
     align-self: flex-end;
+    flex-direction: row-reverse;
 }
 
 .lemon-ai-msg.assistant {
@@ -225,313 +231,267 @@
     padding: 12px 16px;
     border-radius: 18px;
     font-size: 0.92rem;
-    line-height: 1.45;
-    position: relative;
+    line-height: 1.5;
     word-break: break-word;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .lemon-ai-msg.user .lemon-ai-msg-bubble {
-    background: linear-gradient(135deg, #4E9F3D 0%, #3e8130 100%);
+    background: #2F7D32;
     color: #FFFFFF;
     border-bottom-right-radius: 4px;
-    box-shadow: 0 4px 12px rgba(78, 159, 61, 0.2);
 }
 
 .lemon-ai-msg.assistant .lemon-ai-msg-bubble {
     background: #FFFFFF;
-    color: #2C3E2B;
-    border: 1px solid rgba(164, 208, 164, 0.35);
+    color: #1F2937;
+    border: 1px solid rgba(47, 125, 50, 0.12);
     border-bottom-left-radius: 4px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
 }
 
-.lemon-ai-msg-time {
-    font-size: 0.7rem;
-    color: #888888;
-    margin-top: 4px;
-    align-self: flex-start;
-}
-
-.lemon-ai-msg.user .lemon-ai-msg-time {
-    align-self: flex-end;
-}
-
-/* Order Confirmation Card in Chat */
+/* Interactive Order Card inside Chat */
 .lemon-ai-order-card {
-    background: #FFFFFF;
-    border: 2px solid #4E9F3D;
+    background: #FAF6EA;
+    border: 1.5px solid #FFD91A;
     border-radius: 16px;
-    padding: 14px;
-    margin-top: 8px;
-    box-shadow: 0 6px 16px rgba(78, 159, 61, 0.15);
+    padding: 16px;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 14px rgba(255, 217, 26, 0.2);
 }
 
 .lemon-ai-order-card-header {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #173B24;
+    border-bottom: 1px solid rgba(47, 125, 50, 0.12);
+    padding-bottom: 8px;
+}
+
+.lemon-ai-order-item-row {
+    display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px dashed #A4D0A4;
-    padding-bottom: 8px;
-    margin-bottom: 10px;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    color: #2C3E2B;
+    font-size: 0.88rem;
+    padding: 4px 0;
 }
 
-.lemon-ai-order-item {
+.lemon-ai-order-card-total {
     display: flex;
     justify-content: space-between;
-    font-size: 0.85rem;
-    margin-bottom: 6px;
-    color: #333333;
-}
-
-.lemon-ai-order-item-desc {
-    font-size: 0.78rem;
-    color: #666666;
-    padding-left: 8px;
-}
-
-.lemon-ai-order-total {
-    border-top: 1px solid #E2E8F0;
-    padding-top: 8px;
-    margin-top: 8px;
-    display: flex;
-    justify-content: space-between;
-    font-family: 'Outfit', sans-serif;
+    align-items: center;
     font-weight: 800;
-    font-size: 1.05rem;
-    color: #4E9F3D;
+    font-size: 1.15rem;
+    color: #2F7D32;
+    border-top: 1.5px dashed rgba(47, 125, 50, 0.2);
+    padding-top: 10px;
+    margin-top: 4px;
+}
+
+.lemon-ai-order-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.lemon-ai-order-card-btn {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s ease;
 }
 
 .lemon-ai-btn-confirm {
-    width: 100%;
-    margin-top: 12px;
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-    color: #FFFFFF;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 12px;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    background: #FFD91A;
+    color: #0F2818;
 }
 
 .lemon-ai-btn-confirm:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.35);
+    background: #F5C500;
+    transform: scale(1.02);
 }
 
-.lemon-ai-btn-modify {
+.lemon-ai-btn-cancel {
+    background: #E2E8F0;
+    color: #475569;
+}
+
+/* Voice Waveform Animation Overlay */
+.lemon-ai-voice-overlay {
+    display: none;
+    position: absolute;
+    bottom: 0;
+    left: 0;
     width: 100%;
-    margin-top: 6px;
-    background: transparent;
-    color: #666666;
-    border: 1px solid #CBD5E1;
-    padding: 6px 12px;
-    border-radius: 10px;
-    font-size: 0.82rem;
-    cursor: pointer;
-}
-
-.lemon-ai-btn-modify:hover {
-    background: #F1F5F9;
-}
-
-/* Success Order Banner */
-.lemon-ai-success-banner {
-    background: linear-gradient(135deg, #FCE22A 0%, #F59E0B 100%);
-    color: #2C3E2B;
-    border-radius: 16px;
-    padding: 14px;
-    margin-top: 8px;
-    text-align: center;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-}
-
-.lemon-ai-btn-whatsapp {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: #25D366;
-    color: #FFFFFF;
-    padding: 8px 16px;
-    border-radius: 20px;
-    margin-top: 10px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.88rem;
-    transition: transform 0.2s;
-}
-
-.lemon-ai-btn-whatsapp:hover {
-    transform: scale(1.04);
-}
-
-/* Voice Recording & Processing State */
-.lemon-ai-status-indicator {
-    display: flex;
+    background: linear-gradient(180deg, rgba(23, 59, 36, 0.95) 0%, rgba(15, 40, 24, 0.98) 100%);
+    padding: 24px 20px;
+    z-index: 100;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #FFFDF6;
-    border-top: 1px solid rgba(164, 208, 164, 0.2);
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #4E9F3D;
+    gap: 14px;
+    color: #FFFFFF;
+    animation: slideUp 0.3s ease-out;
 }
 
-.lemon-ai-soundwave {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    height: 16px;
+.lemon-ai-voice-overlay.active {
+    display: flex;
 }
 
-.lemon-ai-soundwave span {
-    width: 3px;
-    height: 6px;
-    background-color: #EF4444;
-    border-radius: 2px;
-    animation: soundWave 1s infinite ease-in-out;
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
 }
 
-.lemon-ai-soundwave span:nth-child(2) { animation-delay: 0.2s; }
-.lemon-ai-soundwave span:nth-child(3) { animation-delay: 0.4s; }
-.lemon-ai-soundwave span:nth-child(4) { animation-delay: 0.6s; }
-
-@keyframes soundWave {
-    0%, 100% { height: 6px; }
-    50% { height: 18px; }
-}
-
-/* Typing Dots */
-.lemon-ai-typing-dots {
+.lemon-ai-waveform {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+    height: 40px;
+}
+
+.lemon-ai-wave-bar {
+    width: 5px;
+    height: 12px;
+    background: #FFD91A;
+    border-radius: 4px;
+    animation: wavePulse 1.2s infinite ease-in-out;
+}
+
+.lemon-ai-wave-bar:nth-child(2) { animation-delay: 0.15s; height: 24px; }
+.lemon-ai-wave-bar:nth-child(3) { animation-delay: 0.3s; height: 36px; }
+.lemon-ai-wave-bar:nth-child(4) { animation-delay: 0.45s; height: 20px; }
+.lemon-ai-wave-bar:nth-child(5) { animation-delay: 0.6s; height: 30px; }
+.lemon-ai-wave-bar:nth-child(6) { animation-delay: 0.2s; height: 16px; }
+
+@keyframes wavePulse {
+    0%, 100% { transform: scaleY(0.4); opacity: 0.6; }
+    50% { transform: scaleY(1.4); opacity: 1; }
+}
+
+/* Typing / Processing Dots */
+.lemon-ai-typing {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     padding: 8px 12px;
+    background: #FFFFFF;
+    border: 1px solid rgba(47, 125, 50, 0.12);
+    border-radius: 16px;
+    align-self: flex-start;
+    width: fit-content;
 }
 
-.lemon-ai-typing-dots span {
-    width: 6px;
-    height: 6px;
-    background-color: #4E9F3D;
+.lemon-ai-typing-dot {
+    width: 7px;
+    height: 7px;
+    background: #2F7D32;
     border-radius: 50%;
-    animation: typingBounce 1.2s infinite;
+    animation: typingBounce 1.4s infinite ease-in-out;
 }
 
-.lemon-ai-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.lemon-ai-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+.lemon-ai-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.lemon-ai-typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
 @keyframes typingBounce {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1); }
+    0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
 }
 
-/* Chat Input Footer */
-.lemon-ai-footer {
-    padding: 12px 16px;
+/* Chat Input Bar */
+.lemon-ai-input-area {
+    padding: 14px 16px;
     background: #FFFFFF;
-    border-top: 1px solid rgba(164, 208, 164, 0.2);
+    border-top: 1px solid rgba(47, 125, 50, 0.1);
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.lemon-ai-input {
-    flex: 1;
-    border: 1.5px solid #E2E8F0;
-    border-radius: 20px;
-    padding: 10px 16px;
-    font-size: 0.9rem;
-    font-family: 'Inter', sans-serif;
-    outline: none;
-    transition: border-color 0.2s;
-    background: #FAF8F2;
+.lemon-ai-mic-btn {
+    background: #FAF6EA;
+    border: 1.5px solid rgba(47, 125, 50, 0.2);
+    color: #173B24;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
-.lemon-ai-input:focus {
-    border-color: #4E9F3D;
+.lemon-ai-mic-btn:hover {
+    background: #FFD91A;
+    border-color: #F5C500;
+}
+
+.lemon-ai-text-input {
+    flex: 1;
+    border: 1.5px solid rgba(47, 125, 50, 0.2);
+    border-radius: 24px;
+    padding: 10px 16px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.92rem;
+    color: #1F2937;
+    background: #FAF6EA;
+    transition: border-color 0.2s ease;
+}
+
+.lemon-ai-text-input:focus {
+    outline: none;
+    border-color: #2F7D32;
     background: #FFFFFF;
 }
 
-.lemon-ai-btn-mic {
-    background: #FAF8F2;
-    border: 1.5px solid #E2E8F0;
-    color: #4E9F3D;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    transition: all 0.2s;
-}
-
-.lemon-ai-btn-mic:hover {
-    background: #D8EBB5;
-    border-color: #4E9F3D;
-}
-
-.lemon-ai-btn-mic.recording {
-    background: #EF4444;
-    color: #FFFFFF;
-    border-color: #DC2626;
-    animation: pulseRecording 1.5s infinite;
-}
-
-@keyframes pulseRecording {
-    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
-    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-}
-
-.lemon-ai-btn-send {
-    background: linear-gradient(135deg, #4E9F3D 0%, #2C3E2B 100%);
-    color: #FFFFFF;
+.lemon-ai-send-btn {
+    background: #2F7D32;
     border: none;
-    width: 40px;
-    height: 40px;
+    color: #FFFFFF;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
-    transition: transform 0.2s;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
-.lemon-ai-btn-send:hover {
-    transform: scale(1.06);
+.lemon-ai-send-btn:hover {
+    background: #173B24;
+    transform: scale(1.05);
 }
 
-/* Mobile Responsive */
+/* Mobile Responsiveness for Lemon AI */
 @media (max-width: 640px) {
     .lemon-ai-modal {
         bottom: 0;
         right: 0;
         width: 100vw;
-        height: 100dvh;
         max-width: 100vw;
+        height: 100dvh;
         max-height: 100dvh;
         border-radius: 0;
     }
-    
     .lemon-ai-launcher {
         bottom: 16px;
         right: 16px;
-        padding: 12px 18px;
-        font-size: 0.9rem;
+        padding: 10px 18px;
+        font-size: 0.88rem;
     }
 }

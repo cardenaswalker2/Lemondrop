@@ -3,321 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lemon Drop - Granizados que saben a verano</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <style>
-        /* Mobile-First Base Overrides */
-        .hero-section {
-            display: flex;
-            flex-direction: column-reverse;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-            gap: 30px;
-            background: linear-gradient(135deg, #FFFDF6 0%, #FFF9D2 100%);
-            border-bottom: 2px solid var(--mint);
-            text-align: center;
-        }
-        .hero-text {
-            max-width: 100%;
-        }
-        .hero-text h1 {
-            font-size: 2.5rem;
-            line-height: 1.1;
-            margin-bottom: 15px;
-            color: var(--dark);
-        }
-        .hero-text p {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            margin-bottom: 25px;
-        }
-        .hero-image img {
-            max-width: 85%;
-            margin: 0 auto;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-medium);
-            transform: rotate(2deg);
-        }
-        .step-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-            margin-top: 30px;
-        }
-        .step-card {
-            text-align: center;
-            padding: 25px 20px;
-            background-color: var(--bg-white);
-            border-radius: var(--border-radius-md);
-            box-shadow: var(--shadow-soft);
-            border-bottom: 4px solid var(--green-medium);
-            transition: var(--transition-smooth);
-        }
-        .step-card:hover {
-            transform: translateY(-4px);
-        }
-        .step-number {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--lemon);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            margin-bottom: 15px;
-            color: #333;
-        }
-        
-        /* Grid Layouts for cards on mobile first */
-        .responsive-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        /* Large screens adaptations */
-        @media (min-width: 768px) {
-            .hero-section {
-                flex-direction: row;
-                padding: 80px 10%;
-                text-align: left;
-                gap: 50px;
-            }
-            .hero-text h1 {
-                font-size: 3.5rem;
-            }
-            .hero-text p {
-                font-size: 1.15rem;
-            }
-            .hero-image img {
-                max-width: 100%;
-            }
-            .step-container {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 30px;
-            }
-            .responsive-grid {
-                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                gap: 30px;
-            }
-        }
-    </style>
+    <title>Lemon Drop - Granizados que saben a verano 🍋🍧</title>
+    <link rel="stylesheet" th:href="@{/css/public-theme.css}">
 </head>
-<body style="padding-bottom: 90px;">
+<body class="ld-public-body">
 
     <!-- Public Navbar -->
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-text">
-            <span class="badge-custom badge-new" style="margin-bottom: 15px; display: inline-block;">Feria Escolar 2026</span>
-            <h1>LEMON DROP</h1>
-            <h2 style="font-family:'Outfit'; font-weight:600; color: var(--green-dark); margin-bottom: 15px; font-size: 1.3rem;">Granizados que saben a verano. 🍧✨</h2>
-            <p>Refrescantes granizados artesanales preparados al instante con pulpa 100% natural, hielo cristalino y deliciosos complementos.</p>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center;">
-                <a href="/catalogo" class="btn-custom btn-lemon" style="flex: 1; min-width: 160px; padding: 14px 28px;">Haz tu Pedido 🛍️</a>
-                <a href="#sabores" class="btn-custom btn-outline" style="flex: 1; min-width: 130px; padding: 14px 28px;">Ver Sabores</a>
-            </div>
-        </div>
-        <div class="hero-image">
-            <img src="https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&q=80&w=450" alt="Granizado Lemon Drop">
-        </div>
-    </section>
+    <!-- Hero Section with 3D Visual Stage -->
+    <section class="ld-hero">
+        <div class="ld-hero-container">
+            <!-- Left: Text & CTAs -->
+            <div class="ld-hero-content">
+                <div>
+                    <span class="ld-badge ld-badge-lemon">✨ Feria Escolar 2026</span>
+                </div>
+                <h1 class="ld-title-hero">
+                    Granizados que saben a <span style="color: var(--ld-green-primary); text-decoration: underline decoration-wavy decoration-yellow-400;">verano</span>. 🍧✨
+                </h1>
+                <p style="font-size: 1.1rem; color: var(--ld-text-muted); max-width: 520px; line-height: 1.6;">
+                    Bebidas artesanales refrescantes preparadas con fruta natural, hielo cristalino y los complementos más deliciosos.
+                </p>
+                <div class="ld-hero-actions">
+                    <a href="/catalogo" class="ld-btn ld-btn-lemon">
+                        <span>Haz tu Pedido</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14"></path>
+                            <path d="m12 5 7 7-7 7"></path>
+                        </svg>
+                    </a>
+                    <a href="#sabores" class="ld-btn ld-btn-outline">Ver Sabores</a>
+                </div>
 
-    <!-- Productos Destacados -->
-    <section id="productos-destacados" style="padding: 50px 15px; text-align: center; background-color: var(--bg-white);">
-        <div style="max-width: 1200px; margin: 0 auto;">
-            <h2 style="font-size: 2rem; margin-bottom: 10px;">🍧 Nuestros Recomendados</h2>
-            <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px auto; font-size: 0.95rem;">Prueba las combinaciones y granizados favoritos seleccionados por nuestros clientes.</p>
-            
-            <div class="responsive-grid">
-                <div class="card-premium" th:each="product : ${featuredProducts}" style="display: flex; flex-direction: column; justify-content: space-between; border-radius: var(--border-radius-md); overflow: hidden; padding: 0; transition: var(--transition-smooth); background-color: var(--bg-cream);">
-                    <div th:if="${product.image != null}" style="width:100%; height:200px; overflow:hidden;">
-                        <img th:src="${product.image}" th:alt="${product.name}" style="width:100%; height:100%; object-fit:cover;">
+                <!-- Quick Stats / Highlights -->
+                <div class="ld-hero-stats">
+                    <div class="ld-hero-stat-item">
+                        <span class="ld-hero-stat-num">100%</span>
+                        <span class="ld-hero-stat-label">Fruta Natural</span>
                     </div>
-                    <div style="padding: 20px; text-align: left; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 15px;">
-                        <div>
-                            <span th:if="${product.badge != null}" th:text="${product.badge}" class="badge-custom badge-new" style="margin-bottom: 10px; display: inline-block;">Favorito</span>
-                            <h3 th:text="${product.name}" style="margin-bottom: 8px;">Nombre Producto</h3>
-                            <p th:text="${product.description}" style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4; margin-bottom: 10px;">Descripción del producto</p>
-                        </div>
-                        <div>
-                            <div style="font-weight: 800; color: var(--green-dark); font-size: 1.1rem; margin-bottom: 12px;" 
-                                 th:text="${'Desde $' + #numbers.formatDecimal(product.sizePrices.get(T(com.lemondrop.model.ProductSize).SMALL), 0, 'POINT', 0, 'COMMA')}">
-                                Desde $5.000
-                            </div>
-                            <a href="/catalogo" class="btn-custom btn-lemon" style="width: 100%; font-size: 0.9rem; padding: 10px 15px;">Pedir Ahora 🛍️</a>
-                        </div>
+                    <div class="ld-hero-stat-item">
+                        <span class="ld-hero-stat-num">0 Filas</span>
+                        <span class="ld-hero-stat-label">Retiro con Código</span>
+                    </div>
+                    <div class="ld-hero-stat-item">
+                        <span class="ld-hero-stat-num">Instantáneo</span>
+                        <span class="ld-hero-stat-label">Preparado al Momento</span>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Sabores & Features -->
-    <section id="sabores" style="padding: 50px 15px; text-align: center;">
-        <h2 style="font-size: 2rem; margin-bottom: 10px;">Nuestros Sabores Naturales 🍓🍋</h2>
-        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px auto; font-size: 0.95rem;">Fruta de verdad para darte la mayor frescura en cada sorbo. Combínalos a tu gusto.</p>
-        
-        <div class="responsive-grid" style="max-width: 1200px; margin: 0 auto;">
-            <div class="card-premium" th:each="flavor : ${flavors}" style="transition: var(--transition-smooth); background-color: var(--bg-white);">
-                <h3 style="margin-bottom: 10px;" th:text="${flavor.name}">Limón</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;" th:text="${flavor.description}">El clásico e inigualable sabor cítrico</p>
-                <div style="font-weight: 700; color: var(--green-dark);">
-                    Adicional: <span th:text="${flavor.additionalPrice == 0 ? 'Gratis' : '$' + #numbers.formatDecimal(flavor.additionalPrice, 0, 'POINT', 0, 'COMMA')}">Gratis</span>
+            <!-- Right: 3D Visual Stage -->
+            <div class="ld-hero-visual">
+                <div class="ld-hero-glow"></div>
+                
+                <div class="ld-hero-card-3d">
+                    <!-- Floating Badge 1 -->
+                    <div class="ld-float-pill ld-float-pill-1">
+                        <span style="font-size: 1.2rem;">🍋</span>
+                        <span>Sabor Cítrico Único</span>
+                    </div>
+
+                    <!-- Granizado Product Image -->
+                    <div class="ld-hero-img-box">
+                        <img src="https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&q=80&w=650" alt="Granizado Artesanal Lemon Drop">
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px;">
+                        <div>
+                            <span class="ld-badge ld-badge-green" style="font-size: 0.7rem;">Favorito del Stand</span>
+                            <h3 style="font-size: 1.2rem; margin-top: 4px;">Granizado Lemon Drop</h3>
+                        </div>
+                        <span style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: var(--ld-green-primary);">$6.000</span>
+                    </div>
+
+                    <!-- Floating Badge 2 -->
+                    <div class="ld-float-pill ld-float-pill-2">
+                        <span style="font-size: 1.2rem;">🧊</span>
+                        <span>Hielo Cristalino</span>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Complementos -->
-    <section style="padding: 50px 15px; background-color: var(--bg-white); border-top: 1px solid rgba(164, 208, 164, 0.15); border-bottom: 1px solid rgba(164, 208, 164, 0.15); text-align: center;">
-        <h2 style="font-size: 2rem; margin-bottom: 10px;">Complementa tu Granizado 🥛🍮</h2>
-        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px auto; font-size: 0.95rem;">Agrega un toque extra de cremosidad y dulce tradicional.</p>
-        
-        <div class="responsive-grid" style="max-width: 1200px; margin: 0 auto;">
-            <div class="card-premium" th:each="addon : ${addons}" style="background-color: var(--bg-cream); transition: var(--transition-smooth);">
-                <h3 style="margin-bottom: 10px;" th:text="${addon.name}">Leche condensada</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem;" th:text="${addon.description}">Toque dulce y cremoso</p>
-                <div style="font-weight: 700; color: var(--green-dark); margin-top: 10px;" th:text="${'+ $' + #numbers.formatDecimal(addon.additionalPrice, 0, 'POINT', 0, 'COMMA')}">
-                    +$1.000
+    <!-- Value Proposition Section (Iconos SVG Limpios) -->
+    <section class="ld-section ld-section-white">
+        <h2 class="ld-title-section">¿Por qué elegir Lemon Drop? 🌟</h2>
+        <p class="ld-subtitle-section">Cada vaso se prepara con dedicación para ofrecerte la experiencia más refrescante de la feria escolar.</p>
+
+        <div class="ld-features-grid">
+            <div class="ld-feature-card">
+                <div class="ld-feature-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
                 </div>
+                <h3>Fruta Natural</h3>
+                <p>Pulpa de fruta seleccionada para lograr el balance perfecto entre dulzura y acidez.</p>
             </div>
-        </div>
-    </section>
 
-    <!-- Cómo Funciona -->
-    <section style="padding: 50px 15px; text-align: center;">
-        <h2 style="font-size: 2rem; margin-bottom: 10px;">¿Cómo funciona? 🍧🚀</h2>
-        <p style="color: var(--text-secondary); font-size: 0.95rem;">Realizar tu pedido en la feria escolar es extremadamente sencillo.</p>
-        
-        <div class="step-container" style="max-width: 1000px; margin: 30px auto 0 auto;">
-            <div class="step-card">
-                <div class="step-number">1</div>
-                <h3>Elige tu Granizado</h3>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;">Explora el catálogo y escoge tu sabor base preferido.</p>
-            </div>
-            <div class="step-card">
-                <div class="step-number">2</div>
-                <h3>Personaliza</h3>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;">Define el tamaño del vaso, sabor e introduce complementos dulces.</p>
-            </div>
-            <div class="step-card">
-                <div class="step-number">3</div>
-                <h3>Pide sin Cuentas</h3>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;">Indica tu nombre y teléfono. Obtén tu código de pedido único.</p>
-            </div>
-            <div class="step-card">
-                <div class="step-number">4</div>
-                <h3>Seguimiento</h3>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;">Consulta el estado desde tu teléfono en tiempo real. Te avisamos por WhatsApp.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Por Qué Elegirnos / Calidad -->
-    <section style="padding: 50px 15px; background-color: var(--bg-white); border-bottom: 1px solid rgba(164, 208, 164, 0.15); text-align: center;">
-        <h2 style="font-size: 2rem; margin-bottom: 10px;">¿Por qué Lemon Drop? 🌟</h2>
-        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px auto; font-size: 0.95rem;">Cuidamos cada detalle para ofrecerte la mejor experiencia fresca de la feria.</p>
-        
-        <div class="responsive-grid" style="max-width: 1200px; margin: 0 auto;">
-            <div class="card-premium" style="transition: var(--transition-smooth);">
-                <span style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🍍</span>
-                <h3>Fruta 100% Natural</h3>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 10px;">Utilizamos pulpa natural extraída directamente de frutas seleccionadas. Cero saborizantes artificiales.</p>
-            </div>
-            <div class="card-premium" style="transition: var(--transition-smooth);">
-                <span style="font-size: 2.5rem; display: block; margin-bottom: 15px;">❄️</span>
+            <div class="ld-feature-card">
+                <div class="ld-feature-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </div>
                 <h3>Hielo Cristalino</h3>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 10px;">Hielo de agua doblemente filtrada para garantizar la máxima pureza e higiene en tu bebida.</p>
+                <p>Hielo de agua filtrada triturado finamente para darte esa textura ligera inigualable.</p>
             </div>
-            <div class="card-premium" style="transition: var(--transition-smooth);">
-                <span style="font-size: 2.5rem; display: block; margin-bottom: 15px;">🥛</span>
-                <h3>Leche Premium</h3>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 10px;">La mejor marca de leche condensada y complementos para lograr una textura y sabor de otro nivel.</p>
+
+            <div class="ld-feature-card">
+                <div class="ld-feature-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                </div>
+                <h3>Toppings Deliciosos</h3>
+                <p>Combina con leche condensada, arequipe y complementos especiales a tu elección.</p>
             </div>
-            <div class="card-premium" style="transition: var(--transition-smooth);">
-                <span style="font-size: 2.5rem; display: block; margin-bottom: 15px;">⚡</span>
+
+            <div class="ld-feature-card">
+                <div class="ld-feature-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </div>
                 <h3>Sin Filas</h3>
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 10px;">Haz tu pedido desde tu celular y ven a recogerlo solo cuando recibas la notificación de que está listo.</p>
+                <p>Ordena desde tu teléfono, consulta el avance en tiempo real y retira con tu código único.</p>
             </div>
         </div>
     </section>
 
-    <!-- Testimoniales -->
-    <section style="padding: 50px 15px; text-align: center;">
-        <h2 style="font-size: 2rem; margin-bottom: 10px;">Lo que dicen nuestros clientes 💬</h2>
-        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px auto; font-size: 0.95rem;">Las sonrisas y opiniones de quienes ya probaron nuestros granizados en esta feria.</p>
-        
-        <div class="responsive-grid" style="max-width: 800px; margin: 0 auto;">
-            <div class="card-premium" style="background-color: var(--bg-white); border-top: 4px solid var(--lemon);">
-                <p style="font-style: italic; color: var(--text-secondary); font-size:0.9rem;">"El granizado de maracuyá con leche condensada es simplemente increíble. ¡Es refrescante y nada empalagoso!"</p>
-                <h4 style="margin-top: 15px; color: var(--dark);">— Sofía Gómez</h4>
-                <span style="font-size: 0.8rem; color: var(--text-secondary);">Estudiante de 11° Grado</span>
-            </div>
-            <div class="card-premium" style="background-color: var(--bg-white); border-top: 4px solid var(--strawberry);">
-                <p style="font-style: italic; color: var(--text-secondary); font-size:0.9rem;">"El granizado de fresa con dulce de leche me salvó del calor de la tarde. Los complementos se sienten muy frescos."</p>
-                <h4 style="margin-top: 15px; color: var(--dark);">— Valentina Peña</h4>
-                <span style="font-size: 0.8rem; color: var(--text-secondary);">Estudiante de 9° Grado</span>
+    <!-- Nuestros Favoritos (Featured Products) -->
+    <section class="ld-section" id="favoritos">
+        <h2 class="ld-title-section">Nuestros Favoritos 🍧</h2>
+        <p class="ld-subtitle-section">Los granizados más pedidos y disfrutados por nuestros clientes en el stand.</p>
+
+        <div class="ld-products-grid">
+            <div class="ld-product-card" th:each="product : ${featuredProducts}">
+                <div class="ld-product-media">
+                    <span th:if="${product.badge != null && !product.badge.empty}" th:text="${product.badge}" class="ld-badge ld-badge-lemon ld-product-badge">Favorito</span>
+                    <img th:src="${product.image != null ? product.image : 'https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&q=80&w=450'}" th:alt="${product.name}">
+                </div>
+                <div class="ld-product-body">
+                    <h3 class="ld-product-title" th:text="${product.name}">Granizado</h3>
+                    <p class="ld-product-desc" th:text="${product.description}">Descripción</p>
+                    <div class="ld-product-footer">
+                        <div class="ld-product-price" 
+                             th:text="${'Desde $' + #numbers.formatDecimal(product.sizePrices.get(T(com.lemondrop.model.ProductSize).SMALL), 0, 'POINT', 0, 'COMMA')}">
+                            Desde $5.000
+                        </div>
+                        <a href="/catalogo" class="ld-btn ld-btn-lemon ld-btn-sm">Personalizar 🍧</a>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Preguntas Frecuentes (FAQ) -->
-    <section style="padding: 50px 15px; background-color: var(--bg-white); border-top: 1px solid rgba(164, 208, 164, 0.15); text-align: left;">
-        <h2 style="font-size: 2rem; text-align: center; margin-bottom: 10px;">Preguntas Frecuentes 🤔❓</h2>
-        <p style="color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto 40px auto; font-size:0.95rem;">Todo lo que necesitas saber para pedir tu Lemon Drop.</p>
-        
-        <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
-            <div style="border-bottom: 1px solid rgba(164, 208, 164, 0.2); padding-bottom: 15px;">
-                <h4 style="font-size: 1.1rem; color: var(--dark); margin-bottom: 8px;">¿Cómo recojo mi pedido?</h4>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">Una vez realices el pedido, verás un código único. Puedes consultarlo en la sección de seguimiento. Cuando tu pedido pase al estado "Listo", acércate a nuestro stand de Lemon Drop, muestra tu código y recíbelo de inmediato sin hacer filas.</p>
+    <!-- Sabores & Toppings Reales -->
+    <section class="ld-section ld-section-white" id="sabores">
+        <h2 class="ld-title-section">Sabores Naturales Disponibles 🍓🍋</h2>
+        <p class="ld-subtitle-section">Elige tu base favorita y disfruta de fruta 100% real en cada sorbo.</p>
+
+        <div class="ld-chips-grid">
+            <div class="ld-chip-card" th:each="flavor : ${flavors}">
+                <div class="ld-chip-name" th:text="${flavor.name}">Limón</div>
+                <div class="ld-chip-desc" th:text="${flavor.description}">El clásico e inigualable sabor cítrico</div>
+                <div class="ld-chip-price" th:text="${flavor.additionalPrice == 0 ? 'Sin costo adicional' : '+ $' + #numbers.formatDecimal(flavor.additionalPrice, 0, 'POINT', 0, 'COMMA')}">Gratis</div>
             </div>
-            <div style="border-bottom: 1px solid rgba(164, 208, 164, 0.2); padding-bottom: 15px;">
-                <h4 style="font-size: 1.1rem; color: var(--dark); margin-bottom: 8px;">¿Cuáles son los métodos de pago?</h4>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">Aceptamos pagos en efectivo al recoger tu pedido en el stand, o pagos digitales mediante transferencia (los datos de pago se muestran al enviar tu pedido por WhatsApp).</p>
-            </div>
-            <div style="border-bottom: 1px solid rgba(164, 208, 164, 0.2); padding-bottom: 15px;">
-                <h4 style="font-size: 1.1rem; color: var(--dark); margin-bottom: 8px;">¿Puedo cancelar o modificar mi pedido?</h4>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">Si cometiste un error o deseas cambiar algo, comunícate con nosotros de inmediato por el botón de WhatsApp con tu código de pedido para que un asesor te asista.</p>
+        </div>
+
+        <h3 style="font-size: 1.6rem; text-align: center; margin: 48px 0 12px 0;">Toppings & Complementos 🍯</h3>
+        <p class="ld-subtitle-section" style="margin-bottom: 28px;">Agrega un toque extra de cremosidad y sabor a tu vaso.</p>
+
+        <div class="ld-chips-grid">
+            <div class="ld-chip-card" th:each="addon : ${addons}" style="background: var(--ld-cream-card);">
+                <div class="ld-chip-name" th:text="${addon.name}">Leche condensada</div>
+                <div class="ld-chip-desc" th:text="${addon.description}">Toque dulce y cremoso</div>
+                <div class="ld-chip-price" th:text="${'+ $' + #numbers.formatDecimal(addon.additionalPrice, 0, 'POINT', 0, 'COMMA')}">+$1.000</div>
             </div>
         </div>
     </section>
 
-    <!-- Consulta de pedido -->
-    <section id="seguimiento" style="padding: 50px 15px; background: linear-gradient(135deg, #FFF9D2 0%, #FFFDF6 100%); border-top: 2px solid var(--mint); text-align: center;">
-        <div style="max-width: 600px; margin: 0 auto;">
-            <h2 style="font-size: 2rem; margin-bottom: 15px;">¿Ya hiciste tu pedido? 🛍️🔎</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 25px; font-size:0.95rem;">Introduce el código único de tu orden para comprobar en qué fase de preparación se encuentra.</p>
-            
-            <form action="/pedido/seguimiento" method="get" style="display: flex; flex-direction: column; gap: 12px; max-width: 400px; margin: 0 auto;">
-                <input type="text" name="code" class="form-control" placeholder="Código (Ej: LD-2026-00001)" required style="font-weight: 700; text-transform: uppercase; padding: 12px 15px;">
-                <input type="text" name="phone" class="form-control" placeholder="Teléfono de WhatsApp (Ej: 3001234567)" required style="font-weight: 700; padding: 12px 15px;">
-                <button type="submit" class="btn-custom btn-lemon" style="width: 100%; padding: 12px 20px;">Consultar Estado</button>
-            </form>
+    <!-- Pasos: ¿Cómo Funciona? -->
+    <section class="ld-section">
+        <h2 class="ld-title-section">¿Cómo funciona? 🚀</h2>
+        <p class="ld-subtitle-section">Realizar tu pedido en la feria escolar es extremadamente simple y rápido.</p>
+
+        <div class="ld-steps-grid">
+            <div class="ld-step-item">
+                <div class="ld-step-num">1</div>
+                <h3>Elige tu Granizado</h3>
+                <p>Explora el catálogo o pide recomendación a nuestra Lemon AI.</p>
+            </div>
+            <div class="ld-step-item">
+                <div class="ld-step-num">2</div>
+                <h3>Personaliza</h3>
+                <p>Selecciona tu tamaño favorito (Pequeño, Mediano, Grande) y toppings.</p>
+            </div>
+            <div class="ld-step-item">
+                <div class="ld-step-num">3</div>
+                <h3>Recibe tu Código</h3>
+                <p>Indica tu nombre y WhatsApp para generar tu código único LD-2026-XXXXX.</p>
+            </div>
+            <div class="ld-step-item">
+                <div class="ld-step-num">4</div>
+                <h3>Retira sin Filas</h3>
+                <p>Sigue el avance en pantalla y recoge tu granizado listo en el stand.</p>
+            </div>
         </div>
     </section>
+
+    <!-- CTA Banner Final -->
+    <div class="ld-cta-banner">
+        <h2>¿Listo para disfrutar un Lemon Drop? 🍋</h2>
+        <p>Arma tu combinación personalizada ahora mismo o déjate asesorar por nuestra Inteligencia Artificial.</p>
+        <a href="/catalogo" class="ld-btn ld-btn-lemon" style="font-size: 1.1rem; padding: 16px 36px;">
+            <span>Haz tu Pedido Ahora</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+            </svg>
+        </a>
+    </div>
 
     <!-- Footer -->
     <div th:replace="~{fragments/footer :: footer}"></div>
 
-    <!-- Floating Actions (Mobile-First) -->
-    <div class="floating-actions-container">
-        <!-- Order Button -->
-        <a href="/catalogo" class="floating-btn floating-btn-order" title="Haz tu pedido">
-            🛒 <span>Haz tu pedido</span>
-        </a>
-        <!-- WhatsApp Button -->
-        <a href="https://wa.me/573001234567" class="floating-btn floating-btn-whatsapp" target="_blank" title="Escríbenos por WhatsApp">
-            💬
-        </a>
-    </div>
-
     <script>
         document.getElementById('nav-home').classList.add('active');
+        const drawerHome = document.getElementById('drawer-home');
+        if (drawerHome) drawerHome.classList.add('active');
     </script>
 </body>
 </html>
