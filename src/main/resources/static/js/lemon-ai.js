@@ -357,27 +357,33 @@
             banner.className = 'lemon-ai-msg assistant';
 
             const waButton = whatsAppUrl ? `
-                <div style="margin-top: 10px;">
-                    <a href="${whatsAppUrl}" target="_blank" class="ld-btn ld-btn-lemon ld-btn-sm" style="width: 100%;">
-                        📱 Enviar Pedido por WhatsApp
-                    </a>
-                </div>
+                <a href="${whatsAppUrl}" target="_blank" class="ld-btn ld-btn-lemon ld-btn-sm" style="flex: 1; text-align: center; font-size: 0.82rem;">
+                    📱 Abrir WhatsApp
+                </a>
             ` : '';
 
             banner.innerHTML = `
                 <div class="lemon-ai-order-card" style="border-color: #2F7D32; background: #FFFDF7;">
-                    <div style="font-size: 1.25rem; font-weight: 800; color: #173B24; text-align: center;">
-                        🎉 ¡PEDIDO CONFIRMADO!
+                    <div style="font-size: 1.15rem; font-weight: 800; color: #173B24; text-align: center;">
+                        🎉 PEDIDO RECIBIDO
                     </div>
-                    <div style="text-align: center; margin: 8px 0;">
-                        <span class="ld-badge ld-badge-lemon" style="font-size: 1.1rem; padding: 6px 16px;">
+                    <div style="text-align: center; margin: 6px 0;">
+                        <span class="ld-badge ld-badge-lemon" style="font-size: 1rem; padding: 5px 14px;">
                             ${orderCode}
                         </span>
                     </div>
-                    <p style="font-size: 0.88rem; color: #64748B; text-align: center; line-height: 1.4;">
-                        Tu orden ha sido registrada en el sistema. Puedes rastrearla en la sección de seguimiento o enviarla por WhatsApp.
+                    <div style="background: #E8F5E9; border-radius: 8px; padding: 6px 10px; margin: 6px 0; font-size: 0.82rem; color: #1B5E20; text-align: center; font-weight: 700;">
+                        🟢 Estado: Pedido recibido
+                    </div>
+                    <p style="font-size: 0.82rem; color: #64748B; text-align: center; line-height: 1.4; margin-bottom: 8px;">
+                        Tu pedido fue registrado correctamente. Te avisaremos por WhatsApp cuando esté listo para recoger.
                     </p>
-                    ${waButton}
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <a href="/pedido/seguimiento/${orderCode}" target="_blank" class="ld-btn ld-btn-outline ld-btn-sm" style="flex: 1; text-align: center; font-size: 0.82rem;">
+                            🔎 Seguimiento
+                        </a>
+                        ${waButton}
+                    </div>
                 </div>
             `;
 

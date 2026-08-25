@@ -107,9 +107,12 @@ public class AdvisorDashboardController {
             map.put("id", o.getId());
             map.put("code", o.getOrderCode());
             map.put("customerName", o.getCustomerName());
+            map.put("customerPhone", o.getCustomerPhone() != null ? o.getCustomerPhone() : "");
             map.put("status", o.getStatus().name());
             map.put("statusDisplay", o.getStatus().getDisplayName());
             map.put("total", o.getTotal());
+            map.put("observations", o.getObservations() != null ? o.getObservations() : "");
+            map.put("items", o.getItems());
             map.put("createdAt", o.getCreatedAt().toString());
             map.put("whatsappUrl", whatsAppService.generateWhatsAppUrl(o));
             return map;
@@ -160,13 +163,18 @@ public class AdvisorDashboardController {
         
         List<Map<String, Object>> response = finishedOrders.stream().map(o -> {
             Map<String, Object> map = new HashMap<>();
+            map.put("id", o.getId());
             map.put("code", o.getOrderCode());
             map.put("customerName", o.getCustomerName());
+            map.put("customerPhone", o.getCustomerPhone() != null ? o.getCustomerPhone() : "");
             map.put("total", o.getTotal());
             map.put("status", o.getStatus().name());
             map.put("statusDisplay", o.getStatus().getDisplayName());
+            map.put("observations", o.getObservations() != null ? o.getObservations() : "");
+            map.put("items", o.getItems());
             map.put("createdAt", o.getCreatedAt().toString());
             map.put("lastModifiedBy", o.getLastModifiedBy() != null ? o.getLastModifiedBy() : "GUEST");
+            map.put("whatsappUrl", whatsAppService.generateWhatsAppUrl(o));
             return map;
         }).collect(Collectors.toList());
         

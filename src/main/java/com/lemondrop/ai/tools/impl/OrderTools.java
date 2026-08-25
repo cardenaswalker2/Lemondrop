@@ -134,16 +134,40 @@ public class OrderTools {
             name = conv.getCustomerName();
         }
         if (name == null || name.trim().isEmpty()) {
-            name = "Cliente Lemon AI";
+            return AIToolResult.builder()
+                    .toolName("confirmar_pedido")
+                    .success(false)
+                    .message("Necesito tu nombre para completar el pedido 😊")
+                    .build();
         }
+        name = name.trim();
 
         String phone = (String) args.get("customerPhone");
         if (phone == null || phone.trim().isEmpty()) {
             phone = conv.getCustomerPhone();
         }
         if (phone == null || phone.trim().isEmpty()) {
-            phone = "3000000000"; // Default contact placeholder if not provided
+            return AIToolResult.builder()
+                    .toolName("confirmar_pedido")
+                    .success(false)
+                    .message("Solo me falta tu número de teléfono para terminar el pedido 📱")
+                    .build();
         }
+        
+        String cleanPhone = phone.replaceAll("[^0-9]", "");
+        if (cleanPhone.startsWith("57") && cleanPhone.length() == 12) {
+            cleanPhone = cleanPhone.substring(2);
+        }
+        if (cleanPhone.length() < 7 || cleanPhone.length() > 15) {
+            return AIToolResult.builder()
+                    .toolName("confirmar_pedido")
+                    .success(false)
+                    .message("Por favor ingresa un número de teléfono válido (entre 7 y 15 dígitos) 📱")
+                    .build();
+        }
+
+        conv.setCustomerName(name);
+        conv.setCustomerPhone(cleanPhone);
 
         String obs = (String) args.get("observations");
 
@@ -168,7 +192,7 @@ public class OrderTools {
 
         CreateOrderRequest orderRequest = CreateOrderRequest.builder()
                 .customerName(name)
-                .customerPhone(phone)
+                .customerPhone(cleanPhone)
                 .observations(obs)
                 .requestId(requestId)
                 .items(itemDtos)
@@ -192,13 +216,22 @@ public class OrderTools {
             data.put("status", order.getStatus().name());
             data.put("whatsAppUrl", whatsAppUrl);
 
+            String successMsg = String.format(
+                    "🎉 ¡Listo, %s!\n\n" +
+                    "Tu pedido %s quedó registrado correctamente.\n\n" +
+                    "📦 Estado: Pedido recibido\n\n" +
+                    "Te enviamos la confirmación por WhatsApp y te avisaremos por allí cuando tu pedido esté listo para recoger.\n\n" +
+                    "Guarda tu código:\n%s 🍋",
+                    order.getCustomerName(), order.getOrderCode(), order.getOrderCode()
+            );
+
             return AIToolResult.builder()
                     .toolName("confirmar_pedido")
                     .success(true)
                     .orderCreated(true)
                     .cartModified(true)
                     .data(data)
-                    .message("¡Pedido confirmado con éxito! Código: " + order.getOrderCode() + ". Total: $" + order.getTotal())
+                    .message(successMsg)
                     .build();
 
         } catch (Exception ex) {
