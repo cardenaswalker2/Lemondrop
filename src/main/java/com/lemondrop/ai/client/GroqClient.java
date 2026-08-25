@@ -107,8 +107,12 @@ public class GroqClient {
                 }
 
             } catch (HttpStatusCodeException ex) {
+                if (ex.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                    log.error("Clave de API de Groq inválida o expirada (401 UNAUTHORIZED). Verifica GROQ_API_KEY en la configuración.");
+                    return Optional.empty();
+                }
                 if (ex.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS && attempt < maxAttempts) {
-                    long sleepMs = 3000L * attempt;
+                    long sleepMs = 1500L * attempt;
                     String body = ex.getResponseBodyAsString();
                     if (body != null && body.contains("Please try again in ")) {
                         try {
@@ -116,11 +120,17 @@ public class GroqClient {
                             int endIdx = body.indexOf("s.", startIdx);
                             if (endIdx > startIdx) {
                                 double secs = Double.parseDouble(body.substring(startIdx, endIdx).trim());
-                                sleepMs = (long) (Math.ceil(secs) * 1000L + 600L);
+                                sleepMs = (long) (Math.ceil(secs) * 1000L + 500L);
                             }
                         } catch (Exception ignored) {}
                     }
-                    log.warn("Rate limit temporal en Groq (429). Esperando {}ms antes de reintentar... (intento {}/{})", sleepMs, attempt, maxAttempts);
+                    // Auto-fallback to llama-3.1-8b-instant which has a much higher rate limit allowance
+                    if (!"llama-3.1-8b-instant".equals(request.getModel())) {
+                        log.warn("Rate limit en Groq ({}) para modelo {}. Cambiando a 'llama-3.1-8b-instant'...",
+                                ex.getStatusCode(), request.getModel());
+                        request.setModel("llama-3.1-8b-instant");
+                    }
+                    log.warn("Esperando {}ms antes de reintentar petición a Groq... (intento {}/{})", sleepMs, attempt, maxAttempts);
                     try {
                         Thread.sleep(sleepMs);
                     } catch (InterruptedException ie) {
