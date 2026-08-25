@@ -18,10 +18,12 @@ class LemonAiProductCarousel extends StatelessWidget {
 
     // Display maximum 5 products in horizontal carousel
     final displayProducts = products.take(5).toList();
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      height: 205,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      height: 200,
+      width: screenWidth > 80 ? screenWidth - 72 : double.infinity,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
