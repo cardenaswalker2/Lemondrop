@@ -146,7 +146,7 @@ class LemonAiRepository {
         success: false,
         error: chatError.error ?? 'AI_NETWORK_ERROR: Error de red al procesar el audio.',
       );
-    } on FormatException catch (e) {
+    } on FormatException {
       sw.stop();
       return const AIVoiceResponse(
         success: false,

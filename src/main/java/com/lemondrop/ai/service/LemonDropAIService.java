@@ -110,9 +110,17 @@ public class LemonDropAIService {
                 .build();
         conversation.addMessage(userMsg);
 
-        // 4. If Groq is not configured, run deterministic conversation and order engine
+        // 4. If Groq is not configured, notify clearly
         if (!groqClient.isAvailable()) {
-            return handleDeterministicFlow(conversation, cleanMessage, startTime);
+            log.warn("Groq API no está configurada o no tiene API key válida.");
+            return buildStandardResponse(
+                    conversation,
+                    "Lemon AI no está disponible en este momento. Por favor verifica la configuración de GROQ_API_KEY en el servidor o realiza tu pedido desde el catálogo digital. 🍋",
+                    startTime,
+                    false,
+                    false,
+                    false
+            );
         }
 
         // 5. Agent Loop with Function Calling
@@ -134,8 +142,15 @@ public class LemonDropAIService {
             Optional<GroqChatResponse> optResponse = groqClient.sendChatCompletion(groqRequest);
 
             if (optResponse.isEmpty() || optResponse.get().getChoices() == null || optResponse.get().getChoices().isEmpty()) {
-                log.warn("Groq devolvió una respuesta vacía o con error en la iteración {}. Ejecutando motor conversacional y de pedidos determinístico.", iterations);
-                return handleDeterministicFlow(conversation, cleanMessage, startTime);
+                log.error("Groq devolvió una respuesta vacía o con error en la iteración {}.", iterations);
+                return buildStandardResponse(
+                        conversation,
+                        "Lemon AI está experimentando alta demanda o intermitencia en este momento. Por favor intenta de nuevo en unos segundos. 🍋",
+                        startTime,
+                        false,
+                        false,
+                        false
+                );
             }
 
             GroqChatResponse.GroqChoice choice = optResponse.get().getChoices().get(0);
@@ -497,7 +512,7 @@ public class LemonDropAIService {
 
         return """
                 Eres "Lemon Drop AI", el asistente inteligente oficial de Lemon Drop.
-                Eres un asistente conversacional avanzado, empático, dinámico y al mismo tiempo un agente de pedidos experto.
+                Eres un asistente conversacional general y un agente de pedidos experto.
                 
                 FECHA Y HORA ACTUAL DEL NEGOCIO:
                 - Hoy es %s (Zona Horaria: Colombia / America/Bogota).
@@ -509,21 +524,18 @@ public class LemonDropAIService {
                 - Campos pendientes de cliente: [%s]
                 %s
                 
-                DIRECTIVAS FUNDAMENTALES:
-                1. CONVERSACIÓN LIBRE Y NATURAL: Eres un modelo de IA inteligente. Puedes responder libremente y con calidez cualquier pregunta razonable que el usuario formule (saludos, cultura general, curiosidades, el clima, recomendaciones, chistes, etc.). No te limites a frases prefabricadas ni te comportes como un menú rígido.
-                2. SI EL USUARIO HACE PREGUNTAS GENERALES O CAMBIA DE TEMA TEMPORALMENTE (ej. "¿Qué día es hoy?", "¿Qué hora es?", "¿Cómo estás?", "¿Cuál es la capital de Colombia?"):
-                   - Responde con naturalidad, precisión y estilo agradable ("¡De una! 🍋").
-                   - Si preguntan por fecha o hora, puedes usar `obtener_fecha_hora_actual` o responder con la fecha del sistema indicada arriba.
-                   - NUNCA borres el pedido, el carrito ni los datos del cliente por responder una pregunta general.
-                3. GESTIÓN DE PEDIDOS Y HERRAMIENTAS:
-                   - Para consultar productos o la carta: `buscar_productos`, `obtener_catalogo`, `consultar_producto`.
-                   - Para armar el pedido: `agregar_producto`, `modificar_producto_carrito`, `eliminar_producto_carrito`, `vaciar_carrito`.
-                   - Para notas y observaciones de preparación (ej. "sin mucho hielo", "bien frío", "recoger a las 5"): Utiliza `actualizar_nota_pedido`.
-                   - Para confirmar el pedido: Cuando el cliente tenga su pedido, nombre y teléfono listos y dé su confirmación ("Sí", "Confirmo", "Dale", "Pídelo"), ejecuta `confirmar_pedido`.
-                4. AUTORIDAD DEL BACKEND: NUNCA inventes productos, sabores, tamaños, precios ni códigos de pedido. Toda operación comercial real debe ejecutarse mediante las tools.
-                5. DATOS DE CLIENTE: Para formalizar el pedido se requieren nombre y teléfono de WhatsApp. Pídelos amablemente cuando el cliente esté armando su pedido o listo para confirmar.
-                6. ESTADO INICIAL DEL PEDIDO: Al confirmarse un pedido, el estado inicial es "Pedido recibido" (RECEIVED) en proceso de preparación en cocina. Se le notificará al cliente por WhatsApp cuando esté listo para recoger.
-                7. REGLA VISUAL DE PRODUCTOS: Cuando el cliente pida ver el menú, sabores o recomendaciones, responde con un saludo breve y entusiasta. La aplicación móvil adjunta las tarjetas visuales interactivas correspondientes.
+                DIRECTIVAS PRINCIPALES:
+                1. CONVERSACIÓN LIBRE: Puedes responder preguntas generales, conversar, explicar, recomendar y ayudar con pedidos.
+                2. NO REDIRIJAS AUTOMÁTICAMENTE toda conversación hacia un pedido. Solo habla del pedido cuando el usuario esté hablando del pedido o cuando sea útil y pertinente para la conversación.
+                3. Si el usuario pregunta "¿eres una IA?", responde directamente y con naturalidad explicando quién eres y qué puedes hacer.
+                4. Si el usuario pregunta "¿cómo estás?", responde directamente con calidez y estilo agradable ("¡De una! 🍋").
+                5. Si el usuario pregunta "¿cuáles productos tienen?" o "¿cuáles hay?", consulta el catálogo con `buscar_productos` o `obtener_catalogo`.
+                6. Si el usuario pregunta la fecha o la hora (ej. "¿qué día es hoy?"), responde usando la fecha/hora actual del sistema o la herramienta `obtener_fecha_hora_actual`.
+                7. Si el usuario quiere pedir algo, utiliza las tools correspondientes (`agregar_producto`, `modificar_producto_carrito`, `actualizar_nota_pedido`, etc.).
+                8. MANTÉN EL CONTEXTO: Conserva siempre los datos del cliente, notas y los productos agregados al carrito, pero NO fuerces al usuario a hablar del pedido si está haciendo preguntas generales.
+                9. AUTORIDAD DEL BACKEND: NUNCA inventes productos, sabores, tamaños, precios ni códigos de pedido. Toda operación comercial real debe ejecutarse mediante las tools.
+                10. CONFIRMACIÓN: Cuando el cliente tenga su pedido armado y dé su confirmación ("Sí", "Confirmo", "Dale", "Pídelo"), ejecuta `confirmar_pedido`. El estado inicial es "Pedido recibido" (RECEIVED) en preparación en cocina.
+                11. REGLA VISUAL DE PRODUCTOS: Cuando consultes productos del catálogo, da una introducción breve y entusiasta. Las tarjetas interactivas se muestran automáticamente en la interfaz.
                 """.formatted(currentDateTimeFormatted, clientContext.toString(),
                 conv.getState() != null ? conv.getState().name() : "IDLE",
                 pendingStr,
@@ -661,7 +673,6 @@ public class LemonDropAIService {
                     .name(name)
                     .description((String) p.getOrDefault("description", ""))
                     .image((String) p.getOrDefault("image", ""))
-                    .category((String) p.getOrDefault("category", "Granizados"))
                     .badge((String) p.getOrDefault("badge", ""))
                     .priceFrom(priceFrom)
                     .prices(prices)
@@ -681,329 +692,6 @@ public class LemonDropAIService {
                 lower.contains("ofreces") || lower.contains("dulce") || lower.contains("acido") ||
                 lower.contains("ácido") || lower.contains("mostrar") || lower.contains("muestrame") ||
                 lower.contains("muéstrame") || lower.contains("puedo pedir") || lower.contains("que hay");
-    }
-
-    private AIChatResponse handleDeterministicFlow(AIConversation conversation, String cleanMessage, long startTime) {
-        String lower = cleanMessage != null ? cleanMessage.toLowerCase().trim() : "";
-        extractAndPersistCustomerInfo(cleanMessage, conversation);
-
-        List<AIProductCardDto> collectedProducts = new ArrayList<>();
-        boolean cartUpdated = false;
-        boolean requiresConfirmation = false;
-        boolean orderConfirmed = false;
-        String finalAssistantMessage;
-        String orderCode = conversation.getConfirmedOrderCode();
-        String whatsAppUrl = null;
-
-        boolean hasCartItems = conversation.getCart() != null && !conversation.getCart().getItems().isEmpty();
-        List<String> pending = conversation.getPendingCustomerFields();
-
-        // 1. Date / Time inquiries (e.g. "¿Qué día es hoy?", "¿Qué hora es?", "fecha")
-        if (lower.contains("dia es hoy") || lower.contains("día es hoy") || lower.contains("que hora") || lower.contains("qué hora") || lower.contains("fecha")) {
-            java.time.ZonedDateTime now = java.time.ZonedDateTime.now(java.time.ZoneId.of("America/Bogota"));
-            java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy, hh:mm a", new java.util.Locale("es", "CO"));
-            finalAssistantMessage = "Hoy es " + now.format(dtf) + " (hora de Colombia). 📅⏰";
-            if (hasCartItems) {
-                finalAssistantMessage += "\n\nTu pedido actual sigue guardado:\n" + formatCartSummary(conversation.getCart()) + "\nTotal: $" + conversation.getCart().getTotal();
-            }
-        }
-        // 2. Chitchat / "¿Cómo estás?"
-        else if (lower.contains("como estas") || lower.contains("cómo estás") || lower.contains("como te va") || lower.contains("cómo te va") || lower.contains("que tal") || lower.contains("qué tal")) {
-            finalAssistantMessage = "¡Estoy súper bien y listo para atenderte con el mejor sabor de Lemon Drop! 🍋 Cuéntame, ¿qué se te antoja hoy?";
-        }
-        // 3. Cart Review / "¿Cuánto llevo?"
-        else if (lower.contains("cuanto llevo") || lower.contains("cuánto llevo") || lower.contains("ver mi pedido") || lower.contains("mi carrito") || lower.contains("total")) {
-            if (hasCartItems) {
-                finalAssistantMessage = "Llevas en tu pedido:\n" + formatCartSummary(conversation.getCart()) + "\n\nTotal: $" + conversation.getCart().getTotal();
-                if (conversation.getObservations() != null && !conversation.getObservations().isEmpty()) {
-                    finalAssistantMessage += "\nObservación: \"" + conversation.getObservations() + "\"";
-                }
-            } else {
-                finalAssistantMessage = "Aún no tienes productos en tu pedido. ¿Qué granizado te gustaría que te preparemos? 🍋";
-            }
-        }
-        // 4. Order notes / observations setting or inquiry
-        else if ((lower.contains("nota") || lower.contains("observaci") || lower.contains("hielo") || lower.contains("frio") || lower.contains("frío")) && conversation.getObservations() != null) {
-            if (hasCartItems && (pending == null || pending.isEmpty())) {
-                conversation.setState(ConversationState.WAITING_CONFIRMATION);
-                requiresConfirmation = true;
-                finalAssistantMessage = "¡Perfecto" + (conversation.getCustomerName() != null ? ", " + conversation.getCustomerName() : "") + "! 🍋 Ya registré tus datos y tu observación: \"" + conversation.getObservations() + "\".\n\n" +
-                        "Resumen de tu pedido:\n" + formatCartSummary(conversation.getCart()) + "\n\n" +
-                        "Total: $" + conversation.getCart().getTotal() + "\n\n" +
-                        "¿Confirmamos tu pedido para enviarlo a preparación en cocina? 🚀✨";
-            } else {
-                finalAssistantMessage = "¡Listo! 📝 Dejé anotada tu observación: \"" + conversation.getObservations() + "\".";
-                if (hasCartItems) {
-                    finalAssistantMessage += "\n\nResumen de tu pedido:\n" + formatCartSummary(conversation.getCart()) + "\nTotal: $" + conversation.getCart().getTotal();
-                }
-            }
-        }
-        // 5. Inquiries about missing data (e.g. "me estabas pidiendo el número no?") - ONLY when not providing a phone number
-        else if ((lower.contains("pidiendo") || lower.contains("preguntando") || lower.contains("para qué") || lower.contains("para que") || lower.contains("no?")) && !cleanMessage.matches(".*\\d{7,15}.*")) {
-            if (pending != null && pending.contains("PHONE")) {
-                finalAssistantMessage = "¡Sí! 😊 Solo me falta tu número de teléfono de WhatsApp para registrar tu pedido y notificarte cuando esté listo para recoger. 📱";
-            } else if (pending != null && pending.contains("NAME")) {
-                finalAssistantMessage = "¡Sí! 😊 Solo me falta tu nombre para registrar tu pedido en la cocina. 🍋";
-            } else {
-                conversation.setState(ConversationState.WAITING_CONFIRMATION);
-                requiresConfirmation = true;
-                finalAssistantMessage = "¡Ya tengo todos tus datos! 🍋 ¿Confirmamos tu pedido para enviarlo a cocina?";
-            }
-        }
-        // 6. Direct Confirmation ("Sí", "Confirmo", "Dale", "Pídelo", "Haz el pedido")
-        else if (lower.equals("si") || lower.equals("sí") || lower.contains("confirmo") || lower.contains("dale") || lower.contains("pídelo") || lower.contains("pidelo") || lower.contains("hazlo") || lower.contains("de una") || lower.contains("claro")) {
-            if (hasCartItems) {
-                if (pending == null || pending.isEmpty()) {
-                    AIToolResult confirmResult = toolRegistry.execute("confirmar_pedido", "{}", conversation);
-                    if (confirmResult.isOrderCreated() && confirmResult.getData() instanceof Map<?, ?> map) {
-                        conversation.setState(ConversationState.ORDER_CONFIRMED);
-                        orderConfirmed = true;
-                        orderCode = (String) map.get("orderCode");
-                        whatsAppUrl = (String) map.get("whatsAppUrl");
-                        finalAssistantMessage = "🎉 ¡Listo, " + (conversation.getCustomerName() != null ? conversation.getCustomerName() : "") + "! 🍋\n\nTu pedido " + orderCode + " quedó registrado exitosamente.\n\n🟢 Estado: Pedido recibido.\n\nTe avisaremos por WhatsApp cuando esté listo para recoger. ¡Muchas gracias por elegir Lemon Drop! 🍧✨";
-                    } else {
-                        finalAssistantMessage = confirmResult.getMessage() != null ? confirmResult.getMessage() : "Hubo un problema al confirmar tu pedido.";
-                    }
-                } else {
-                    conversation.setState(ConversationState.COLLECTING_CUSTOMER);
-                    requiresConfirmation = true;
-                    if (pending.contains("NAME") && pending.contains("PHONE")) {
-                        finalAssistantMessage = "¡Excelente! 🍋 Para enviar tu pedido a preparación en cocina, ¿a qué nombre y número de WhatsApp lo registramos? 📱";
-                    } else if (pending.contains("PHONE")) {
-                        finalAssistantMessage = "¡Listo, " + conversation.getCustomerName() + "! 🍋 Solo me falta tu número de WhatsApp para confirmar tu pedido. 📱";
-                    } else {
-                        finalAssistantMessage = "¡Listo! 📱 Solo me falta tu nombre para confirmar tu pedido. 🍋";
-                    }
-                }
-            } else {
-                finalAssistantMessage = "Tu carrito está vacío actualmente. ¿Qué granizado te gustaría que te preparemos? 🍋";
-                attachAllActiveProducts(collectedProducts);
-            }
-        }
-        // 7. Customization / Size / Topping specification
-        else if (containsSizeKeyword(lower) || containsToppingKeyword(lower)) {
-            String flavor = findTargetFlavor(lower, conversation);
-            String size = extractSize(lower);
-            List<String> toppings = extractToppings(lower);
-
-            Map<String, Object> addArgs = new HashMap<>();
-            addArgs.put("productName", flavor != null ? flavor : "Granizado de Limón");
-            addArgs.put("size", size != null ? size : "MEDIUM");
-            if (!toppings.isEmpty()) {
-                addArgs.put("addons", toppings);
-            }
-            addArgs.put("quantity", 1);
-
-            try {
-                String argsJson = objectMapper.writeValueAsString(addArgs);
-                AIToolResult addResult = toolRegistry.execute("agregar_producto", argsJson, conversation);
-                cartUpdated = addResult.isCartModified();
-
-                if (pending == null || pending.isEmpty()) {
-                    conversation.setState(ConversationState.WAITING_CONFIRMATION);
-                    requiresConfirmation = true;
-                    finalAssistantMessage = "¡Listo! 🙌 Agregué al carrito:\n" +
-                            "• " + (flavor != null ? flavor : "Granizado de Limón") + " (" + (size != null ? size : "MEDIUM") + ")" +
-                            (!toppings.isEmpty() ? " con " + String.join(", ", toppings) : "") + "\n\n" +
-                            "Total del carrito: $" + conversation.getCart().getTotal() + "\n\n" +
-                            "¿Confirmamos este pedido para enviarlo a preparación en cocina? 🚀✨";
-                } else {
-                    conversation.setState(ConversationState.COLLECTING_CUSTOMER);
-                    finalAssistantMessage = "¡Listo! 🙌 Agregué al carrito:\n" +
-                            "• " + (flavor != null ? flavor : "Granizado de Limón") + " (" + (size != null ? size : "MEDIUM") + ")" +
-                            (!toppings.isEmpty() ? " con " + String.join(", ", toppings) : "") + "\n\n" +
-                            "Total del carrito: $" + conversation.getCart().getTotal() + "\n\n" +
-                            "Tu granizado está casi listo. ¿A qué nombre y número de WhatsApp registramos tu pedido? 📱✨";
-                }
-            } catch (Exception ex) {
-                finalAssistantMessage = "¡Listo! Ya tomé nota de tu pedido. ¿A qué nombre y número de WhatsApp lo confirmamos? 📱";
-            }
-        }
-        // 8. User providing Name and/or Phone when in COLLECTING_CUSTOMER or when cart has items
-        else if (conversation.getState() == ConversationState.COLLECTING_CUSTOMER || (hasCartItems && (conversation.getCustomerName() != null || conversation.getCustomerPhone() != null))) {
-            if (pending == null || pending.isEmpty()) {
-                conversation.setState(ConversationState.WAITING_CONFIRMATION);
-                requiresConfirmation = true;
-                finalAssistantMessage = "¡Perfecto, " + conversation.getCustomerName() + "! 🍋 Ya tengo tus datos registrados.\n\n" +
-                        "Resumen de tu pedido:\n" + formatCartSummary(conversation.getCart()) + "\n\n" +
-                        "Total: $" + conversation.getCart().getTotal() + "\n\n" +
-                        "¿Confirmamos tu pedido para enviarlo a preparación en cocina? 🚀✨";
-            } else if (pending.contains("PHONE") && !pending.contains("NAME")) {
-                conversation.setState(ConversationState.COLLECTING_CUSTOMER);
-                finalAssistantMessage = "¡Mucho gusto, " + conversation.getCustomerName() + "! 🍋 Ahora solo me falta tu número de WhatsApp para poder notificarte cuando tu granizado esté listo. 📱";
-            } else if (pending.contains("NAME") && !pending.contains("PHONE")) {
-                conversation.setState(ConversationState.COLLECTING_CUSTOMER);
-                finalAssistantMessage = "¡Perfecto! 📱 Ya anoté tu número " + conversation.getCustomerPhone() + ". Ahora indícame tu nombre para registrar el pedido. 🍋";
-            } else {
-                finalAssistantMessage = "¡Excelente! 🍋 Para completar tu orden, ¿a qué nombre y número de WhatsApp la registramos? 📱";
-            }
-        }
-        // 9. Product Order Selection ("Quiero un Granizado de Limón", "el de limón porfa")
-        else if (isSpecificProductOrder(lower)) {
-            String flavor = findTargetFlavor(lower, conversation);
-            if (flavor == null) flavor = "Granizado de Limón";
-
-            conversation.setState(ConversationState.BUILDING_ORDER);
-            finalAssistantMessage = "¡De una! 🍋 Vamos a armar tu " + flavor + ".\n\n" +
-                    "Solo necesito que me confirmes:\n\n" +
-                    "1️⃣ Tamaño:\n" +
-                    "- SMALL (pequeño) – $5.000\n" +
-                    "- MEDIUM (mediano) – $7.000\n" +
-                    "- LARGE (grande) – $9.000\n\n" +
-                    "2️⃣ Toppings (opcionales, +$1.000 cada uno):\n" +
-                    "- Leche condensada\n" +
-                    "- Arequipe\n\n" +
-                    "¿Qué tamaño y qué toppings te gustaría? 🚀✨";
-
-            attachSingleProduct(flavor, collectedProducts);
-        }
-        // 10. Catalogue Inquiry
-        else if (isProductInquiry(lower)) {
-            conversation.setState(ConversationState.DISCOVERING);
-            finalAssistantMessage = "¡Claro que sí! 🍋 Aquí te muestro nuestras opciones de granizados disponibles:";
-            attachAllActiveProducts(collectedProducts);
-        }
-        // 11. Greeting
-        else if (lower.contains("hola") || lower.contains("buenas") || lower.contains("hey")) {
-            conversation.setState(ConversationState.DISCOVERING);
-            finalAssistantMessage = "¡Hola! 🍋 ¿Qué granizado se te antoja hoy? Puedes elegir tu sabor favorito o pedirme recomendaciones.";
-            attachAllActiveProducts(collectedProducts);
-        }
-        // 12. Recommendation
-        else if (lower.contains("recomiend") || lower.contains("dulce") || lower.contains("acido") || lower.contains("ácido")) {
-            conversation.setState(ConversationState.DISCOVERING);
-            finalAssistantMessage = "¡Te recomiendo nuestro Granizado de Limón clásico o el de Maracuyá con leche condensada! 🍋✨";
-            attachAllActiveProducts(collectedProducts);
-        }
-        // 13. General fallback
-        else {
-            finalAssistantMessage = "¡Con gusto te atiendo! 🍋 Cuéntame qué sabor o tamaño de granizado deseas que te preparemos hoy.";
-            attachAllActiveProducts(collectedProducts);
-        }
-
-        AIMessage assistantMsg = AIMessage.builder()
-                .role("assistant")
-                .content(finalAssistantMessage)
-                .timestamp(LocalDateTime.now())
-                .build();
-        conversation.addMessage(assistantMsg);
-        conversationService.save(conversation);
-
-        AIChatResponse response = buildStandardResponse(conversation, finalAssistantMessage, startTime, cartUpdated, requiresConfirmation, orderConfirmed);
-        if (orderCode != null) response.setOrderCode(orderCode);
-        if (whatsAppUrl != null) response.setWhatsAppUrl(whatsAppUrl);
-        if (!collectedProducts.isEmpty()) response.setProducts(collectedProducts);
-        return response;
-    }
-
-    private String formatCartSummary(AICart cart) {
-        if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
-            return "• Granizado de Limón (MEDIUM)";
-        }
-        StringBuilder sb = new StringBuilder();
-        for (AICartItem item : cart.getItems()) {
-            sb.append("• ").append(item.getProductName()).append(" (").append(item.getSize() != null ? item.getSize().name() : "MEDIUM").append(")");
-            if (item.getAddons() != null && !item.getAddons().isEmpty()) {
-                sb.append(" con ").append(item.getAddons().stream().map(AICartItemAddon::getAddonName).collect(Collectors.joining(", ")));
-            }
-            sb.append(" — $").append(item.getSubtotal()).append("\n");
-        }
-        return sb.toString().trim();
-    }
-
-    private boolean isSpecificProductOrder(String text) {
-        if (text == null) return false;
-        String lower = text.toLowerCase();
-        boolean hasOrderVerb = lower.contains("quiero") || lower.contains("pedir") || lower.contains("dame") ||
-                lower.contains("el de") || lower.contains("la de") || lower.contains("un ") || lower.contains("uno ") ||
-                lower.contains("porfa") || lower.contains("armar");
-        boolean hasFlavor = lower.contains("limon") || lower.contains("limón") || lower.contains("maracu") ||
-                lower.contains("cereza") || lower.contains("mango") || lower.contains("fresa") || lower.contains("naranja");
-        return (hasOrderVerb && hasFlavor) || (hasFlavor && !lower.contains("qué") && !lower.contains("que") && !lower.contains("mostrar") && !lower.contains("carta") && !lower.contains("menu"));
-    }
-
-    private boolean containsSizeKeyword(String text) {
-        if (text == null) return false;
-        String lower = text.toLowerCase();
-        return lower.contains("pequeñ") || lower.contains("pequeno") || lower.contains("small") || lower.contains("chico") ||
-               lower.contains("median") || lower.contains("medium") || lower.contains("grande") || lower.contains("large");
-    }
-
-    private boolean containsToppingKeyword(String text) {
-        if (text == null) return false;
-        String lower = text.toLowerCase();
-        return lower.contains("arequipe") || lower.contains("leche condensada") || lower.contains("topping") || lower.contains("toppings") || lower.contains("adicional");
-    }
-
-    private String extractSize(String text) {
-        if (text == null) return "MEDIUM";
-        String lower = text.toLowerCase();
-        if (lower.contains("pequeñ") || lower.contains("pequeno") || lower.contains("small") || lower.contains("chico")) return "SMALL";
-        if (lower.contains("grande") || lower.contains("large")) return "LARGE";
-        return "MEDIUM";
-    }
-
-    private List<String> extractToppings(String text) {
-        List<String> toppings = new ArrayList<>();
-        if (text == null) return toppings;
-        String lower = text.toLowerCase();
-        if (lower.contains("arequipe")) toppings.add("Arequipe");
-        if (lower.contains("leche condensada") || lower.contains("lecherita") || lower.contains("condensada")) toppings.add("Leche condensada");
-        return toppings;
-    }
-
-    private String findTargetFlavor(String text, AIConversation conversation) {
-        if (text != null) {
-            String lower = text.toLowerCase();
-            if (lower.contains("limon") || lower.contains("limón")) return "Granizado de Limón";
-            if (lower.contains("maracu")) return "Granizado de Maracuyá";
-            if (lower.contains("cereza")) return "Granizado de Cereza";
-            if (lower.contains("mango")) return "Granizado de Mango";
-            if (lower.contains("fresa")) return "Granizado de Fresa";
-        }
-        if (conversation != null && conversation.getMessages() != null) {
-            for (int i = conversation.getMessages().size() - 1; i >= 0; i--) {
-                String prev = conversation.getMessages().get(i).getContent();
-                if (prev != null) {
-                    String pLower = prev.toLowerCase();
-                    if (pLower.contains("limon") || pLower.contains("limón")) return "Granizado de Limón";
-                    if (pLower.contains("maracu")) return "Granizado de Maracuyá";
-                    if (pLower.contains("cereza")) return "Granizado de Cereza";
-                    if (pLower.contains("mango")) return "Granizado de Mango";
-                    if (pLower.contains("fresa")) return "Granizado de Fresa";
-                }
-            }
-        }
-        return "Granizado de Limón";
-    }
-
-    private void attachSingleProduct(String flavorName, List<AIProductCardDto> target) {
-        if (productService == null) return;
-        try {
-            List<Product> prods = productService.getAllActiveAndAvailable();
-            for (Product p : prods) {
-                if (p.getName() != null && (p.getName().equalsIgnoreCase(flavorName) || p.getName().toLowerCase().contains(flavorName.toLowerCase()))) {
-                    BigDecimal priceFrom = p.getSmallPrice();
-                    if (priceFrom == null || priceFrom.compareTo(BigDecimal.ZERO) <= 0) priceFrom = p.getMediumPrice();
-                    Map<String, BigDecimal> prices = new HashMap<>();
-                    if (p.getSizePrices() != null) p.getSizePrices().forEach((sz, pr) -> prices.put(sz.name(), pr));
-
-                    target.add(AIProductCardDto.builder()
-                            .id(p.getId())
-                            .name(p.getName())
-                            .description(p.getDescription() != null ? p.getDescription() : "")
-                            .image(p.getImage() != null ? p.getImage() : "")
-                            .category(p.getCategory() != null ? p.getCategory() : "Granizados")
-                            .badge(p.getBadge() != null ? p.getBadge() : "")
-                            .priceFrom(priceFrom != null ? priceFrom : BigDecimal.ZERO)
-                            .prices(prices)
-                            .available(p.isAvailable())
-                            .build());
-                    return;
-                }
-            }
-            attachAllActiveProducts(target);
-        } catch (Exception ignored) {}
     }
 
     private void attachAllActiveProducts(List<AIProductCardDto> target) {

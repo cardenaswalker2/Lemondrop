@@ -54,10 +54,11 @@ public class GroqClient {
 
                 HttpEntity<GroqChatRequest> entity = new HttpEntity<>(request, headers);
 
-                log.info("Enviando petición a Groq Chat Completions (intento {}/{}, modelo: {}, mensajes: {}, tools: {})",
-                        attempt, maxAttempts, request.getModel(),
-                        request.getMessages() != null ? request.getMessages().size() : 0,
-                        request.getTools() != null ? request.getTools().size() : 0);
+                try {
+                    String reqJson = objectMapper.writeValueAsString(request);
+                    log.info("Enviando petición a Groq (intento {}/{}, modelo: {}):\n{}",
+                            attempt, maxAttempts, request.getModel(), reqJson);
+                } catch (Exception ignored) {}
 
                 ResponseEntity<GroqChatResponse> response = restTemplate.exchange(
                         groqProperties.getApi().getUrl(),
@@ -67,7 +68,10 @@ public class GroqClient {
                 );
 
                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                    log.info("Respuesta de Groq recibida exitosamente (id: {})", response.getBody().getId());
+                    try {
+                        String respJson = objectMapper.writeValueAsString(response.getBody());
+                        log.info("Respuesta de Groq recibida exitosamente (id: {}):\n{}", response.getBody().getId(), respJson);
+                    } catch (Exception ignored) {}
                     return Optional.of(response.getBody());
                 } else {
                     log.error("Respuesta no exitosa de Groq: código {}", response.getStatusCode());
