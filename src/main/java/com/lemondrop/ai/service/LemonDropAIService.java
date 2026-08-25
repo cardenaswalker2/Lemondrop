@@ -17,6 +17,7 @@ import com.lemondrop.model.Product;
 import com.lemondrop.service.ProductService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -38,6 +39,7 @@ public class LemonDropAIService {
     private final ObjectMapper objectMapper;
     private final ProductService productService;
 
+    @Autowired
     public LemonDropAIService(GroqClient groqClient,
                               GroqProperties groqProperties,
                               LemonAiProperties lemonAiProperties,
