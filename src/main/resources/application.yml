@@ -23,3 +23,31 @@ app:
     country-code: "57" # Default country code (e.g. Colombia)
   order:
     prefix: "LD"
+  business:
+    name: "Lemon Drop"
+    schedule: "Lunes a Domingo: 10:00 AM - 9:00 PM"
+    whatsapp: "+573001234567"
+    address: "Calle 10 # 40-20, Medellín, Colombia"
+
+groq:
+  api:
+    key: ${GROQ_API_KEY:}
+    url: ${GROQ_API_URL:https://api.groq.com/openai/v1/chat/completions}
+    model: ${GROQ_API_MODEL:llama-3.3-70b-versatile}
+  stt:
+    url: ${GROQ_STT_URL:https://api.groq.com/openai/v1/audio/transcriptions}
+    model: ${GROQ_STT_MODEL:whisper-large-v3-turbo}
+  timeout:
+    connect: 10000
+    read: 60000
+
+lemon:
+  ai:
+    max-tool-iterations: 8
+    max-message-length: 2000
+    cart-expiration-minutes: 60
+    rate-limit:
+      messages-per-minute: 30
+      audios-per-minute: 10
+      max-audio-size-bytes: 5242880 # 5MB
+

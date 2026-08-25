@@ -1,0 +1,537 @@
+/* ============================================================
+   LEMON DROP AI - FLOATING AGENT STYLING
+   ============================================================ */
+
+/* Floating Launcher Button */
+.lemon-ai-launcher {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #4E9F3D 0%, #2C3E2B 100%);
+    color: #FFFFFF;
+    padding: 14px 22px;
+    border-radius: 50px;
+    box-shadow: 0 10px 25px rgba(78, 159, 61, 0.4), 0 4px 10px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    border: 2px solid rgba(252, 226, 42, 0.6);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.lemon-ai-launcher:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 14px 30px rgba(78, 159, 61, 0.5), 0 6px 14px rgba(0, 0, 0, 0.15);
+    border-color: #FCE22A;
+}
+
+.lemon-ai-launcher .launcher-icon {
+    font-size: 1.35rem;
+    animation: lemonBounce 2s infinite ease-in-out;
+}
+
+@keyframes lemonBounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-3px) rotate(6deg); }
+}
+
+.lemon-ai-launcher .pulse-indicator {
+    width: 9px;
+    height: 9px;
+    background-color: #10B981;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulseRing 1.8s infinite;
+}
+
+@keyframes pulseRing {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* AI Modal / Drawer Window */
+.lemon-ai-modal {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    height: 640px;
+    max-height: calc(100vh - 48px);
+    background: #FFFFFF;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(164, 208, 164, 0.25);
+    display: flex;
+    flex-direction: column;
+    z-index: 10000;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px) scale(0.96);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lemon-ai-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+/* Modal Header */
+.lemon-ai-header {
+    background: linear-gradient(135deg, #2C3E2B 0%, #1e2c1d 100%);
+    color: #FFFFFF;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lemon-ai-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lemon-ai-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(252, 226, 42, 0.2);
+    border: 1.5px solid #FCE22A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.lemon-ai-header-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lemon-ai-header-subtitle {
+    font-size: 0.78rem;
+    color: #D8EBB5;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.lemon-ai-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lemon-ai-btn-icon {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #FFFFFF;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.lemon-ai-btn-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Quick Suggestion Chips */
+.lemon-ai-chips {
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #FFFDF6;
+    border-bottom: 1px solid rgba(164, 208, 164, 0.2);
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+}
+
+.lemon-ai-chips::-webkit-scrollbar {
+    display: none;
+}
+
+.lemon-ai-chip {
+    background: #FFFFFF;
+    border: 1px solid #A4D0A4;
+    color: #2C3E2B;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.lemon-ai-chip:hover {
+    background: #D8EBB5;
+    border-color: #4E9F3D;
+    transform: translateY(-1px);
+}
+
+/* Chat Messages Container */
+.lemon-ai-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #FAF8F2;
+}
+
+.lemon-ai-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 85%;
+    animation: fadeInMsg 0.25s ease-out;
+}
+
+@keyframes fadeInMsg {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.lemon-ai-msg.user {
+    align-self: flex-end;
+}
+
+.lemon-ai-msg.assistant {
+    align-self: flex-start;
+}
+
+.lemon-ai-msg-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    position: relative;
+    word-break: break-word;
+}
+
+.lemon-ai-msg.user .lemon-ai-msg-bubble {
+    background: linear-gradient(135deg, #4E9F3D 0%, #3e8130 100%);
+    color: #FFFFFF;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 12px rgba(78, 159, 61, 0.2);
+}
+
+.lemon-ai-msg.assistant .lemon-ai-msg-bubble {
+    background: #FFFFFF;
+    color: #2C3E2B;
+    border: 1px solid rgba(164, 208, 164, 0.35);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+}
+
+.lemon-ai-msg-time {
+    font-size: 0.7rem;
+    color: #888888;
+    margin-top: 4px;
+    align-self: flex-start;
+}
+
+.lemon-ai-msg.user .lemon-ai-msg-time {
+    align-self: flex-end;
+}
+
+/* Order Confirmation Card in Chat */
+.lemon-ai-order-card {
+    background: #FFFFFF;
+    border: 2px solid #4E9F3D;
+    border-radius: 16px;
+    padding: 14px;
+    margin-top: 8px;
+    box-shadow: 0 6px 16px rgba(78, 159, 61, 0.15);
+}
+
+.lemon-ai-order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed #A4D0A4;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: #2C3E2B;
+}
+
+.lemon-ai-order-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    color: #333333;
+}
+
+.lemon-ai-order-item-desc {
+    font-size: 0.78rem;
+    color: #666666;
+    padding-left: 8px;
+}
+
+.lemon-ai-order-total {
+    border-top: 1px solid #E2E8F0;
+    padding-top: 8px;
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #4E9F3D;
+}
+
+.lemon-ai-btn-confirm {
+    width: 100%;
+    margin-top: 12px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.lemon-ai-btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.35);
+}
+
+.lemon-ai-btn-modify {
+    width: 100%;
+    margin-top: 6px;
+    background: transparent;
+    color: #666666;
+    border: 1px solid #CBD5E1;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+.lemon-ai-btn-modify:hover {
+    background: #F1F5F9;
+}
+
+/* Success Order Banner */
+.lemon-ai-success-banner {
+    background: linear-gradient(135deg, #FCE22A 0%, #F59E0B 100%);
+    color: #2C3E2B;
+    border-radius: 16px;
+    padding: 14px;
+    margin-top: 8px;
+    text-align: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+}
+
+.lemon-ai-btn-whatsapp {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #25D366;
+    color: #FFFFFF;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-top: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.88rem;
+    transition: transform 0.2s;
+}
+
+.lemon-ai-btn-whatsapp:hover {
+    transform: scale(1.04);
+}
+
+/* Voice Recording & Processing State */
+.lemon-ai-status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #FFFDF6;
+    border-top: 1px solid rgba(164, 208, 164, 0.2);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #4E9F3D;
+}
+
+.lemon-ai-soundwave {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    height: 16px;
+}
+
+.lemon-ai-soundwave span {
+    width: 3px;
+    height: 6px;
+    background-color: #EF4444;
+    border-radius: 2px;
+    animation: soundWave 1s infinite ease-in-out;
+}
+
+.lemon-ai-soundwave span:nth-child(2) { animation-delay: 0.2s; }
+.lemon-ai-soundwave span:nth-child(3) { animation-delay: 0.4s; }
+.lemon-ai-soundwave span:nth-child(4) { animation-delay: 0.6s; }
+
+@keyframes soundWave {
+    0%, 100% { height: 6px; }
+    50% { height: 18px; }
+}
+
+/* Typing Dots */
+.lemon-ai-typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+}
+
+.lemon-ai-typing-dots span {
+    width: 6px;
+    height: 6px;
+    background-color: #4E9F3D;
+    border-radius: 50%;
+    animation: typingBounce 1.2s infinite;
+}
+
+.lemon-ai-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.lemon-ai-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+/* Chat Input Footer */
+.lemon-ai-footer {
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border-top: 1px solid rgba(164, 208, 164, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lemon-ai-input {
+    flex: 1;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #FAF8F2;
+}
+
+.lemon-ai-input:focus {
+    border-color: #4E9F3D;
+    background: #FFFFFF;
+}
+
+.lemon-ai-btn-mic {
+    background: #FAF8F2;
+    border: 1.5px solid #E2E8F0;
+    color: #4E9F3D;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+}
+
+.lemon-ai-btn-mic:hover {
+    background: #D8EBB5;
+    border-color: #4E9F3D;
+}
+
+.lemon-ai-btn-mic.recording {
+    background: #EF4444;
+    color: #FFFFFF;
+    border-color: #DC2626;
+    animation: pulseRecording 1.5s infinite;
+}
+
+@keyframes pulseRecording {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.lemon-ai-btn-send {
+    background: linear-gradient(135deg, #4E9F3D 0%, #2C3E2B 100%);
+    color: #FFFFFF;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: transform 0.2s;
+}
+
+.lemon-ai-btn-send:hover {
+    transform: scale(1.06);
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+    .lemon-ai-modal {
+        bottom: 0;
+        right: 0;
+        width: 100vw;
+        height: 100dvh;
+        max-width: 100vw;
+        max-height: 100dvh;
+        border-radius: 0;
+    }
+    
+    .lemon-ai-launcher {
+        bottom: 16px;
+        right: 16px;
+        padding: 12px 18px;
+        font-size: 0.9rem;
+    }
+}
