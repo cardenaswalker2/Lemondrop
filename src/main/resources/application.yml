@@ -33,7 +33,7 @@ groq:
   api:
     key: ${GROQ_API_KEY:}
     url: ${GROQ_API_URL:https://api.groq.com/openai/v1/chat/completions}
-    model: ${GROQ_API_MODEL:openai/gpt-oss-20b}
+    model: ${GROQ_API_MODEL:llama-3.3-70b-versatile}
   stt:
     url: ${GROQ_STT_URL:https://api.groq.com/openai/v1/audio/transcriptions}
     model: ${GROQ_STT_MODEL:whisper-large-v3-turbo}

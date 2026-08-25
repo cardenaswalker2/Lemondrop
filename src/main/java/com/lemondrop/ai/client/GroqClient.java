@@ -97,6 +97,15 @@ public class GroqClient {
                     }
                     continue;
                 }
+                if ((ex.getStatusCode() == HttpStatus.BAD_REQUEST || ex.getStatusCode() == HttpStatus.NOT_FOUND) && attempt < maxAttempts) {
+                    String body = ex.getResponseBodyAsString();
+                    if (body != null && body.contains("model")) {
+                        String fallback = request.getModel().contains("8b") ? "llama-3.3-70b-versatile" : "llama-3.1-8b-instant";
+                        log.warn("Modelo '{}' no disponible en Groq. Cambiando a fallback '{}'...", request.getModel(), fallback);
+                        request.setModel(fallback);
+                        continue;
+                    }
+                }
                 log.error("Error HTTP al comunicarse con Groq: {} - {}", ex.getStatusCode(), ex.getResponseBodyAsString());
                 return Optional.empty();
             } catch (ResourceAccessException ex) {
