@@ -241,13 +241,35 @@ void main() {
       expect(notifier.state.uiState, LemonAiUiState.idle);
     });
 
-    test('Starting new conversation cleans state and restarts with greeting', () async {
-      await notifier.startNewConversation();
+    test('Multi-turn conversation continuity retains conversationId and clientToken', () async {
+      // Turn 1
+      mockRepo.nextResponse = const AIChatResponse(
+        conversationId: 'conv-session-777',
+        clientToken: 'token-secret-888',
+        message: '¡De una! 🍋 Aquí tienes las opciones de limón.',
+        success: true,
+      );
 
-      expect(notifier.state.messages.length, 1);
-      expect(notifier.state.activeCart, isNull);
-      expect(notifier.state.confirmedOrderCode, isNull);
-      expect(notifier.state.uiState, LemonAiUiState.idle);
+      await notifier.sendMessage('Quiero un Granizado de Limón');
+
+      expect(notifier.state.conversationId, 'conv-session-777');
+      expect(notifier.state.clientToken, 'token-secret-888');
+
+      // Turn 2
+      mockRepo.nextResponse = const AIChatResponse(
+        conversationId: 'conv-session-777',
+        clientToken: 'token-secret-888',
+        message: '¡Listo! ¿Qué tamaño prefieres: pequeño, mediano o grande?',
+        success: true,
+      );
+
+      await notifier.sendMessage('el de limón porfa');
+
+      expect(mockRepo.lastRequest?.conversationId, 'conv-session-777');
+      expect(mockRepo.lastRequest?.clientToken, 'token-secret-888');
+      expect(mockRepo.lastRequest?.message, 'el de limón porfa');
+      expect(notifier.state.conversationId, 'conv-session-777');
+      expect(notifier.state.messages.length, 5); // welcome, user1, assistant1, user2, assistant2
     });
   });
 }

@@ -136,4 +136,63 @@ class AgentLoopAndSpeechTest {
         assertFalse(response.isSuccess());
         assertTrue(response.getError().contains("tamaño máximo"));
     }
+
+    @Test
+    void testConversationContinuityMultiTurn() {
+        when(groqClient.isAvailable()).thenReturn(true);
+
+        java.util.Map<String, AIConversation> memoryStore = new java.util.HashMap<>();
+        when(conversationRepository.findByConversationId(anyString()))
+                .thenAnswer(inv -> Optional.ofNullable(memoryStore.get(inv.getArgument(0))));
+        when(conversationRepository.save(any(AIConversation.class)))
+                .thenAnswer(inv -> {
+                    AIConversation c = inv.getArgument(0);
+                    memoryStore.put(c.getConversationId(), c);
+                    return c;
+                });
+
+        GroqChatResponse r1 = GroqChatResponse.builder()
+                .id("resp-1")
+                .choices(List.of(GroqChatResponse.GroqChoice.builder()
+                        .message(GroqMessage.builder().role("assistant").content("¡De una! 🍋 Aquí tienes las opciones de limón.").build())
+                        .build()))
+                .build();
+
+        GroqChatResponse r2 = GroqChatResponse.builder()
+                .id("resp-2")
+                .choices(List.of(GroqChatResponse.GroqChoice.builder()
+                        .message(GroqMessage.builder().role("assistant").content("¡Listo! ¿Qué tamaño prefieres: pequeño, mediano o grande?").build())
+                        .build()))
+                .build();
+
+        when(groqClient.sendChatCompletion(any(GroqChatRequest.class))).thenReturn(Optional.of(r1), Optional.of(r2));
+
+        // Turn 1
+        AIChatRequest req1 = AIChatRequest.builder()
+                .message("Quiero un Granizado de Limón")
+                .build();
+        AIChatResponse res1 = aiService.processMessage(req1);
+
+        assertTrue(res1.isSuccess());
+        String convId = res1.getConversationId();
+        String token = res1.getClientToken();
+        assertNotNull(convId);
+        assertNotNull(token);
+
+        // Turn 2 reusing same convId and token
+        AIChatRequest req2 = AIChatRequest.builder()
+                .conversationId(convId)
+                .clientToken(token)
+                .message("el de limón porfa")
+                .build();
+        AIChatResponse res2 = aiService.processMessage(req2);
+
+        assertTrue(res2.isSuccess());
+        assertEquals(convId, res2.getConversationId());
+        AIConversation savedConv = memoryStore.get(convId);
+        assertNotNull(savedConv);
+        assertEquals(4, savedConv.getMessages().size()); // user1, assistant1, user2, assistant2
+        assertEquals("Quiero un Granizado de Limón", savedConv.getMessages().get(0).getContent());
+        assertEquals("el de limón porfa", savedConv.getMessages().get(2).getContent());
+    }
 }
