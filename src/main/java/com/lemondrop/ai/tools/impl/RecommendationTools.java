@@ -55,9 +55,9 @@ public class RecommendationTools {
 
     private void registerRecomendarProducto() {
         Map<String, Object> props = new HashMap<>();
-        props.put("preference", Map.of("type", "string", "description", "Preferencia del cliente (ej. 'dulce', 'ácido', 'cítrico', 'refrescante', 'popular', 'económico')"));
-        props.put("maxBudget", Map.of("type", "number", "description", "Presupuesto máximo en pesos colombianos"));
-        props.put("size", Map.of("type", "string", "enum", List.of("SMALL", "MEDIUM", "LARGE"), "description", "Tamaño deseado opcional"));
+        props.put("preference", Map.of("description", "Preferencia del cliente (ej. 'dulce', 'ácido', 'cítrico', 'refrescante', 'popular', 'económico')"));
+        props.put("maxBudget", Map.of("description", "Presupuesto numérico opcional en pesos"));
+        props.put("size", Map.of("description", "Tamaño deseado opcional: SMALL, MEDIUM, LARGE"));
 
         Map<String, Object> schema = new HashMap<>();
         schema.put("type", "object");

@@ -95,7 +95,7 @@ public class CartTools {
         props.put("flavorId", Map.of("type", "string", "description", "ID del sabor o nombre del sabor (ej. 'Mango', 'Fresa', 'Limón')"));
         props.put("flavorName", Map.of("type", "string", "description", "Nombre del sabor si no se tiene el ID"));
         props.put("size", Map.of("type", "string", "enum", List.of("SMALL", "MEDIUM", "LARGE"), "description", "Tamaño: SMALL (Pequeño), MEDIUM (Mediano), LARGE (Grande)"));
-        props.put("quantity", Map.of("type", "integer", "description", "Cantidad de unidades (por defecto 1)", "default", 1));
+        props.put("quantity", Map.of("description", "Cantidad de unidades (por defecto 1)"));
         props.put("addonIds", Map.of("type", "array", "items", Map.of("type", "string"), "description", "Lista de IDs o nombres de toppings/complementos (ej. ['Gomitas', 'Leche condensada'])"));
         props.put("observations", Map.of("type", "string", "description", "Notas especiales opcionales"));
 
@@ -248,7 +248,7 @@ public class CartTools {
         props.put("cartItemId", Map.of("type", "string", "description", "ID del ítem en el carrito"));
         props.put("size", Map.of("type", "string", "enum", List.of("SMALL", "MEDIUM", "LARGE"), "description", "Nuevo tamaño"));
         props.put("flavorName", Map.of("type", "string", "description", "Nuevo sabor"));
-        props.put("quantity", Map.of("type", "integer", "description", "Nueva cantidad"));
+        props.put("quantity", Map.of("description", "Nueva cantidad numérica"));
         props.put("addonIds", Map.of("type", "array", "items", Map.of("type", "string"), "description", "Lista completa de reemplazo de toppings/complementos"));
         props.put("addAddonNames", Map.of("type", "array", "items", Map.of("type", "string"), "description", "Nombres o IDs de toppings adicionales a agregar (ej. ['Gomitas'])"));
         props.put("removeAddonNames", Map.of("type", "array", "items", Map.of("type", "string"), "description", "Nombres o IDs de toppings a remover (ej. ['Oreo'])"));

@@ -76,9 +76,21 @@ public class GroqClient {
 
             } catch (HttpStatusCodeException ex) {
                 if (ex.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS && attempt < maxAttempts) {
-                    log.warn("Rate limit temporal en Groq (429). Reintentando en 1000ms... (intento {}/{})", attempt, maxAttempts);
+                    long sleepMs = 3000L * attempt;
+                    String body = ex.getResponseBodyAsString();
+                    if (body != null && body.contains("Please try again in ")) {
+                        try {
+                            int startIdx = body.indexOf("Please try again in ") + "Please try again in ".length();
+                            int endIdx = body.indexOf("s.", startIdx);
+                            if (endIdx > startIdx) {
+                                double secs = Double.parseDouble(body.substring(startIdx, endIdx).trim());
+                                sleepMs = (long) (Math.ceil(secs) * 1000L + 600L);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    log.warn("Rate limit temporal en Groq (429). Esperando {}ms antes de reintentar... (intento {}/{})", sleepMs, attempt, maxAttempts);
                     try {
-                        Thread.sleep(1000L * attempt);
+                        Thread.sleep(sleepMs);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         return Optional.empty();

@@ -51,9 +51,9 @@ public class CatalogTools {
 
     private void registerBuscarProductos() {
         Map<String, Object> props = new HashMap<>();
-        props.put("query", Map.of("type", "string", "description", "Término de búsqueda (ej. 'mango', 'fresa', 'limón', 'granizado')"));
-        props.put("size", Map.of("type", "string", "enum", List.of("SMALL", "MEDIUM", "LARGE"), "description", "Tamaño deseado opcional"));
-        props.put("category", Map.of("type", "string", "description", "Categoría del producto opcional"));
+        props.put("query", Map.of("description", "Término de búsqueda (ej. 'mango', 'fresa', 'limón', 'granizado')"));
+        props.put("size", Map.of("description", "Tamaño deseado opcional (SMALL, MEDIUM, LARGE)"));
+        props.put("category", Map.of("description", "Categoría del producto opcional"));
 
         Map<String, Object> schema = new HashMap<>();
         schema.put("type", "object");
@@ -168,8 +168,8 @@ public class CatalogTools {
 
     private void registerConsultarProducto() {
         Map<String, Object> props = new HashMap<>();
-        props.put("productId", Map.of("type", "string", "description", "ID único del producto"));
-        props.put("productName", Map.of("type", "string", "description", "Nombre aproximado o exacto del producto"));
+        props.put("productId", Map.of("description", "ID único del producto"));
+        props.put("productName", Map.of("description", "Nombre aproximado o exacto del producto"));
 
         Map<String, Object> schema = new HashMap<>();
         schema.put("type", "object");
@@ -201,22 +201,22 @@ public class CatalogTools {
             return AIToolResult.builder()
                     .toolName("consultar_producto")
                     .success(false)
-                    .message("No se encontró el producto especificado en el catálogo.")
+                    .message("No se encontró el producto en el catálogo.")
                     .build();
         }
 
-        Product p = optProduct.get();
+        Product product = optProduct.get();
         return AIToolResult.builder()
                 .toolName("consultar_producto")
                 .success(true)
-                .data(formatProductSummary(p))
-                .message("Detalles de " + p.getName() + " consultados exitosamente.")
+                .data(formatProductSummary(product))
+                .message("Producto encontrado: " + product.getName())
                 .build();
     }
 
     private void registerConsultarStock() {
         Map<String, Object> props = new HashMap<>();
-        props.put("itemName", Map.of("type", "string", "description", "Nombre del insumo o producto (ej. 'Limón', 'Maracuyá', 'Hielo', 'Vasos', 'Leche condensada')"));
+        props.put("itemName", Map.of("description", "Nombre del ingrediente, fruta o insumo a verificar"));
 
         Map<String, Object> schema = new HashMap<>();
         schema.put("type", "object");
