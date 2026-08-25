@@ -142,8 +142,8 @@ public class LemonDropAIService {
             Optional<GroqChatResponse> optResponse = groqClient.sendChatCompletion(groqRequest);
 
             if (optResponse.isEmpty() || optResponse.get().getChoices() == null || optResponse.get().getChoices().isEmpty()) {
-                log.warn("Groq devolvió una respuesta vacía o con error en la iteración {}", iterations);
-                finalAssistantMessage = "Estoy teniendo un pequeño problema de conexión 😅, pero cuéntame: ¿qué granizado deseas que te prepare?";
+                log.warn("Groq devolvió una respuesta vacía o con error en la iteración {}. Generando fallback conversacional cálido.", iterations);
+                finalAssistantMessage = generateConversationalFallback(cleanMessage, conversation);
                 break;
             }
 
@@ -561,5 +561,31 @@ public class LemonDropAIService {
                lower.contains("ofreces") || lower.contains("dulce") || lower.contains("acido") ||
                lower.contains("ácido") || lower.contains("mostrar") || lower.contains("muestrame") ||
                lower.contains("muéstrame") || lower.contains("puedo pedir") || lower.contains("que hay");
+    }
+
+    private String generateConversationalFallback(String text, AIConversation conv) {
+        if (text == null || text.trim().isEmpty()) {
+            return "¡Hola! 🍋 Bienvenido a Lemon Drop. ¿Qué granizado te gustaría pedir hoy?";
+        }
+        String lower = text.toLowerCase().trim();
+        if (lower.contains("hola") || lower.contains("buenas") || lower.contains("buenos") || lower.contains("hey")) {
+            return "¡Hola! 🍋 ¿Qué granizado se te antoja hoy? Puedes elegir tu sabor favorito o pedirme recomendaciones.";
+        }
+        if (lower.contains("producto") || lower.contains("granizado") || lower.contains("sabor") || 
+            lower.contains("sabores") || lower.contains("carta") || lower.contains("menu") || 
+            lower.contains("menú") || lower.contains("tienes") || lower.contains("opcion") || 
+            lower.contains("catalogo") || lower.contains("catálogo")) {
+            return "¡Claro que sí! 🍋 Aquí te muestro nuestras opciones de granizados disponibles:";
+        }
+        if (lower.contains("recomiend") || lower.contains("dulce") || lower.contains("acido") || lower.contains("ácido") || lower.contains("vendido")) {
+            return "¡Te recomiendo nuestro Granizado de Limón clásico o el de Maracuyá con leche condensada! 🍋✨";
+        }
+        if (lower.contains("precio") || lower.contains("cuesta") || lower.contains("cuanto") || lower.contains("cuánto")) {
+            return "Nuestros granizados vienen en tamaño Pequeño ($5.000), Mediano ($7.000) y Grande ($9.000), y puedes añadir toppings por $1.000 c/u. 🍋";
+        }
+        if (lower.equals("si") || lower.equals("sí") || lower.contains("confirmo") || lower.contains("dale") || lower.contains("listo")) {
+            return "¡De una! 🚀 Por favor indícame tu nombre y número de WhatsApp para registrar tu pedido.";
+        }
+        return "¡Con gusto te atiendo! 🍋 Cuéntame qué granizado deseas que te preparemos hoy.";
     }
 }

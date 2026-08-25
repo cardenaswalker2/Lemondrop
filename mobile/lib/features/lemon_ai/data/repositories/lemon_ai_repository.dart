@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_client.dart';
 import '../models/ai_models.dart';
 
@@ -12,11 +13,24 @@ class LemonAiRepository {
 
   /// Envía un mensaje de texto al agente Lemon Drop AI (POST /api/ai/chat)
   Future<AIChatResponse> sendMessage(AIChatRequest request) async {
+    final sw = Stopwatch()..start();
     try {
+      if (kDebugMode) {
+        final convPreview = request.conversationId != null && request.conversationId!.length >= 8
+            ? '${request.conversationId!.substring(0, 8)}...'
+            : 'new';
+        debugPrint('🍋 [AI REQUEST] POST /api/ai/chat | conv: $convPreview | token: ${request.clientToken != null}');
+      }
+
       final response = await _dio.post(
         '/api/ai/chat',
         data: request.toJson(),
       );
+
+      sw.stop();
+      if (kDebugMode) {
+        debugPrint('🍋 [AI RESPONSE] status: ${response.statusCode} | time: ${sw.elapsedMilliseconds}ms');
+      }
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data is Map<String, dynamic>
@@ -26,15 +40,41 @@ class LemonAiRepository {
       } else {
         return AIChatResponse(
           success: false,
-          error: 'Error en el servidor (${response.statusCode})',
+          error: 'AI_HTTP_ERROR: Error en el servidor (${response.statusCode})',
         );
       }
     } on DioException catch (e) {
+      sw.stop();
+      if (kDebugMode) {
+        debugPrint('🍋 [AI DIO ERROR] type: ${e.type} | message: ${e.message} | time: ${sw.elapsedMilliseconds}ms');
+      }
       return _handleDioError(e);
-    } catch (e) {
+    } on FormatException catch (e, stack) {
+      sw.stop();
+      if (kDebugMode) {
+        debugPrint('🍋 [AI PARSE ERROR] FormatException: $e\n$stack');
+      }
       return AIChatResponse(
         success: false,
-        error: 'Ocurrió un problema de conexión al enviar el mensaje.',
+        error: 'AI_PARSE_ERROR: Formato de respuesta no válido.',
+      );
+    } on TypeError catch (e, stack) {
+      sw.stop();
+      if (kDebugMode) {
+        debugPrint('🍋 [AI TYPE ERROR] TypeError: $e\n$stack');
+      }
+      return AIChatResponse(
+        success: false,
+        error: 'AI_PARSE_ERROR: Error al procesar datos del servidor.',
+      );
+    } catch (e, stack) {
+      sw.stop();
+      if (kDebugMode) {
+        debugPrint('🍋 [AI UNKNOWN ERROR] $e\n$stack');
+      }
+      return AIChatResponse(
+        success: false,
+        error: 'AI_UNKNOWN_ERROR: Ocurrió un error inesperado.',
       );
     }
   }
@@ -47,7 +87,12 @@ class LemonAiRepository {
     String? customerName,
     String? customerPhone,
   }) async {
+    final sw = Stopwatch()..start();
     try {
+      if (kDebugMode) {
+        debugPrint('🍋 [AI VOICE REQUEST] POST /api/ai/voice | file: $audioFilePath');
+      }
+
       final formDataMap = <String, dynamic>{
         'audio': await MultipartFile.fromFile(
           audioFilePath,
@@ -78,6 +123,11 @@ class LemonAiRepository {
         ),
       );
 
+      sw.stop();
+      if (kDebugMode) {
+        debugPrint('🍋 [AI VOICE RESPONSE] status: ${response.statusCode} | time: ${sw.elapsedMilliseconds}ms');
+      }
+
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data is Map<String, dynamic>
             ? response.data as Map<String, dynamic>
@@ -86,19 +136,27 @@ class LemonAiRepository {
       } else {
         return AIVoiceResponse(
           success: false,
-          error: 'No se pudo procesar el audio (${response.statusCode})',
+          error: 'AI_HTTP_ERROR: No se pudo procesar el audio (${response.statusCode})',
         );
       }
     } on DioException catch (e) {
+      sw.stop();
       final chatError = _handleDioError(e);
       return AIVoiceResponse(
         success: false,
-        error: chatError.error ?? 'Error de red al procesar el audio.',
+        error: chatError.error ?? 'AI_NETWORK_ERROR: Error de red al procesar el audio.',
       );
-    } catch (e) {
+    } on FormatException catch (e) {
+      sw.stop();
       return const AIVoiceResponse(
         success: false,
-        error: 'Error de conexión al enviar el audio de voz.',
+        error: 'AI_PARSE_ERROR: Formato de audio inválido.',
+      );
+    } catch (e) {
+      sw.stop();
+      return const AIVoiceResponse(
+        success: false,
+        error: 'AI_UNKNOWN_ERROR: Error al procesar audio.',
       );
     }
   }
@@ -113,11 +171,11 @@ class LemonAiRepository {
             : jsonDecode(response.data.toString()) as Map<String, dynamic>;
         return AIChatResponse.fromJson(data);
       }
-      return AIChatResponse(success: false, error: 'Conversación no encontrada');
+      return const AIChatResponse(success: false, error: 'AI_NOT_FOUND: Conversación no encontrada');
     } on DioException catch (e) {
       return _handleDioError(e);
     } catch (e) {
-      return AIChatResponse(success: false, error: 'Error al consultar conversación');
+      return const AIChatResponse(success: false, error: 'AI_UNKNOWN_ERROR: Error al consultar conversación');
     }
   }
 
@@ -148,18 +206,28 @@ class LemonAiRepository {
         e.type == DioExceptionType.sendTimeout) {
       return const AIChatResponse(
         success: false,
-        error: 'El servidor tardó en responder. Por favor intenta de nuevo.',
+        error: 'AI_TIMEOUT: El servidor tardó en responder. Por favor intenta de nuevo.',
       );
     } else if (e.type == DioExceptionType.connectionError) {
       return const AIChatResponse(
         success: false,
-        error: 'Sin conexión al servidor Lemon Drop. Revisa tu internet.',
+        error: 'AI_NETWORK_ERROR: Sin conexión al servidor Lemon Drop. Revisa tu internet.',
+      );
+    } else if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+      return const AIChatResponse(
+        success: false,
+        error: 'AI_AUTH_ERROR: Sesión no autorizada.',
+      );
+    } else if (e.response?.statusCode == 500) {
+      return const AIChatResponse(
+        success: false,
+        error: 'AI_BACKEND_ERROR: Error interno en el servidor Lemon Drop.',
       );
     }
 
     final message = e.response?.data is Map
         ? (e.response?.data['message'] ?? e.response?.data['error'] ?? 'Error en el servidor')
-        : 'Lo siento, hubo un problema al procesar tu solicitud.';
+        : 'AI_HTTP_ERROR: No se pudo completar la solicitud.';
 
     return AIChatResponse(
       success: false,

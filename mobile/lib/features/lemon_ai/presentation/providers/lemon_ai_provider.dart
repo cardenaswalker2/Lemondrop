@@ -108,7 +108,6 @@ class LemonAiNotifier extends StateNotifier<LemonAiState> {
   final TextToSpeechProvider _ttsProvider;
 
   static const _keyConvId = 'lemon_ai_conv_id';
-  static const _keyClientToken = 'lemon_ai_client_token';
   static const _keyTtsEnabled = 'lemon_ai_tts_enabled';
 
   LemonAiNotifier({
