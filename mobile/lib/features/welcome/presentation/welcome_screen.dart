@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../lemon_ai/presentation/widgets/lemon_ai_fab.dart';
+import '../../lemon_ai/presentation/widgets/lemon_ai_sheet.dart';
 import 'customer_wizard_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -58,6 +60,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.creamBg,
+      floatingActionButton: const LemonAiFab(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -162,6 +165,84 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             ],
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Lemon AI Assistant Prominent Card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Card(
+                elevation: 3,
+                shadowColor: AppTheme.darkGreen.withOpacity(0.2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: const BorderSide(color: AppTheme.primaryLemon, width: 1.5),
+                ),
+                color: AppTheme.darkBg,
+                child: InkWell(
+                  onTap: () {
+                    LemonAiSheet.show(context);
+                  },
+                  borderRadius: BorderRadius.circular(24),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryLemon,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primaryLemon.withOpacity(0.4),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Text('🍋', style: TextStyle(fontSize: 26)),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'PEDIR CON LEMON AI',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text('✨', style: TextStyle(fontSize: 14)),
+                                ],
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Pide hablando por voz 🎙️ o escribiendo por chat',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppTheme.mintGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.primaryLemon, size: 18),
                       ],
                     ),
                   ),

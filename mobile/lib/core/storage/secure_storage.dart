@@ -8,6 +8,8 @@ class SecureStorage {
   static const _keyName = 'auth_name';
   static const _keyRole = 'auth_role';
 
+  static const _keyAiClientToken = 'lemon_ai_client_token';
+
   static Future<void> saveSession({
     required String token,
     required String username,
@@ -24,6 +26,13 @@ class SecureStorage {
   static Future<String?> getUsername() async => await _storage.read(key: _keyUsername);
   static Future<String?> getName() async => await _storage.read(key: _keyName);
   static Future<String?> getRole() async => await _storage.read(key: _keyRole);
+
+  static Future<void> saveAiClientToken(String token) async =>
+      await _storage.write(key: _keyAiClientToken, value: token);
+  static Future<String?> getAiClientToken() async =>
+      await _storage.read(key: _keyAiClientToken);
+  static Future<void> clearAiClientToken() async =>
+      await _storage.delete(key: _keyAiClientToken);
 
   static Future<void> clearSession() async {
     await _storage.delete(key: _keyToken);
