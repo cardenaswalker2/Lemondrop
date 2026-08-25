@@ -5,6 +5,7 @@ public enum ConversationState {
     DISCOVERING("Explorando catálogo"),
     BUILDING_ORDER("Armando pedido"),
     REVIEWING_ORDER("Revisando pedido"),
+    COLLECTING_CUSTOMER("Recolectando datos del cliente"),
     WAITING_CONFIRMATION("Esperando confirmación"),
     ORDER_CONFIRMED("Pedido confirmado"),
     ORDER_COMPLETED("Pedido completado"),

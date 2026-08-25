@@ -341,10 +341,11 @@ public class LemonDropAIService {
 
     private void extractAndPersistCustomerInfo(String text, AIConversation conv) {
         if (text == null || text.trim().isEmpty() || conv == null) return;
+        String raw = text.trim();
 
         // 1. Extract phone number (7 to 15 digits, Colombian format 3xx xxx xxxx, +57, etc.)
         java.util.regex.Pattern phonePattern = java.util.regex.Pattern.compile("(?:\\+?57\\s*)?(3\\d{2}[\\s.-]?\\d{3}[\\s.-]?\\d{4}|\\b\\d{7,15}\\b)");
-        java.util.regex.Matcher phoneMatcher = phonePattern.matcher(text);
+        java.util.regex.Matcher phoneMatcher = phonePattern.matcher(raw);
         if (phoneMatcher.find()) {
             String rawFound = phoneMatcher.group(1);
             String digits = rawFound.replaceAll("[^0-9]", "");
@@ -353,24 +354,87 @@ public class LemonDropAIService {
             }
         }
 
-        // 2. Extract name if explicitly provided
-        java.util.regex.Pattern namePattern = java.util.regex.Pattern.compile("(?i)(?:mi nombre es|me llamo|soy)\\s+([A-Za-zÁÉÍÓÚáéíóúñÑ]{2,25}(?:\\s+[A-Za-zÁÉÍÓÚáéíóúñÑ]{2,25})?)");
-        java.util.regex.Matcher nameMatcher = namePattern.matcher(text);
-        if (nameMatcher.find()) {
-            conv.setCustomerName(nameMatcher.group(1).trim());
-        } else if (text.contains(",")) {
-            String[] parts = text.split(",");
-            if (parts.length >= 2) {
-                String possibleName = parts[0].trim();
-                if (possibleName.matches("^[A-Za-zÁÉÍÓÚáéíóúñÑ\\s]{2,30}$") 
-                        && !possibleName.equalsIgnoreCase("hola") 
-                        && !possibleName.equalsIgnoreCase("si") 
-                        && !possibleName.equalsIgnoreCase("sí")
-                        && !possibleName.equalsIgnoreCase("buenas")) {
-                    conv.setCustomerName(possibleName);
+        // 2. Extract name
+        // Pattern A: Text preceding phone number (e.g. "Juan y el número es 3005722844", "Carlos, 3101234567", "Soy Juan 300...")
+        if (conv.getCustomerName() == null || conv.getCustomerName().isEmpty()) {
+            java.util.regex.Matcher pMatcher = phonePattern.matcher(raw);
+            if (pMatcher.find()) {
+                int phoneStart = pMatcher.start();
+                if (phoneStart > 0) {
+                    String prefix = raw.substring(0, phoneStart).trim();
+                    String[] words = prefix.split("[,\\s]+");
+                    StringBuilder nameBuilder = new StringBuilder();
+                    for (String w : words) {
+                        String cleanWord = w.replaceAll("[^\\p{L}]", "");
+                        if (cleanWord.isEmpty()) continue;
+                        String lw = cleanWord.toLowerCase();
+                        if (lw.equals("y") || lw.equals("e") || lw.equals("el") || lw.equals("la") ||
+                            lw.equals("mi") || lw.equals("es") || lw.equals("numero") || lw.equals("número") ||
+                            lw.equals("num") || lw.equals("celular") || lw.equals("cel") || lw.equals("tel") ||
+                            lw.equals("telefono") || lw.equals("teléfono") || lw.equals("whatsapp") ||
+                            lw.equals("wa") || lw.equals("soy") || lw.equals("me") || lw.equals("llamo") ||
+                            lw.equals("nombre")) {
+                            continue;
+                        }
+                        if (nameBuilder.length() > 0) nameBuilder.append(" ");
+                        nameBuilder.append(cleanWord);
+                    }
+                    String candidate = nameBuilder.toString().trim();
+                    if (candidate.matches("^[\\p{L} ]{2,30}$") && isValidName(candidate)) {
+                        conv.setCustomerName(candidate);
+                    }
                 }
             }
         }
+
+        // Pattern B: "Mi nombre es Juan", "Me llamo Juan", "Soy Juan"
+        if (conv.getCustomerName() == null || conv.getCustomerName().isEmpty()) {
+            java.util.regex.Pattern explicitNamePattern = java.util.regex.Pattern.compile("(?i)(?:mi nombre es|me llamo|soy)\\s+([\\p{L} ]{2,30})");
+            java.util.regex.Matcher enMatcher = explicitNamePattern.matcher(raw);
+            if (enMatcher.find()) {
+                String foundName = enMatcher.group(1).trim();
+                if (isValidName(foundName)) {
+                    conv.setCustomerName(foundName);
+                }
+            }
+        }
+
+        // Pattern C: Single word or two words if state is COLLECTING_CUSTOMER and expecting NAME
+        if ((conv.getCustomerName() == null || conv.getCustomerName().isEmpty()) &&
+                (conv.getState() == ConversationState.COLLECTING_CUSTOMER || conv.getPendingCustomerFields().contains("NAME"))) {
+            if (raw.matches("^[\\p{L} ]{2,30}$") && isValidName(raw)) {
+                conv.setCustomerName(raw.trim());
+            }
+        }
+
+        // 3. Update pendingCustomerFields
+        List<String> pending = new ArrayList<>();
+        if (conv.getCustomerName() == null || conv.getCustomerName().trim().isEmpty()) {
+            pending.add("NAME");
+        }
+        if (conv.getCustomerPhone() == null || conv.getCustomerPhone().trim().isEmpty()) {
+            pending.add("PHONE");
+        }
+        conv.setPendingCustomerFields(pending);
+    }
+
+    private boolean isValidName(String name) {
+        if (name == null || name.trim().isEmpty()) return false;
+        String lower = name.toLowerCase().trim();
+        if (lower.contains("granizado") || lower.contains("limon") || lower.contains("limón") ||
+            lower.contains("maracu") || lower.contains("cereza") || lower.contains("mango") ||
+            lower.contains("fresa") || lower.contains("pequeñ") || lower.contains("pequeno") ||
+            lower.contains("small") || lower.contains("median") || lower.contains("medium") ||
+            lower.contains("grande") || lower.contains("large") || lower.contains("arequipe") ||
+            lower.contains("topping") || lower.contains("leche") || lower.contains("quiero") ||
+            lower.contains("dame") || lower.contains("pedir") || lower.contains("menu") ||
+            lower.contains("menú") || lower.contains("carta") || lower.contains("sabor") ||
+            lower.contains("sabores") || lower.contains("hola") || lower.contains("buenas") ||
+            lower.contains("buenos") || lower.contains("si") || lower.contains("sí") ||
+            lower.contains("no") || lower.contains("ok") || lower.contains("dale")) {
+            return false;
+        }
+        return name.trim().length() >= 2 && name.trim().length() <= 30;
     }
 
     private String buildSystemPrompt(AIConversation conv) {
@@ -422,7 +486,10 @@ public class LemonDropAIService {
                 .clientToken(conv.getClientToken())
                 .message(message)
                 .state(conv.getState() != null ? conv.getState().name() : ConversationState.IDLE.name())
-                .intent(orderConfirmed ? "ORDER_CONFIRMED" : (requiresConfirmation ? "WAITING_CONFIRMATION" : "DISCOVERING"))
+                .intent(orderConfirmed ? "ORDER_CONFIRMED" : (requiresConfirmation ? "WAITING_CONFIRMATION" : (conv.getState() != null ? conv.getState().name() : "DISCOVERING")))
+                .customerName(conv.getCustomerName())
+                .customerPhone(conv.getCustomerPhone())
+                .pendingCustomerFields(conv.getPendingCustomerFields() != null ? new ArrayList<>(conv.getPendingCustomerFields()) : new ArrayList<>())
                 .cartUpdated(cartUpdated)
                 .orderReadyForConfirmation(requiresConfirmation || conv.getState() == ConversationState.WAITING_CONFIRMATION)
                 .requiresConfirmation(requiresConfirmation || conv.getState() == ConversationState.WAITING_CONFIRMATION)
@@ -545,13 +612,13 @@ public class LemonDropAIService {
         if (text == null) return false;
         String lower = text.toLowerCase();
         return lower.contains("producto") || lower.contains("granizado") || lower.contains("sabor") ||
-               lower.contains("sabores") || lower.contains("carta") || lower.contains("menu") ||
-               lower.contains("menú") || lower.contains("recomiend") || lower.contains("tienes") ||
-               lower.contains("opcion") || lower.contains("opción") || lower.contains("vendido") ||
-               lower.contains("catalogo") || lower.contains("catálogo") || lower.contains("vendes") ||
-               lower.contains("ofreces") || lower.contains("dulce") || lower.contains("acido") ||
-               lower.contains("ácido") || lower.contains("mostrar") || lower.contains("muestrame") ||
-               lower.contains("muéstrame") || lower.contains("puedo pedir") || lower.contains("que hay");
+                lower.contains("sabores") || lower.contains("carta") || lower.contains("menu") ||
+                lower.contains("menú") || lower.contains("recomiend") || lower.contains("tienes") ||
+                lower.contains("opcion") || lower.contains("opción") || lower.contains("vendido") ||
+                lower.contains("catalogo") || lower.contains("catálogo") || lower.contains("vendes") ||
+                lower.contains("ofreces") || lower.contains("dulce") || lower.contains("acido") ||
+                lower.contains("ácido") || lower.contains("mostrar") || lower.contains("muestrame") ||
+                lower.contains("muéstrame") || lower.contains("puedo pedir") || lower.contains("que hay");
     }
 
     private AIChatResponse handleDeterministicFlow(AIConversation conversation, String cleanMessage, long startTime) {
@@ -566,29 +633,71 @@ public class LemonDropAIService {
         String orderCode = conversation.getConfirmedOrderCode();
         String whatsAppUrl = null;
 
-        // 1. Check direct confirmation
-        if (lower.equals("si") || lower.equals("sí") || lower.contains("confirmo") || lower.contains("dale") || lower.contains("pídelo") || lower.contains("pidelo")) {
-            if (conversation.getCart() != null && !conversation.getCart().getItems().isEmpty()) {
-                if (conversation.getCustomerName() != null && !conversation.getCustomerName().isEmpty() &&
-                    conversation.getCustomerPhone() != null && !conversation.getCustomerPhone().isEmpty()) {
+        boolean hasCartItems = conversation.getCart() != null && !conversation.getCart().getItems().isEmpty();
+        List<String> pending = conversation.getPendingCustomerFields();
+
+        // 1. Inquiries about missing data (e.g. "me estabas pidiendo el número no?") - ONLY when not providing a phone number
+        if ((lower.contains("pidiendo") || lower.contains("preguntando") || lower.contains("para qué") || lower.contains("para que") || lower.contains("no?")) && !cleanMessage.matches(".*\\d{7,15}.*")) {
+            if (pending != null && pending.contains("PHONE")) {
+                finalAssistantMessage = "¡Sí! 😊 Solo me falta tu número de teléfono de WhatsApp para registrar tu pedido y notificarte cuando esté listo para recoger. 📱";
+            } else if (pending != null && pending.contains("NAME")) {
+                finalAssistantMessage = "¡Sí! 😊 Solo me falta tu nombre para registrar tu pedido en la cocina. 🍋";
+            } else {
+                conversation.setState(ConversationState.WAITING_CONFIRMATION);
+                requiresConfirmation = true;
+                finalAssistantMessage = "¡Ya tengo todos tus datos! 🍋 ¿Confirmamos tu pedido para enviarlo a cocina?";
+            }
+        }
+        // 2. Direct Confirmation ("Sí", "Confirmo", "Dale", "Pídelo", "Haz el pedido")
+        else if (lower.equals("si") || lower.equals("sí") || lower.contains("confirmo") || lower.contains("dale") || lower.contains("pídelo") || lower.contains("pidelo") || lower.contains("hazlo") || lower.contains("de una") || lower.contains("claro")) {
+            if (hasCartItems) {
+                if (pending == null || pending.isEmpty()) {
                     AIToolResult confirmResult = toolRegistry.execute("confirmar_pedido", "{}", conversation);
                     if (confirmResult.isOrderCreated() && confirmResult.getData() instanceof Map<?, ?> map) {
+                        conversation.setState(ConversationState.ORDER_CONFIRMED);
                         orderConfirmed = true;
                         orderCode = (String) map.get("orderCode");
                         whatsAppUrl = (String) map.get("whatsAppUrl");
-                        finalAssistantMessage = "🎉 ¡Pedido recibido con éxito! Código: " + orderCode + ".\n\nYa lo estamos preparando en la cocina. Te notificaremos por WhatsApp cuando esté listo para recoger. 🍋💛";
+                        finalAssistantMessage = "🎉 ¡Listo, " + (conversation.getCustomerName() != null ? conversation.getCustomerName() : "") + "! 🍋\n\nTu pedido " + orderCode + " quedó registrado exitosamente.\n\n🟢 Estado: Pedido recibido.\n\nTe avisaremos por WhatsApp cuando esté listo para recoger. ¡Muchas gracias por elegir Lemon Drop! 🍧✨";
                     } else {
-                        finalAssistantMessage = confirmResult.getMessage() != null ? confirmResult.getMessage() : "Hubo un error al confirmar tu pedido.";
+                        finalAssistantMessage = confirmResult.getMessage() != null ? confirmResult.getMessage() : "Hubo un problema al confirmar tu pedido.";
                     }
                 } else {
+                    conversation.setState(ConversationState.COLLECTING_CUSTOMER);
                     requiresConfirmation = true;
-                    finalAssistantMessage = "¡Listo! 🍋 Para enviar tu pedido a preparación en cocina, ¿a qué nombre y número de WhatsApp lo registramos? 📱";
+                    if (pending.contains("NAME") && pending.contains("PHONE")) {
+                        finalAssistantMessage = "¡Excelente! 🍋 Para enviar tu pedido a preparación en cocina, ¿a qué nombre y número de WhatsApp lo registramos? 📱";
+                    } else if (pending.contains("PHONE")) {
+                        finalAssistantMessage = "¡Listo, " + conversation.getCustomerName() + "! 🍋 Solo me falta tu número de WhatsApp para confirmar tu pedido. 📱";
+                    } else {
+                        finalAssistantMessage = "¡Listo! 📱 Solo me falta tu nombre para confirmar tu pedido. 🍋";
+                    }
                 }
             } else {
                 finalAssistantMessage = "Tu carrito está vacío actualmente. ¿Qué granizado te gustaría que te preparemos? 🍋";
+                attachAllActiveProducts(collectedProducts);
             }
         }
-        // 2. Check if user specifies size and/or toppings
+        // 3. User providing Name and/or Phone when in COLLECTING_CUSTOMER or when cart has items
+        else if (conversation.getState() == ConversationState.COLLECTING_CUSTOMER || (hasCartItems && (conversation.getCustomerName() != null || conversation.getCustomerPhone() != null))) {
+            if (pending == null || pending.isEmpty()) {
+                conversation.setState(ConversationState.WAITING_CONFIRMATION);
+                requiresConfirmation = true;
+                finalAssistantMessage = "¡Perfecto, " + conversation.getCustomerName() + "! 🍋 Ya tengo tus datos registrados.\n\n" +
+                        "Resumen de tu pedido:\n" + formatCartSummary(conversation.getCart()) + "\n\n" +
+                        "Total: $" + conversation.getCart().getTotal() + "\n\n" +
+                        "¿Confirmamos tu pedido para enviarlo a preparación en cocina? 🚀✨";
+            } else if (pending.contains("PHONE") && !pending.contains("NAME")) {
+                conversation.setState(ConversationState.COLLECTING_CUSTOMER);
+                finalAssistantMessage = "¡Mucho gusto, " + conversation.getCustomerName() + "! 🍋 Ahora solo me falta tu número de WhatsApp para poder notificarte cuando tu granizado esté listo. 📱";
+            } else if (pending.contains("NAME") && !pending.contains("PHONE")) {
+                conversation.setState(ConversationState.COLLECTING_CUSTOMER);
+                finalAssistantMessage = "¡Perfecto! 📱 Ya anoté tu número " + conversation.getCustomerPhone() + ". Ahora indícame tu nombre para registrar el pedido. 🍋";
+            } else {
+                finalAssistantMessage = "¡Excelente! 🍋 Para completar tu orden, ¿a qué nombre y número de WhatsApp la registramos? 📱";
+            }
+        }
+        // 4. Customization / Size / Topping specification
         else if (containsSizeKeyword(lower) || containsToppingKeyword(lower)) {
             String flavor = findTargetFlavor(lower, conversation);
             String size = extractSize(lower);
@@ -606,22 +715,33 @@ public class LemonDropAIService {
                 String argsJson = objectMapper.writeValueAsString(addArgs);
                 AIToolResult addResult = toolRegistry.execute("agregar_producto", argsJson, conversation);
                 cartUpdated = addResult.isCartModified();
-                requiresConfirmation = true;
 
-                finalAssistantMessage = "¡Listo! 🙌 Agregué al carrito:\n" +
-                        "• " + (flavor != null ? flavor : "Granizado de Limón") + " (" + (size != null ? size : "MEDIUM") + ")" +
-                        (!toppings.isEmpty() ? " con " + String.join(", ", toppings) : "") + "\n\n" +
-                        "Total del carrito: $" + (conversation.getCart() != null ? conversation.getCart().getTotal() : "7.000") + "\n\n" +
-                        "¿Confirmas este pedido tal cual o a qué nombre y número de WhatsApp lo registramos? 📱✨";
+                if (pending == null || pending.isEmpty()) {
+                    conversation.setState(ConversationState.WAITING_CONFIRMATION);
+                    requiresConfirmation = true;
+                    finalAssistantMessage = "¡Listo! 🙌 Agregué al carrito:\n" +
+                            "• " + (flavor != null ? flavor : "Granizado de Limón") + " (" + (size != null ? size : "MEDIUM") + ")" +
+                            (!toppings.isEmpty() ? " con " + String.join(", ", toppings) : "") + "\n\n" +
+                            "Total del carrito: $" + conversation.getCart().getTotal() + "\n\n" +
+                            "¿Confirmamos este pedido para enviarlo a preparación en cocina? 🚀✨";
+                } else {
+                    conversation.setState(ConversationState.COLLECTING_CUSTOMER);
+                    finalAssistantMessage = "¡Listo! 🙌 Agregué al carrito:\n" +
+                            "• " + (flavor != null ? flavor : "Granizado de Limón") + " (" + (size != null ? size : "MEDIUM") + ")" +
+                            (!toppings.isEmpty() ? " con " + String.join(", ", toppings) : "") + "\n\n" +
+                            "Total del carrito: $" + conversation.getCart().getTotal() + "\n\n" +
+                            "Tu granizado está casi listo. ¿A qué nombre y número de WhatsApp registramos tu pedido? 📱✨";
+                }
             } catch (Exception ex) {
                 finalAssistantMessage = "¡Listo! Ya tomé nota de tu pedido. ¿A qué nombre y número de WhatsApp lo confirmamos? 📱";
             }
         }
-        // 3. Check if user is requesting a specific product/flavor (e.g. "Quiero un Granizado de Limón", "el de limón porfa")
+        // 5. Product Order Selection ("Quiero un Granizado de Limón", "el de limón porfa")
         else if (isSpecificProductOrder(lower)) {
             String flavor = findTargetFlavor(lower, conversation);
             if (flavor == null) flavor = "Granizado de Limón";
 
+            conversation.setState(ConversationState.BUILDING_ORDER);
             finalAssistantMessage = "¡De una! 🍋 Vamos a armar tu " + flavor + ".\n\n" +
                     "Solo necesito que me confirmes:\n\n" +
                     "1️⃣ Tamaño:\n" +
@@ -633,25 +753,27 @@ public class LemonDropAIService {
                     "- Arequipe\n\n" +
                     "¿Qué tamaño y qué toppings te gustaría? 🚀✨";
 
-            // Attach that specific product card
             attachSingleProduct(flavor, collectedProducts);
         }
-        // 4. Catalogue inquiry (e.g. "qué productos tienes", "muéstrame la carta")
+        // 6. Catalogue Inquiry
         else if (isProductInquiry(lower)) {
+            conversation.setState(ConversationState.DISCOVERING);
             finalAssistantMessage = "¡Claro que sí! 🍋 Aquí te muestro nuestras opciones de granizados disponibles:";
             attachAllActiveProducts(collectedProducts);
         }
-        // 5. Greeting
+        // 7. Greeting
         else if (lower.contains("hola") || lower.contains("buenas") || lower.contains("hey")) {
+            conversation.setState(ConversationState.DISCOVERING);
             finalAssistantMessage = "¡Hola! 🍋 ¿Qué granizado se te antoja hoy? Puedes elegir tu sabor favorito o pedirme recomendaciones.";
             attachAllActiveProducts(collectedProducts);
         }
-        // 6. Recommendation
+        // 8. Recommendation
         else if (lower.contains("recomiend") || lower.contains("dulce") || lower.contains("acido") || lower.contains("ácido")) {
+            conversation.setState(ConversationState.DISCOVERING);
             finalAssistantMessage = "¡Te recomiendo nuestro Granizado de Limón clásico o el de Maracuyá con leche condensada! 🍋✨";
             attachAllActiveProducts(collectedProducts);
         }
-        // 7. General fallback
+        // 9. General fallback
         else {
             finalAssistantMessage = "¡Con gusto te atiendo! 🍋 Cuéntame qué sabor o tamaño de granizado deseas que te preparemos hoy.";
             attachAllActiveProducts(collectedProducts);
@@ -670,6 +792,21 @@ public class LemonDropAIService {
         if (whatsAppUrl != null) response.setWhatsAppUrl(whatsAppUrl);
         if (!collectedProducts.isEmpty()) response.setProducts(collectedProducts);
         return response;
+    }
+
+    private String formatCartSummary(AICart cart) {
+        if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
+            return "• Granizado de Limón (MEDIUM)";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (AICartItem item : cart.getItems()) {
+            sb.append("• ").append(item.getProductName()).append(" (").append(item.getSize() != null ? item.getSize().name() : "MEDIUM").append(")");
+            if (item.getAddons() != null && !item.getAddons().isEmpty()) {
+                sb.append(" con ").append(item.getAddons().stream().map(AICartItemAddon::getAddonName).collect(Collectors.joining(", ")));
+            }
+            sb.append(" — $").append(item.getSubtotal()).append("\n");
+        }
+        return sb.toString().trim();
     }
 
     private boolean isSpecificProductOrder(String text) {

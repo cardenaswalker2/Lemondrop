@@ -17,6 +17,9 @@ public class AIChatResponse {
     private String message;
     private String state;
     private String intent;
+    private String customerName;
+    private String customerPhone;
+    private List<String> pendingCustomerFields;
     
     @Builder.Default
     private boolean cartUpdated = false;

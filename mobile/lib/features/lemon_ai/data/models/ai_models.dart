@@ -289,6 +289,9 @@ class AIChatResponse {
   final String? message;
   final String? state;
   final String? intent;
+  final String? customerName;
+  final String? customerPhone;
+  final List<String> pendingCustomerFields;
   final bool cartUpdated;
   final bool requiresConfirmation;
   final bool orderReadyForConfirmation;
@@ -308,6 +311,9 @@ class AIChatResponse {
     this.message,
     this.state,
     this.intent,
+    this.customerName,
+    this.customerPhone,
+    this.pendingCustomerFields = const [],
     this.cartUpdated = false,
     this.requiresConfirmation = false,
     this.orderReadyForConfirmation = false,
@@ -329,6 +335,12 @@ class AIChatResponse {
       message: json['message'] as String?,
       state: json['state'] as String?,
       intent: json['intent'] as String?,
+      customerName: json['customerName'] as String?,
+      customerPhone: json['customerPhone'] as String?,
+      pendingCustomerFields: (json['pendingCustomerFields'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       cartUpdated: json['cartUpdated'] as bool? ?? false,
       requiresConfirmation: json['requiresConfirmation'] as bool? ?? false,
       orderReadyForConfirmation: json['orderReadyForConfirmation'] as bool? ?? false,
@@ -353,6 +365,9 @@ class AIChatResponse {
         'message': message,
         'state': state,
         'intent': intent,
+        'customerName': customerName,
+        'customerPhone': customerPhone,
+        'pendingCustomerFields': pendingCustomerFields,
         'cartUpdated': cartUpdated,
         'requiresConfirmation': requiresConfirmation,
         'orderReadyForConfirmation': orderReadyForConfirmation,
