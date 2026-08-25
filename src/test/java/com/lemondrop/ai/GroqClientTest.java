@@ -3,6 +3,7 @@ package com.lemondrop.ai;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lemondrop.ai.client.GroqClient;
 import com.lemondrop.ai.config.GroqConfig.GroqProperties;
+import com.lemondrop.ai.config.GroqConfig.LemonAiProperties;
 import com.lemondrop.ai.dto.groq.GroqChatRequest;
 import com.lemondrop.ai.dto.groq.GroqChatResponse;
 import com.lemondrop.ai.dto.groq.GroqMessage;
@@ -28,19 +29,21 @@ class GroqClientTest {
     private RestTemplate restTemplate;
     private GroqProperties groqProperties;
     private ObjectMapper objectMapper;
+    private LemonAiProperties lemonAiProperties;
     private GroqClient groqClient;
 
     @BeforeEach
     void setUp() {
         restTemplate = Mockito.mock(RestTemplate.class);
         groqProperties = new GroqProperties();
+        lemonAiProperties = new LemonAiProperties();
         objectMapper = new ObjectMapper();
     }
 
     @Test
     void testGroqClientWhenApiKeyNotConfigured() {
         groqProperties.getApi().setKey("");
-        groqClient = new GroqClient(restTemplate, groqProperties, objectMapper);
+        groqClient = new GroqClient(restTemplate, groqProperties, lemonAiProperties, objectMapper);
 
         assertFalse(groqClient.isAvailable());
         Optional<GroqChatResponse> response = groqClient.sendChatCompletion(
@@ -52,7 +55,8 @@ class GroqClientTest {
     @Test
     void testGroqClientSuccess() {
         groqProperties.getApi().setKey("gsk_test_key");
-        groqClient = new GroqClient(restTemplate, groqProperties, objectMapper);
+        lemonAiProperties.setDebugLogging(false); // default production mode
+        groqClient = new GroqClient(restTemplate, groqProperties, lemonAiProperties, objectMapper);
 
         assertTrue(groqClient.isAvailable());
 
@@ -77,7 +81,7 @@ class GroqClientTest {
     @Test
     void testGroqClientHttpErrorHandling() {
         groqProperties.getApi().setKey("gsk_test_key");
-        groqClient = new GroqClient(restTemplate, groqProperties, objectMapper);
+        groqClient = new GroqClient(restTemplate, groqProperties, lemonAiProperties, objectMapper);
 
         when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(GroqChatResponse.class)))
                 .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Invalid API Key"));

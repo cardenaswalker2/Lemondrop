@@ -62,6 +62,7 @@ public class GroqConfig {
 
     @Data
     public static class LemonAiProperties {
+        private boolean debugLogging = false;
         private int maxToolIterations = 8;
         private int maxMessageLength = 2000;
         private int cartExpirationMinutes = 60;

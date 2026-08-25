@@ -43,6 +43,7 @@ groq:
 
 lemon:
   ai:
+    debug-logging: ${LEMON_AI_DEBUG_LOGGING:false}
     max-tool-iterations: 8
     max-message-length: 2000
     cart-expiration-minutes: 60

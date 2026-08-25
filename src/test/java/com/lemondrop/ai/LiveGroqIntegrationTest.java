@@ -49,8 +49,9 @@ class LiveGroqIntegrationTest {
         factory.setReadTimeout(30000);
         RestTemplate restTemplate = new RestTemplate(factory);
 
+        LemonAiProperties aiProps = new LemonAiProperties();
         ObjectMapper objectMapper = new ObjectMapper();
-        GroqClient groqClient = new GroqClient(restTemplate, groqProperties, objectMapper);
+        GroqClient groqClient = new GroqClient(restTemplate, groqProperties, aiProps, objectMapper);
 
         AIToolRegistry toolRegistry = new AIToolRegistry(objectMapper);
         ProductService productService = Mockito.mock(ProductService.class);
@@ -80,7 +81,6 @@ class LiveGroqIntegrationTest {
         CatalogTools catalogTools = new CatalogTools(toolRegistry, productService, flavorService, addonService, inventoryService);
         catalogTools.registerTools();
 
-        LemonAiProperties aiProps = new LemonAiProperties();
         CartTools cartTools = new CartTools(toolRegistry, productService, flavorService, addonService, aiProps);
         cartTools.registerTools();
 

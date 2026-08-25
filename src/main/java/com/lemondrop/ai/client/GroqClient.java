@@ -2,6 +2,7 @@ package com.lemondrop.ai.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lemondrop.ai.config.GroqConfig.GroqProperties;
+import com.lemondrop.ai.config.GroqConfig.LemonAiProperties;
 import com.lemondrop.ai.dto.groq.GroqChatRequest;
 import com.lemondrop.ai.dto.groq.GroqChatResponse;
 import org.slf4j.Logger;
@@ -21,13 +22,16 @@ public class GroqClient {
 
     private final RestTemplate restTemplate;
     private final GroqProperties groqProperties;
+    private final LemonAiProperties lemonAiProperties;
     private final ObjectMapper objectMapper;
 
     public GroqClient(RestTemplate groqRestTemplate,
                       GroqProperties groqProperties,
+                      LemonAiProperties lemonAiProperties,
                       ObjectMapper objectMapper) {
         this.restTemplate = groqRestTemplate;
         this.groqProperties = groqProperties;
+        this.lemonAiProperties = lemonAiProperties;
         this.objectMapper = objectMapper;
     }
 
@@ -45,7 +49,9 @@ public class GroqClient {
             request.setModel(groqProperties.getApi().getModel());
         }
 
+        boolean isDebug = lemonAiProperties != null && lemonAiProperties.isDebugLogging();
         int maxAttempts = 3;
+
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 HttpHeaders headers = new HttpHeaders();
@@ -54,25 +60,47 @@ public class GroqClient {
 
                 HttpEntity<GroqChatRequest> entity = new HttpEntity<>(request, headers);
 
-                try {
-                    String reqJson = objectMapper.writeValueAsString(request);
-                    log.info("Enviando petición a Groq (intento {}/{}, modelo: {}):\n{}",
-                            attempt, maxAttempts, request.getModel(), reqJson);
-                } catch (Exception ignored) {}
+                if (isDebug) {
+                    try {
+                        String reqJson = objectMapper.writeValueAsString(request);
+                        log.info("Enviando petición a Groq [DEBUG] (intento {}/{}, modelo: {}):\n{}",
+                                attempt, maxAttempts, request.getModel(), reqJson);
+                    } catch (Exception ignored) {}
+                } else {
+                    log.info("Enviando petición a Groq (intento {}/{}, modelo: {}, mensajes: {}, tools: {})",
+                            attempt, maxAttempts, request.getModel(),
+                            request.getMessages() != null ? request.getMessages().size() : 0,
+                            request.getTools() != null ? request.getTools().size() : 0);
+                }
 
+                long tStart = System.currentTimeMillis();
                 ResponseEntity<GroqChatResponse> response = restTemplate.exchange(
                         groqProperties.getApi().getUrl(),
                         HttpMethod.POST,
                         entity,
                         GroqChatResponse.class
                 );
+                long tDuration = System.currentTimeMillis() - tStart;
 
                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                    try {
-                        String respJson = objectMapper.writeValueAsString(response.getBody());
-                        log.info("Respuesta de Groq recibida exitosamente (id: {}):\n{}", response.getBody().getId(), respJson);
-                    } catch (Exception ignored) {}
-                    return Optional.of(response.getBody());
+                    GroqChatResponse body = response.getBody();
+                    int toolCallsCount = 0;
+                    if (body.getChoices() != null && !body.getChoices().isEmpty() &&
+                            body.getChoices().get(0).getMessage() != null &&
+                            body.getChoices().get(0).getMessage().getToolCalls() != null) {
+                        toolCallsCount = body.getChoices().get(0).getMessage().getToolCalls().size();
+                    }
+
+                    if (isDebug) {
+                        try {
+                            String respJson = objectMapper.writeValueAsString(body);
+                            log.info("Respuesta de Groq recibida [DEBUG] (id: {}, {}ms):\n{}", body.getId(), tDuration, respJson);
+                        } catch (Exception ignored) {}
+                    } else {
+                        log.info("Respuesta de Groq recibida exitosamente (id: {}, {}ms, toolCalls: {})",
+                                body.getId(), tDuration, toolCallsCount);
+                    }
+                    return Optional.of(body);
                 } else {
                     log.error("Respuesta no exitosa de Groq: código {}", response.getStatusCode());
                     return Optional.empty();
