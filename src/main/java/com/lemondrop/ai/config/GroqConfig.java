@@ -44,7 +44,7 @@ public class GroqConfig {
         public static class Api {
             private String key;
             private String url = "https://api.groq.com/openai/v1/chat/completions";
-            private String model = "llama-3.3-70b-versatile";
+            private String model = "openai/gpt-oss-120b";
         }
 
         @Data
