@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class MockLemonAiRepository implements LemonAiRepository {
   AIChatResponse? nextResponse;
+  AIVoiceResponse? nextVoiceResponse;
   AIChatRequest? lastRequest;
 
   @override
@@ -21,14 +22,21 @@ class MockLemonAiRepository implements LemonAiRepository {
   }
 
   @override
-  Future<AIChatResponse> sendVoice({
+  Future<AIVoiceResponse> sendVoice({
     required String audioFilePath,
     String? conversationId,
     String? clientToken,
     String? customerName,
     String? customerPhone,
   }) async {
-    return nextResponse ?? const AIChatResponse(success: true, message: 'Voz procesada');
+    return nextVoiceResponse ??
+        const AIVoiceResponse(
+          transcription: 'Quiero un granizado de fresa',
+          chatResponse: AIChatResponse(
+            success: true,
+            message: '¡Listo! Te agregué el Granizado de Fresa.',
+          ),
+        );
   }
 }
 
@@ -98,12 +106,6 @@ class MockTextToSpeechProvider implements TextToSpeechProvider {
 
   @override
   Future<void> setRate(double rate) async {}
-
-  @override
-  Future<void> setVolume(double volume) async {}
-
-  @override
-  Future<void> dispose() async {}
 }
 
 void main() {
@@ -114,9 +116,10 @@ void main() {
   late MockTextToSpeechProvider mockTts;
   late LemonAiNotifier notifier;
 
-  setUp(() async {
-    FlutterSecureStorage.setMockInitialValues({});
+  setUp(() {
     SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
+
     mockRepo = MockLemonAiRepository();
     mockRecorder = MockAudioRecorderService();
     mockTts = MockTextToSpeechProvider();
@@ -126,17 +129,18 @@ void main() {
       recorderService: mockRecorder,
       ttsProvider: mockTts,
     );
-    await Future.delayed(const Duration(milliseconds: 20));
   });
 
-  group('LemonAiNotifier Flow Tests', () {
-    test('Initial state contains Colombian welcome greeting', () async {
+  group('LemonAiNotifier State & Workflow Tests', () {
+    test('Initial state contains welcome message and idle state', () async {
+      await Future.delayed(const Duration(milliseconds: 20));
       expect(notifier.state.messages.length, 1);
       expect(notifier.state.messages.first.role, 'assistant');
       expect(notifier.state.messages.first.content, contains('Bienvenido a Lemon Drop'));
+      expect(notifier.state.uiState, LemonAiUiState.idle);
     });
 
-    test('Sending message adds user bubble and processes assistant response with cart', () async {
+    test('Sending message adds user message and processes AI response', () async {
       mockRepo.nextResponse = const AIChatResponse(
         conversationId: 'conv-101',
         clientToken: 'token-202',
@@ -176,6 +180,30 @@ void main() {
       expect(mockTts.lastSpoken, contains('Agregué tu Granizado de Mango'));
     });
 
+    test('Stopping and sending voice creates user message with transcription and assistant reply', () async {
+      mockRepo.nextVoiceResponse = const AIVoiceResponse(
+        transcription: 'Quiero un granizado de limón mediano',
+        chatResponse: AIChatResponse(
+          conversationId: 'conv-voice-1',
+          clientToken: 'token-voice-1',
+          message: '¡Excelente elección! 🍋 Te preparo el Granizado de Limón.',
+          success: true,
+        ),
+      );
+
+      await notifier.startVoiceRecording();
+      await notifier.stopAndSendVoiceRecording();
+
+      expect(mockRecorder.recordingStopped, isTrue);
+      expect(notifier.state.messages.length, 3); // Welcome + User voice transcript + Assistant
+      expect(notifier.state.messages[1].role, 'user');
+      expect(notifier.state.messages[1].content, 'Quiero un granizado de limón mediano');
+      expect(notifier.state.messages[1].isVoice, isTrue);
+      expect(notifier.state.messages[2].role, 'assistant');
+      expect(notifier.state.messages[2].content, contains('Granizado de Limón'));
+      expect(notifier.state.uiState, LemonAiUiState.idle);
+    });
+
     test('Confirming order sends CONFIRM_ORDER action and updates state to orderConfirmed', () async {
       mockRepo.nextResponse = const AIChatResponse(
         conversationId: 'conv-101',
@@ -203,12 +231,13 @@ void main() {
       expect(notifier.state.uiState, LemonAiUiState.listening);
     });
 
-    test('Canceling voice recording cleans up and restores state', () async {
+    test('Canceling voice recording cleans up and restores state without adding empty message', () async {
       await notifier.startVoiceRecording();
       await notifier.cancelVoiceRecording();
 
       expect(mockRecorder.recordingCancelled, isTrue);
       expect(notifier.state.isRecording, isFalse);
+      expect(notifier.state.messages.length, 1); // Only initial welcome message remains
       expect(notifier.state.uiState, LemonAiUiState.idle);
     });
 

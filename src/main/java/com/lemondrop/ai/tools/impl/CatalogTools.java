@@ -277,10 +277,17 @@ public class CatalogTools {
         map.put("id", p.getId());
         map.put("name", p.getName());
         map.put("description", p.getDescription() != null ? p.getDescription() : "");
+        map.put("image", p.getImage() != null ? p.getImage() : "");
         map.put("category", p.getCategory() != null ? p.getCategory() : "Granizados");
         map.put("badge", p.getBadge() != null ? p.getBadge() : "");
         map.put("featured", p.isFeatured());
         map.put("available", p.isAvailable());
+
+        BigDecimal priceFrom = p.getSmallPrice();
+        if (priceFrom == null || priceFrom.compareTo(BigDecimal.ZERO) <= 0) {
+            priceFrom = p.getMediumPrice();
+        }
+        map.put("priceFrom", priceFrom != null ? priceFrom : BigDecimal.ZERO);
 
         Map<String, Object> prices = new HashMap<>();
         if (p.getSizePrices() != null) {

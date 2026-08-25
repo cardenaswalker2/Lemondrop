@@ -78,6 +78,59 @@ void main() {
       expect(response.suggestions, ['Confirmar', 'Cambiar tamaño']);
     });
 
+    test('AIChatResponse deserializes products list and visual metadata', () {
+      final json = {
+        'conversationId': 'conv-456',
+        'message': 'Aquí tienes los granizados más populares:',
+        'products': [
+          {
+            'id': 'prod-mango',
+            'name': 'Granizado de Mango',
+            'description': 'Mango tropical con sal y limón opcional',
+            'image': 'https://example.com/mango.jpg',
+            'category': 'Granizados',
+            'badge': 'Más vendido',
+            'priceFrom': 7000,
+            'prices': {'SMALL': 5000, 'MEDIUM': 7000, 'LARGE': 9000},
+            'available': true,
+          }
+        ],
+        'success': true,
+      };
+
+      final response = AIChatResponse.fromJson(json);
+
+      expect(response.products.length, 1);
+      final prod = response.products.first;
+      expect(prod.id, 'prod-mango');
+      expect(prod.name, 'Granizado de Mango');
+      expect(prod.badge, 'Más vendido');
+      expect(prod.priceFrom, 7000);
+      expect(prod.prices['MEDIUM'], 7000);
+      expect(prod.available, isTrue);
+    });
+
+    test('AIVoiceResponse deserializes transcription and embedded chatResponse', () {
+      final json = {
+        'transcription': 'Quiero un granizado de maracuyá',
+        'chatResponse': {
+          'conversationId': 'conv-voice-1',
+          'message': '¡Listo! Te agregué Granizado de Maracuyá.',
+          'success': true,
+        },
+        'sttDurationMs': 450,
+        'success': true,
+      };
+
+      final voiceResp = AIVoiceResponse.fromJson(json);
+
+      expect(voiceResp.transcription, 'Quiero un granizado de maracuyá');
+      expect(voiceResp.sttDurationMs, 450);
+      expect(voiceResp.success, isTrue);
+      expect(voiceResp.chatResponse, isNotNull);
+      expect(voiceResp.chatResponse!.message, contains('Maracuyá'));
+    });
+
     test('AIChatResponse deserializes confirmed order payload', () {
       final json = {
         'conversationId': 'conv-456',

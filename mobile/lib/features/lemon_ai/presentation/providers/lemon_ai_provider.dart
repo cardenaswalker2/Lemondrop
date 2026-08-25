@@ -255,7 +255,7 @@ class LemonAiNotifier extends StateNotifier<LemonAiState> {
     }
 
     try {
-      final response = await _repository.sendVoice(
+      final voiceResponse = await _repository.sendVoice(
         audioFilePath: audioPath,
         conversationId: state.conversationId,
         clientToken: state.clientToken,
@@ -264,7 +264,36 @@ class LemonAiNotifier extends StateNotifier<LemonAiState> {
       );
 
       await _recorderService.cleanupFile(audioPath);
-      await _processAiResponse(response, isVoice: true);
+
+      if (!voiceResponse.success) {
+        state = state.copyWith(
+          uiState: LemonAiUiState.idle,
+          errorMessage: voiceResponse.error ?? 'No se pudo procesar el mensaje de voz.',
+        );
+        return;
+      }
+
+      // 1. Agregar la transcripción como mensaje normal del usuario
+      if (voiceResponse.transcription != null && voiceResponse.transcription!.trim().isNotEmpty) {
+        final userMsg = AIMessage(
+          id: 'msg-u-${DateTime.now().millisecondsSinceEpoch}',
+          role: 'user',
+          content: voiceResponse.transcription!.trim(),
+          timestamp: DateTime.now(),
+          isVoice: true,
+        );
+        state = state.copyWith(
+          messages: [...state.messages, userMsg],
+          uiState: LemonAiUiState.thinking,
+        );
+      }
+
+      // 2. Procesar la respuesta del asistente
+      if (voiceResponse.chatResponse != null) {
+        await _processAiResponse(voiceResponse.chatResponse!);
+      } else {
+        state = state.copyWith(uiState: LemonAiUiState.idle);
+      }
     } catch (e) {
       await _recorderService.cleanupFile(audioPath);
       state = state.copyWith(
@@ -334,6 +363,7 @@ class LemonAiNotifier extends StateNotifier<LemonAiState> {
       timestamp: DateTime.now(),
       isVoice: isVoice,
       cartSnapshot: response.cart,
+      products: response.products,
       orderCode: response.orderCode,
       whatsAppUrl: response.whatsAppUrl,
       requiresConfirmation: response.requiresConfirmation || response.orderReadyForConfirmation,

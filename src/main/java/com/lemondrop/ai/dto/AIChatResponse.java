@@ -34,6 +34,7 @@ public class AIChatResponse {
     private String orderCode;
     private String whatsAppUrl;
     
+    private List<AIProductCardDto> products;
     private List<String> suggestions;
     private long executionTimeMs;
     private boolean success;

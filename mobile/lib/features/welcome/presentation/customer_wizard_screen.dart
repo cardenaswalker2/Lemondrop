@@ -665,7 +665,6 @@ class _CustomerWizardScreenState extends ConsumerState<CustomerWizardScreen> {
                 else
                   Column(
                     children: _flavors.where((f) => f.available).map((flavor) {
-                      final isSel = _selectedFlavor?.id == flavor.id;
                       final extra = flavor.additionalPrice == 0
                           ? 'Gratis'
                           : '+\$${flavor.additionalPrice.toStringAsFixed(0)}';

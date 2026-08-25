@@ -8,6 +8,7 @@ import com.lemondrop.ai.dto.AICartDto;
 import com.lemondrop.ai.dto.AICartItemDto;
 import com.lemondrop.ai.dto.AIChatRequest;
 import com.lemondrop.ai.dto.AIChatResponse;
+import com.lemondrop.ai.dto.AIProductCardDto;
 import com.lemondrop.ai.dto.AIToolResult;
 import com.lemondrop.ai.dto.groq.*;
 import com.lemondrop.ai.model.*;
@@ -114,6 +115,7 @@ public class LemonDropAIService {
 
         int iterations = 0;
         int maxIterations = lemonAiProperties.getMaxToolIterations();
+        List<AIProductCardDto> collectedProducts = new ArrayList<>();
 
         while (iterations < maxIterations) {
             iterations++;
@@ -185,6 +187,11 @@ public class LemonDropAIService {
                         }
                     }
 
+                    // Extract products for visual catalog cards in Flutter
+                    if (result.isSuccess() && result.getData() != null) {
+                        extractProductsFromResult(result.getData(), collectedProducts);
+                    }
+
                     // Append Tool Result to conversation
                     String resultJson;
                     try {
@@ -236,6 +243,7 @@ public class LemonDropAIService {
         AIChatResponse response = buildStandardResponse(conversation, finalAssistantMessage, startTime, cartUpdated, requiresConfirmation, orderConfirmed);
         if (lastOrderCode != null) response.setOrderCode(lastOrderCode);
         if (whatsAppUrl != null) response.setWhatsAppUrl(whatsAppUrl);
+        if (!collectedProducts.isEmpty()) response.setProducts(collectedProducts);
 
         return response;
     }
@@ -430,5 +438,64 @@ public class LemonDropAIService {
                 .status(cart.getStatus() != null ? cart.getStatus().name() : "DRAFT")
                 .totalItems(items.size())
                 .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void extractProductsFromResult(Object data, List<AIProductCardDto> target) {
+        if (data == null) return;
+
+        List<Map<String, Object>> productMaps = new ArrayList<>();
+        if (data instanceof List<?> list) {
+            for (Object item : list) {
+                if (item instanceof Map<?, ?> map && (map.containsKey("name") && (map.containsKey("prices") || map.containsKey("priceFrom")))) {
+                    productMaps.add((Map<String, Object>) map);
+                }
+            }
+        } else if (data instanceof Map<?, ?> map) {
+            if (map.containsKey("products") && map.get("products") instanceof List<?> list) {
+                for (Object item : list) {
+                    if (item instanceof Map<?, ?> pMap) {
+                        productMaps.add((Map<String, Object>) pMap);
+                    }
+                }
+            }
+        }
+
+        for (Map<String, Object> p : productMaps) {
+            String name = (String) p.getOrDefault("name", "");
+            if (name == null || name.trim().isEmpty()) continue;
+
+            // Avoid duplicates
+            if (target.stream().anyMatch(existing -> existing.getName().equalsIgnoreCase(name))) {
+                continue;
+            }
+
+            BigDecimal priceFrom = BigDecimal.ZERO;
+            if (p.get("priceFrom") instanceof BigDecimal bd) {
+                priceFrom = bd;
+            } else if (p.get("priceFrom") instanceof Number num) {
+                priceFrom = BigDecimal.valueOf(num.doubleValue());
+            }
+
+            Map<String, BigDecimal> prices = new HashMap<>();
+            if (p.get("prices") instanceof Map<?, ?> pMap) {
+                pMap.forEach((k, v) -> {
+                    if (v instanceof BigDecimal bd) prices.put(k.toString(), bd);
+                    else if (v instanceof Number n) prices.put(k.toString(), BigDecimal.valueOf(n.doubleValue()));
+                });
+            }
+
+            target.add(AIProductCardDto.builder()
+                    .id((String) p.getOrDefault("id", ""))
+                    .name(name)
+                    .description((String) p.getOrDefault("description", ""))
+                    .image((String) p.getOrDefault("image", ""))
+                    .category((String) p.getOrDefault("category", "Granizados"))
+                    .badge((String) p.getOrDefault("badge", ""))
+                    .priceFrom(priceFrom)
+                    .prices(prices)
+                    .available((Boolean) p.getOrDefault("available", true))
+                    .build());
+        }
     }
 }

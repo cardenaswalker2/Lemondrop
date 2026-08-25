@@ -40,7 +40,7 @@ class LemonAiRepository {
   }
 
   /// Envía audio grabado por voz para transcripción Whisper y ejecución de IA (POST /api/ai/voice)
-  Future<AIChatResponse> sendVoice({
+  Future<AIVoiceResponse> sendVoice({
     required String audioFilePath,
     String? conversationId,
     String? clientToken,
@@ -82,17 +82,21 @@ class LemonAiRepository {
         final data = response.data is Map<String, dynamic>
             ? response.data as Map<String, dynamic>
             : jsonDecode(response.data.toString()) as Map<String, dynamic>;
-        return AIChatResponse.fromJson(data);
+        return AIVoiceResponse.fromJson(data);
       } else {
-        return AIChatResponse(
+        return AIVoiceResponse(
           success: false,
           error: 'No se pudo procesar el audio (${response.statusCode})',
         );
       }
     } on DioException catch (e) {
-      return _handleDioError(e);
+      final chatError = _handleDioError(e);
+      return AIVoiceResponse(
+        success: false,
+        error: chatError.error ?? 'Error de red al procesar el audio.',
+      );
     } catch (e) {
-      return AIChatResponse(
+      return const AIVoiceResponse(
         success: false,
         error: 'Error de conexión al enviar el audio de voz.',
       );

@@ -17,6 +17,66 @@ enum LemonAiUiState {
   error,
 }
 
+/// DTO de tarjeta de producto visual para recomendaciones y catálogo dentro del chat
+class AIProductCardDto {
+  final String id;
+  final String name;
+  final String description;
+  final String? image;
+  final String? category;
+  final String? badge;
+  final num priceFrom;
+  final Map<String, num> prices;
+  final bool available;
+
+  const AIProductCardDto({
+    required this.id,
+    required this.name,
+    required this.description,
+    this.image,
+    this.category,
+    this.badge,
+    required this.priceFrom,
+    this.prices = const {},
+    this.available = true,
+  });
+
+  factory AIProductCardDto.fromJson(Map<String, dynamic> json) {
+    final pricesMap = <String, num>{};
+    if (json['prices'] is Map) {
+      (json['prices'] as Map).forEach((key, value) {
+        if (value is num) {
+          pricesMap[key.toString()] = value;
+        }
+      });
+    }
+
+    return AIProductCardDto(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      image: json['image'] as String?,
+      category: json['category'] as String? ?? 'Granizados',
+      badge: json['badge'] as String?,
+      priceFrom: (json['priceFrom'] as num?) ?? 0,
+      prices: pricesMap,
+      available: json['available'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'description': description,
+        'image': image,
+        'category': category,
+        'badge': badge,
+        'priceFrom': priceFrom,
+        'prices': prices,
+        'available': available,
+      };
+}
+
 /// DTO de ítem de carrito estructurado devuelto por el backend
 class AICartItemDto {
   final String? id;
@@ -130,6 +190,7 @@ class AIMessage {
   final DateTime timestamp;
   final bool isVoice;
   final AICartDto? cartSnapshot;
+  final List<AIProductCardDto> products;
   final String? orderCode;
   final String? whatsAppUrl;
   final bool requiresConfirmation;
@@ -142,6 +203,7 @@ class AIMessage {
     required this.timestamp,
     this.isVoice = false,
     this.cartSnapshot,
+    this.products = const [],
     this.orderCode,
     this.whatsAppUrl,
     this.requiresConfirmation = false,
@@ -163,6 +225,10 @@ class AIMessage {
       cartSnapshot: json['cartSnapshot'] != null
           ? AICartDto.fromJson(json['cartSnapshot'] as Map<String, dynamic>)
           : null,
+      products: (json['products'] as List<dynamic>?)
+              ?.map((e) => AIProductCardDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       orderCode: json['orderCode'] as String?,
       whatsAppUrl: json['whatsAppUrl'] as String?,
       requiresConfirmation: json['requiresConfirmation'] as bool? ?? false,
@@ -177,6 +243,7 @@ class AIMessage {
         'timestamp': timestamp.toIso8601String(),
         'isVoice': isVoice,
         'cartSnapshot': cartSnapshot?.toJson(),
+        'products': products.map((e) => e.toJson()).toList(),
         'orderCode': orderCode,
         'whatsAppUrl': whatsAppUrl,
         'requiresConfirmation': requiresConfirmation,
@@ -215,7 +282,7 @@ class AIChatRequest {
   }
 }
 
-/// Respuesta estructurada recibida de POST /api/ai/chat o POST /api/ai/voice
+/// Respuesta estructurada recibida de POST /api/ai/chat
 class AIChatResponse {
   final String? conversationId;
   final String? clientToken;
@@ -229,6 +296,7 @@ class AIChatResponse {
   final String? orderCode;
   final String? whatsAppUrl;
   final AICartDto? cart;
+  final List<AIProductCardDto> products;
   final List<String> suggestions;
   final int executionTimeMs;
   final bool success;
@@ -247,6 +315,7 @@ class AIChatResponse {
     this.orderCode,
     this.whatsAppUrl,
     this.cart,
+    this.products = const [],
     this.suggestions = const [],
     this.executionTimeMs = 0,
     this.success = true,
@@ -267,6 +336,10 @@ class AIChatResponse {
       orderCode: json['orderCode'] as String?,
       whatsAppUrl: json['whatsAppUrl'] as String?,
       cart: json['cart'] != null ? AICartDto.fromJson(json['cart'] as Map<String, dynamic>) : null,
+      products: (json['products'] as List<dynamic>?)
+              ?.map((e) => AIProductCardDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       suggestions: (json['suggestions'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       executionTimeMs: (json['executionTimeMs'] as num?)?.toInt() ?? 0,
       success: json['success'] as bool? ?? true,
@@ -287,8 +360,46 @@ class AIChatResponse {
         'orderCode': orderCode,
         'whatsAppUrl': whatsAppUrl,
         'cart': cart?.toJson(),
+        'products': products.map((e) => e.toJson()).toList(),
         'suggestions': suggestions,
         'executionTimeMs': executionTimeMs,
+        'success': success,
+        'error': error,
+      };
+}
+
+/// Respuesta estructurada recibida de POST /api/ai/voice
+class AIVoiceResponse {
+  final String? transcription;
+  final AIChatResponse? chatResponse;
+  final int sttDurationMs;
+  final bool success;
+  final String? error;
+
+  const AIVoiceResponse({
+    this.transcription,
+    this.chatResponse,
+    this.sttDurationMs = 0,
+    this.success = true,
+    this.error,
+  });
+
+  factory AIVoiceResponse.fromJson(Map<String, dynamic> json) {
+    return AIVoiceResponse(
+      transcription: json['transcription'] as String?,
+      chatResponse: json['chatResponse'] != null
+          ? AIChatResponse.fromJson(json['chatResponse'] as Map<String, dynamic>)
+          : null,
+      sttDurationMs: (json['sttDurationMs'] as num?)?.toInt() ?? 0,
+      success: json['success'] as bool? ?? true,
+      error: json['error'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'transcription': transcription,
+        'chatResponse': chatResponse?.toJson(),
+        'sttDurationMs': sttDurationMs,
         'success': success,
         'error': error,
       };
