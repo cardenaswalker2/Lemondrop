@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/models.dart';
-import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/app_formatters.dart';
 import '../../auth/providers/auth_provider.dart';
-import 'widgets/interactive_order_card.dart';
 import 'widgets/order_status_badge.dart';
 import 'widgets/order_tracking_timeline.dart';
 

@@ -35,6 +35,8 @@ public class MobileApiController {
     private final ProductService productService;
     private final FlavorService flavorService;
     private final AddonService addonService;
+    private final OrderStatusHistoryRepository statusHistoryRepository;
+    private final OrderChangeHistoryRepository changeHistoryRepository;
 
     public MobileApiController(UserRepository userRepository,
                                ApiTokenRepository apiTokenRepository,
@@ -43,7 +45,9 @@ public class MobileApiController {
                                OrderService orderService,
                                ProductService productService,
                                FlavorService flavorService,
-                               AddonService addonService) {
+                               AddonService addonService,
+                               OrderStatusHistoryRepository statusHistoryRepository,
+                               OrderChangeHistoryRepository changeHistoryRepository) {
         this.userRepository = userRepository;
         this.apiTokenRepository = apiTokenRepository;
         this.passwordEncoder = passwordEncoder;
@@ -52,6 +56,8 @@ public class MobileApiController {
         this.productService = productService;
         this.flavorService = flavorService;
         this.addonService = addonService;
+        this.statusHistoryRepository = statusHistoryRepository;
+        this.changeHistoryRepository = changeHistoryRepository;
     }
 
     // 1. POST /api/mobile/auth/login
@@ -91,14 +97,16 @@ public class MobileApiController {
                 .build();
         apiTokenRepository.save(token);
 
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("id", user.getId());
+        userData.put("name", user.getName());
+        userData.put("username", user.getUsername());
+        userData.put("role", user.getRole());
+        userData.put("phone", user.getPhone() != null ? user.getPhone() : "");
+
         Map<String, Object> response = new HashMap<>();
         response.put("token", tokenStr);
-        response.put("user", Map.of(
-                "id", user.getId(),
-                "name", user.getName(),
-                "username", user.getUsername(),
-                "role", user.getRole()
-        ));
+        response.put("user", userData);
 
         return ResponseEntity.ok(response);
     }
@@ -118,12 +126,14 @@ public class MobileApiController {
         }
 
         User user = userOpt.get();
-        return ResponseEntity.ok(Map.of(
-                "id", user.getId(),
-                "name", user.getName(),
-                "username", user.getUsername(),
-                "role", user.getRole()
-        ));
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("id", user.getId());
+        userData.put("name", user.getName());
+        userData.put("username", user.getUsername());
+        userData.put("role", user.getRole());
+        userData.put("phone", user.getPhone() != null ? user.getPhone() : "");
+
+        return ResponseEntity.ok(userData);
     }
 
     // 3. GET /api/mobile/orders (active orders with optional status filter)
@@ -156,14 +166,83 @@ public class MobileApiController {
         return ResponseEntity.ok(ordersPage);
     }
 
-    // 4. GET /api/mobile/orders/history (history of completed/cancelled orders)
+    // 4. GET /api/mobile/orders/history (history of completed/cancelled orders with server-side filters & search)
     @GetMapping("/orders/history")
     public ResponseEntity<?> getOrderHistory(@RequestParam(defaultValue = "0") int page,
-                                             @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        List<OrderStatus> completedStatuses = List.of(OrderStatus.DELIVERED, OrderStatus.CANCELLED);
-        Page<Order> historyPage = orderRepository.findByStatusIn(completedStatuses, pageable);
-        return ResponseEntity.ok(historyPage);
+                                             @RequestParam(defaultValue = "20") int size,
+                                             @RequestParam(required = false, defaultValue = "") String query,
+                                             @RequestParam(required = false, defaultValue = "TODOS") String filter,
+                                             @RequestParam(required = false, defaultValue = "ALL") String status) {
+        List<Order> allOrders = orderService.getAllOrders();
+
+        List<Order> finishedOrders = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.DELIVERED || o.getStatus() == OrderStatus.CANCELLED)
+                .collect(Collectors.toList());
+
+        // Filter by status if specified
+        if ("DELIVERED".equalsIgnoreCase(status)) {
+            finishedOrders = finishedOrders.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERED).collect(Collectors.toList());
+        } else if ("CANCELLED".equalsIgnoreCase(status)) {
+            finishedOrders = finishedOrders.stream().filter(o -> o.getStatus() == OrderStatus.CANCELLED).collect(Collectors.toList());
+        }
+
+        // Filter by time range
+        LocalDateTime now = LocalDateTime.now();
+        if ("HOY".equalsIgnoreCase(filter)) {
+            LocalDateTime startOfToday = now.toLocalDate().atStartOfDay();
+            finishedOrders = finishedOrders.stream()
+                    .filter(o -> (o.getDeliveredAt() != null && o.getDeliveredAt().isAfter(startOfToday))
+                            || (o.getCancelledAt() != null && o.getCancelledAt().isAfter(startOfToday))
+                            || (o.getUpdatedAt() != null && o.getUpdatedAt().isAfter(startOfToday))
+                            || o.getCreatedAt().isAfter(startOfToday))
+                    .collect(Collectors.toList());
+        } else if ("AYER".equalsIgnoreCase(filter)) {
+            LocalDateTime startOfYesterday = now.toLocalDate().minusDays(1).atStartOfDay();
+            LocalDateTime endOfYesterday = now.toLocalDate().atStartOfDay().minusSeconds(1);
+            finishedOrders = finishedOrders.stream()
+                    .filter(o -> o.getCreatedAt().isAfter(startOfYesterday) && o.getCreatedAt().isBefore(endOfYesterday))
+                    .collect(Collectors.toList());
+        } else if ("7_DIAS".equalsIgnoreCase(filter)) {
+            LocalDateTime startOf7DaysAgo = now.toLocalDate().minusDays(7).atStartOfDay();
+            finishedOrders = finishedOrders.stream()
+                    .filter(o -> o.getCreatedAt().isAfter(startOf7DaysAgo))
+                    .collect(Collectors.toList());
+        }
+
+        // Search query filter (orderCode, customerName, customerPhone)
+        if (query != null && !query.trim().isEmpty()) {
+            final String q = query.toLowerCase().trim();
+            finishedOrders = finishedOrders.stream()
+                    .filter(o -> (o.getOrderCode() != null && o.getOrderCode().toLowerCase().contains(q))
+                            || (o.getCustomerName() != null && o.getCustomerName().toLowerCase().contains(q))
+                            || (o.getCustomerPhone() != null && o.getCustomerPhone().contains(q)))
+                    .collect(Collectors.toList());
+        }
+
+        // Sort descending by updatedAt or createdAt
+        finishedOrders.sort((a, b) -> {
+            LocalDateTime timeA = a.getUpdatedAt() != null ? a.getUpdatedAt() : a.getCreatedAt();
+            LocalDateTime timeB = b.getUpdatedAt() != null ? b.getUpdatedAt() : b.getCreatedAt();
+            return timeB.compareTo(timeA);
+        });
+
+        int totalElements = finishedOrders.size();
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        if (totalPages == 0) totalPages = 1;
+
+        int fromIndex = Math.min(page * size, totalElements);
+        int toIndex = Math.min(fromIndex + size, totalElements);
+        List<Order> pageContent = finishedOrders.subList(fromIndex, toIndex);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("content", pageContent);
+        result.put("totalPages", totalPages);
+        result.put("totalElements", totalElements);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("isLast", page >= totalPages - 1);
+
+        return ResponseEntity.ok(result);
     }
 
     // 5. GET /api/mobile/orders/updates (polling optimized endpoint)
@@ -218,22 +297,22 @@ public class MobileApiController {
                 }
                 break;
             case ACCEPTED:
-                if (newStatus == OrderStatus.PREPARING) {
+                if (newStatus == OrderStatus.PREPARING || newStatus == OrderStatus.CANCELLED) {
                     isValidTransition = true;
                 }
                 break;
             case PREPARING:
-                if (newStatus == OrderStatus.ALMOST_READY) {
+                if (newStatus == OrderStatus.ALMOST_READY || newStatus == OrderStatus.CANCELLED) {
                     isValidTransition = true;
                 }
                 break;
             case ALMOST_READY:
-                if (newStatus == OrderStatus.READY) {
+                if (newStatus == OrderStatus.READY || newStatus == OrderStatus.CANCELLED) {
                     isValidTransition = true;
                 }
                 break;
             case READY:
-                if (newStatus == OrderStatus.DELIVERED) {
+                if (newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.CANCELLED) {
                     isValidTransition = true;
                 }
                 break;
@@ -255,7 +334,39 @@ public class MobileApiController {
         }
     }
 
-    // 7. POST /api/mobile/orders/{id}/edit (edit order items and recalculate)
+    // 7. POST /api/mobile/orders/{id}/claim (advisor claims an order)
+    @PostMapping("/orders/{id}/claim")
+    public ResponseEntity<?> claimOrder(@PathVariable String id,
+                                        @RequestHeader("Authorization") String authHeader) {
+        String tokenStr = authHeader.replace("Bearer ", "").trim();
+        ApiToken token = apiTokenRepository.findByToken(tokenStr).orElseThrow();
+        String actor = token.getUsername();
+
+        try {
+            Order updated = orderService.claimOrder(id, actor);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Error al tomar el pedido: " + e.getMessage()));
+        }
+    }
+
+    // 8. GET /api/mobile/orders/{id}/status-history
+    @GetMapping("/orders/{id}/status-history")
+    public ResponseEntity<?> getStatusHistory(@PathVariable String id) {
+        List<OrderStatusHistory> history = statusHistoryRepository.findByOrderIdOrderByUpdatedAtAsc(id);
+        return ResponseEntity.ok(history);
+    }
+
+    // 9. GET /api/mobile/orders/{id}/change-history
+    @GetMapping("/orders/{id}/change-history")
+    public ResponseEntity<?> getChangeHistory(@PathVariable String id) {
+        List<OrderChangeHistory> history = changeHistoryRepository.findByOrderIdOrderByUpdatedAtAsc(id);
+        return ResponseEntity.ok(history);
+    }
+
+    // 10. POST /api/mobile/orders/{id}/edit (edit order items and recalculate)
     @PostMapping("/orders/{id}/edit")
     public ResponseEntity<?> editOrderItems(@PathVariable String id,
                                             @RequestBody Map<String, Object> body,
@@ -308,7 +419,7 @@ public class MobileApiController {
         }
     }
 
-    // 8. GET /api/mobile/catalog
+    // 11. GET /api/mobile/catalog
     @GetMapping("/catalog")
     public ResponseEntity<?> getCatalog() {
         Map<String, Object> response = new HashMap<>();
@@ -318,9 +429,18 @@ public class MobileApiController {
         return ResponseEntity.ok(response);
     }
 
-    // 9. GET /api/mobile/stats
+    // 12. GET /api/mobile/stats
     @GetMapping("/stats")
-    public ResponseEntity<?> getStats() {
+    public ResponseEntity<?> getStats(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        String actor = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String tokenStr = authHeader.replace("Bearer ", "").trim();
+            Optional<ApiToken> tokenOpt = apiTokenRepository.findByToken(tokenStr);
+            if (tokenOpt.isPresent()) {
+                actor = tokenOpt.get().getUsername();
+            }
+        }
+
         LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
         LocalDateTime endOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
 
@@ -330,6 +450,7 @@ public class MobileApiController {
         long deliveredCount = ordersToday.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERED).count();
         long readyCount = ordersToday.stream().filter(o -> o.getStatus() == OrderStatus.READY).count();
         long preparingCount = ordersToday.stream().filter(o -> o.getStatus() == OrderStatus.PREPARING).count();
+        long cancelledCount = ordersToday.stream().filter(o -> o.getStatus() == OrderStatus.CANCELLED).count();
 
         // Admin metrics
         double totalSales = ordersToday.stream()
@@ -340,6 +461,34 @@ public class MobileApiController {
         long pendingCount = ordersToday.stream()
                 .filter(o -> o.getStatus() == OrderStatus.RECEIVED || o.getStatus() == OrderStatus.ACCEPTED)
                 .count();
+
+        // Operational metrics
+        List<Order> allActiveOrders = orderService.getAllOrders().stream()
+                .filter(o -> o.getStatus() != OrderStatus.DELIVERED && o.getStatus() != OrderStatus.CANCELLED)
+                .collect(Collectors.toList());
+
+        long urgentCount = allActiveOrders.stream()
+                .filter(o -> "ALTA".equalsIgnoreCase(o.getPriority()))
+                .count();
+
+        long unassignedCount = allActiveOrders.stream()
+                .filter(o -> o.getAssignedAdvisor() == null || o.getAssignedAdvisor().trim().isEmpty() || "Sin asignar".equalsIgnoreCase(o.getAssignedAdvisor()))
+                .count();
+
+        final String finalActor = actor;
+        long myDeliveredCount = 0;
+        long myActiveCount = 0;
+
+        if (finalActor != null) {
+            myDeliveredCount = ordersToday.stream()
+                    .filter(o -> o.getStatus() == OrderStatus.DELIVERED &&
+                            (finalActor.equalsIgnoreCase(o.getAssignedAdvisor()) || finalActor.equalsIgnoreCase(o.getLastModifiedBy())))
+                    .count();
+
+            myActiveCount = allActiveOrders.stream()
+                    .filter(o -> finalActor.equalsIgnoreCase(o.getAssignedAdvisor()))
+                    .count();
+        }
 
         // Top products/flavors today
         Map<String, Long> productCounts = new HashMap<>();
@@ -369,6 +518,11 @@ public class MobileApiController {
         stats.put("readyCount", readyCount);
         stats.put("preparingCount", preparingCount);
         stats.put("pendingCount", pendingCount);
+        stats.put("cancelledCountToday", cancelledCount);
+        stats.put("urgentCount", urgentCount);
+        stats.put("unassignedCount", unassignedCount);
+        stats.put("myDeliveredCountToday", myDeliveredCount);
+        stats.put("myActiveCount", myActiveCount);
         stats.put("totalSalesToday", totalSales);
         stats.put("ordersCreatedToday", ordersToday.size());
         stats.put("topProductToday", topProduct);

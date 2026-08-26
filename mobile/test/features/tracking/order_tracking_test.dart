@@ -5,7 +5,6 @@ import 'package:lemondrop_mobile/core/models/models.dart';
 import 'package:lemondrop_mobile/core/theme/app_theme.dart';
 import 'package:lemondrop_mobile/features/tracking/presentation/order_tracking_detail_screen.dart';
 import 'package:lemondrop_mobile/features/tracking/presentation/widgets/interactive_order_card.dart';
-import 'package:lemondrop_mobile/features/tracking/presentation/widgets/order_status_badge.dart';
 import 'package:lemondrop_mobile/features/tracking/presentation/widgets/order_tracking_timeline.dart';
 
 void main() {

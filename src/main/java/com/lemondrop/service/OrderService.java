@@ -491,6 +491,35 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    public synchronized Order claimOrder(String id, String advisor) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));
+
+        String current = order.getAssignedAdvisor();
+        if (current != null && !current.trim().isEmpty() && !current.equalsIgnoreCase("Sin asignar") && !current.equalsIgnoreCase(advisor)) {
+            throw new IllegalStateException("Este pedido ya fue tomado por " + current);
+        }
+
+        String oldAdvisor = current != null ? current : "Sin asignar";
+        order.setAssignedAdvisor(advisor);
+        order.setLastModifiedBy(advisor);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        OrderChangeHistory changeHistory = OrderChangeHistory.builder()
+                .orderId(order.getId())
+                .orderCode(order.getOrderCode())
+                .propertyName("assignedAdvisor")
+                .oldValue(oldAdvisor)
+                .newValue(advisor)
+                .updatedBy(advisor)
+                .updatedAt(LocalDateTime.now())
+                .reason("Asesor tomó la comanda para preparación")
+                .build();
+        changeHistoryRepository.save(changeHistory);
+
+        return orderRepository.save(order);
+    }
+
     public synchronized Order closeOrder(String id, String actor) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));

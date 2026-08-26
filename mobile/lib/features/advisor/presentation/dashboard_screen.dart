@@ -6,6 +6,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/orders_provider.dart';
 import 'order_detail_screen.dart';
+import 'widgets/advisor_badges.dart';
+import 'widgets/order_timer_badge.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -15,6 +17,7 @@ class DashboardScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final statsAsync = ref.watch(statsProvider);
     final ordersAsync = ref.watch(activeOrdersProvider);
+    final currentUser = authState.user;
 
     final todayStr = DateFormat('EEEE, d MMMM', 'es_CO').format(DateTime.now());
     final capitalizeToday = todayStr[0].toUpperCase() + todayStr.substring(1);
@@ -22,6 +25,7 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
+          color: AppTheme.darkGreen,
           onRefresh: () async {
             ref.read(statsProvider.notifier).fetchStats();
             ref.read(activeOrdersProvider.notifier).fetchActiveOrders();
@@ -41,7 +45,7 @@ class DashboardScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '¡Hola, ${authState.user?.name ?? "María"}! 👋',
+                            '¡Hola, ${currentUser?.name ?? "Asesor"}! 👋',
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
@@ -69,9 +73,9 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                // Operational KPIs Grid
+                // Operational KPIs Header
                 const Text(
                   'Operación Hoy',
                   style: TextStyle(
@@ -82,18 +86,40 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 statsAsync.when(
-                  data: (stats) => GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.4,
+                  data: (stats) => Column(
                     children: [
-                      _buildKpiCard('🔔 PENDIENTES', stats.pendingCount.toString(), AppTheme.primaryLemon, AppTheme.darkBg),
-                      _buildKpiCard('🧊 PREPARANDO', stats.preparingCount.toString(), AppTheme.mintGreen, AppTheme.darkGreen),
-                      _buildKpiCard('🎉 LISTOS', stats.readyCount.toString(), AppTheme.softGreen, AppTheme.darkGreen),
-                      _buildKpiCard('✅ ENTREGADOS', stats.deliveredCountToday.toString(), Colors.white, AppTheme.textDark),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.5,
+                        children: [
+                          _buildKpiCard('🔔 PENDIENTES', stats.pendingCount.toString(), AppTheme.primaryLemon, AppTheme.darkBg),
+                          _buildKpiCard('🧊 PREPARANDO', stats.preparingCount.toString(), AppTheme.mintGreen, AppTheme.darkGreen),
+                          _buildKpiCard('🎉 LISTOS', stats.readyCount.toString(), AppTheme.softGreen, AppTheme.darkGreen),
+                          _buildKpiCard('✅ ENTREGADOS', stats.deliveredCountToday.toString(), Colors.white, AppTheme.textDark),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          if (stats.urgentCount > 0) ...[
+                            Expanded(
+                              child: _buildMiniKpiCard('🔥 URGENTES', stats.urgentCount.toString(), const Color(0xFFFFEBEE), AppTheme.strawberryRed),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
+                          Expanded(
+                            child: _buildMiniKpiCard('👤 SIN ASIGNAR', stats.unassignedCount.toString(), const Color(0xFFF1F5F9), const Color(0xFF334155)),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildMiniKpiCard('✨ MIS DESPACHOS', stats.myDeliveredCountToday.toString(), AppTheme.softGreen, AppTheme.darkGreen),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                   loading: () => const Center(
@@ -114,11 +140,11 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
 
-                // Highlighted Notification Board or Motivation banner
-                _buildMotivationBanner(statsAsync),
-                const SizedBox(height: 28),
+                // Highlighted Urgent or Motivation Banner
+                _buildOperationalInsightBanner(ordersAsync, statsAsync),
+                const SizedBox(height: 24),
 
                 // New/Pending Orders Board
                 Row(
@@ -134,7 +160,6 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        // Switch tab to orders list
                         final layoutState = ref.read(advisorLayoutTabProvider.notifier);
                         layoutState.state = 1; // index for Pedidos Tab
                       },
@@ -179,7 +204,7 @@ class DashboardScreen extends ConsumerWidget {
                       itemCount: newOrders.length,
                       itemBuilder: (context, index) {
                         final order = newOrders[index];
-                        return _buildNewOrderCard(context, ref, order);
+                        return _buildNewOrderCard(context, ref, order, currentUser?.username);
                       },
                     );
                   },
@@ -200,8 +225,9 @@ class DashboardScreen extends ConsumerWidget {
     return Card(
       color: bgColor,
       elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(14.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,13 +238,13 @@ class DashboardScreen extends ConsumerWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
                 color: textColor.withOpacity(0.8),
-                letterSpacing: 1,
+                letterSpacing: 0.5,
               ),
             ),
             Text(
               value,
               style: TextStyle(
-                fontSize: 28,
+                fontSize: 26,
                 fontWeight: FontWeight.w900,
                 color: textColor,
               ),
@@ -229,42 +255,100 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMotivationBanner(AsyncValue<Stats> statsAsync) {
+  Widget _buildMiniKpiCard(String title, String value, Color bgColor, Color textColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: textColor.withOpacity(0.85)),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: textColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOperationalInsightBanner(AsyncValue<List<Order>> ordersAsync, AsyncValue<Stats> statsAsync) {
+    final urgentCount = statsAsync.asData?.value.urgentCount ?? 0;
+    if (urgentCount > 0) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFEBEE),
+          border: Border.all(color: AppTheme.strawberryRed, width: 1.5),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            const Text('🔥', style: TextStyle(fontSize: 28)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '¡Atención prioritaria!',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppTheme.strawberryRed),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Hay $urgentCount pedido(s) con PRIORIDAD ALTA en la cola de producción.',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFFB71C1C)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return statsAsync.maybeWhen(
       data: (stats) {
         if (stats.deliveredCountToday == 0) return const SizedBox.shrink();
         return Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [AppTheme.mintGreen, AppTheme.softGreen],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(18),
           ),
           child: Row(
             children: [
-              const Text('🔥', style: TextStyle(fontSize: 32)),
-              const SizedBox(width: 14),
+              const Text('✨', style: TextStyle(fontSize: 28)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '¡Excelente trabajo hoy!',
+                      '¡Excelente ritmo hoy!',
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: 15,
+                        fontSize: 14,
                         color: AppTheme.darkGreen,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Has gestionado ${stats.deliveredCountToday} pedidos con éxito.',
+                      'Se han despachado ${stats.deliveredCountToday} pedidos con éxito.',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.darkGreen.withOpacity(0.85),
+                        fontSize: 12,
+                        color: AppTheme.darkGreen.withOpacity(0.9),
                       ),
                     ),
                   ],
@@ -278,12 +362,17 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNewOrderCard(BuildContext context, WidgetRef ref, Order order) {
-    // Collect item summaries
-    final itemsStr = order.items.map((i) => '${i.quantity}x ${i.productName}').join(', ');
+  Widget _buildNewOrderCard(BuildContext context, WidgetRef ref, Order order, String? currentUsername) {
+    final itemsStr = order.items.map((i) => '${i.quantity}x ${i.productName} (${i.flavorName})').join(', ');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: order.isUrgent
+            ? const BorderSide(color: AppTheme.strawberryRed, width: 2)
+            : BorderSide.none,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -292,20 +381,28 @@ class DashboardScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryLemon,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'NUEVO 🔔',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.darkBg,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryLemon,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'NUEVO 🔔',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.darkBg,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (order.isUrgent) ...[
+                      const SizedBox(width: 6),
+                      const PriorityBadge(isUrgent: true),
+                    ],
+                  ],
                 ),
                 Text(
                   order.orderCode,
@@ -317,14 +414,22 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              order.customerName,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.darkBg,
-              ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    order.customerName,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.darkBg,
+                    ),
+                  ),
+                ),
+                OrderTimerBadge(order: order, isCompact: true),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -336,25 +441,33 @@ class DashboardScreen extends ConsumerWidget {
                 color: AppTheme.textGray,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '\$${order.total.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: AppTheme.darkGreen,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '\$${order.total.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.darkGreen,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    AdvisorBadge(assignedAdvisor: order.assignedAdvisor, currentUsername: currentUsername, isCompact: true),
+                  ],
                 ),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryLemon,
+                    foregroundColor: AppTheme.darkBg,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    side: const BorderSide(color: AppTheme.primaryLemon, width: 2),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   ),
                   onPressed: () {
                     Navigator.push(
@@ -365,8 +478,8 @@ class DashboardScreen extends ConsumerWidget {
                     );
                   },
                   child: const Text(
-                    'VER PEDIDO',
-                    style: TextStyle(color: AppTheme.darkBg, fontWeight: FontWeight.bold, fontSize: 12),
+                    'VER FICHA',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
                   ),
                 ),
               ],

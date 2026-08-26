@@ -5,6 +5,14 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../core/models/models.dart';
 import '../../../core/storage/preferences.dart';
 import '../../auth/providers/auth_provider.dart';
+import 'history_provider.dart';
+
+export 'history_provider.dart';
+
+// Live Ticker Provider: emits current epoch milliseconds every second for seamless live timers
+final liveSecondsProvider = StreamProvider<int>((ref) {
+  return Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now().millisecondsSinceEpoch);
+});
 
 // Catalog Provider
 final catalogProvider = FutureProvider<Map<String, List<dynamic>>>((ref) async {
@@ -22,6 +30,28 @@ final catalogProvider = FutureProvider<Map<String, List<dynamic>>>((ref) async {
     };
   }
   throw Exception('No se pudo cargar el catálogo.');
+});
+
+// Order Status History Provider
+final orderStatusHistoryProvider = FutureProvider.family<List<OrderStatusHistoryEntry>, String>((ref, orderId) async {
+  final client = ref.read(apiClientProvider);
+  final res = await client.dio.get('/api/mobile/orders/$orderId/status-history');
+  if (res.statusCode == 200) {
+    final List raw = res.data as List? ?? [];
+    return raw.map((e) => OrderStatusHistoryEntry.fromJson(e)).toList();
+  }
+  return [];
+});
+
+// Order Change History Provider
+final orderChangeHistoryProvider = FutureProvider.family<List<OrderChangeHistoryEntry>, String>((ref, orderId) async {
+  final client = ref.read(apiClientProvider);
+  final res = await client.dio.get('/api/mobile/orders/$orderId/change-history');
+  if (res.statusCode == 200) {
+    final List raw = res.data as List? ?? [];
+    return raw.map((e) => OrderChangeHistoryEntry.fromJson(e)).toList();
+  }
+  return [];
 });
 
 // Stats Provider
@@ -59,7 +89,7 @@ class ActiveOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
   DateTime _lastUpdateTime = DateTime.now().subtract(const Duration(days: 1));
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  ActiveOrdersNotifier(this._ref) : super(const Duration(seconds: 0) == const Duration(seconds: 1) ? const AsyncValue.data([]) : const AsyncValue.loading()) {
+  ActiveOrdersNotifier(this._ref) : super(const AsyncValue.loading()) {
     fetchActiveOrders();
     _startPolling();
   }
@@ -82,7 +112,6 @@ class ActiveOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
   void _startPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      // Avoid fetching if not logged in or in error state
       if (_ref.read(authProvider).user == null) return;
 
       try {
@@ -98,18 +127,19 @@ class ActiveOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
             final updates = updatesRaw.map((e) => Order.fromJson(e)).toList();
             _lastUpdateTime = DateTime.now();
 
-            // Merge updates with current active list
             final currentList = state.value ?? [];
             final updatedMap = {for (var o in currentList) o.id: o};
 
             bool hasNewReceived = false;
+            bool historyChanged = false;
 
             for (var u in updates) {
-              // If order is completed or cancelled, remove from active list
               if (u.status == OrderStatus.delivered || u.status == OrderStatus.cancelled) {
                 updatedMap.remove(u.id);
+                // Prepend completed order directly to history state
+                _ref.read(historyProvider.notifier).prependCompletedOrder(u);
+                historyChanged = true;
               } else {
-                // If it's a new RECEIVED order that wasn't in list before
                 if (u.status == OrderStatus.received && !updatedMap.containsKey(u.id)) {
                   hasNewReceived = true;
                 }
@@ -120,18 +150,18 @@ class ActiveOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
             state = AsyncValue.data(updatedMap.values.toList()
               ..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
 
-            // Trigger alarms if new order arrived
             if (hasNewReceived) {
               _triggerAlert();
             }
 
-            // Refresh stats
+            if (historyChanged) {
+              _ref.read(historyProvider.notifier).fetchHistory(isRefresh: true);
+            }
+
             _ref.read(statsProvider.notifier).fetchStats();
           }
         }
-      } catch (_) {
-        // Suppress background errors to keep UI responsive
-      }
+      } catch (_) {}
     });
   }
 
@@ -146,9 +176,7 @@ class ActiveOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
         });
         return;
       }
-    } catch (_) {
-      // Fallback to standard player/haptics if native call fails (e.g. non-Android platforms)
-    }
+    } catch (_) {}
 
     if (AppPreferences.vibrationEnabled) {
       HapticFeedback.vibrate();
@@ -156,9 +184,7 @@ class ActiveOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
     if (AppPreferences.soundEnabled) {
       try {
         await _audioPlayer.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav'));
-      } catch (_) {
-        // Fallback silently
-      }
+      } catch (_) {}
     }
   }
 
@@ -176,9 +202,16 @@ class ActiveOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
 
         if (newStatus == OrderStatus.delivered || newStatus == OrderStatus.cancelled) {
           state = AsyncValue.data(currentList.where((o) => o.id != orderId).toList());
+          // Sync directly to history provider
+          _ref.read(historyProvider.notifier).prependCompletedOrder(updatedOrder);
+          _ref.read(historyProvider.notifier).fetchHistory(isRefresh: true);
         } else {
           state = AsyncValue.data(currentList.map((o) => o.id == orderId ? updatedOrder : o).toList());
         }
+
+        // Invalidate histories for this order if open
+        _ref.invalidate(orderStatusHistoryProvider(orderId));
+        _ref.invalidate(orderChangeHistoryProvider(orderId));
 
         // Refresh stats
         _ref.read(statsProvider.notifier).fetchStats();
@@ -186,6 +219,33 @@ class ActiveOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
       }
     } catch (_) {}
     return false;
+  }
+
+  Future<String?> claimOrder(String orderId) async {
+    try {
+      final client = _ref.read(apiClientProvider);
+      final res = await client.dio.post('/api/mobile/orders/$orderId/claim');
+
+      if (res.statusCode == 200) {
+        final updatedOrder = Order.fromJson(res.data);
+        final currentList = state.value ?? [];
+        state = AsyncValue.data(currentList.map((o) => o.id == orderId ? updatedOrder : o).toList());
+
+        _ref.invalidate(orderStatusHistoryProvider(orderId));
+        _ref.invalidate(orderChangeHistoryProvider(orderId));
+        _ref.read(statsProvider.notifier).fetchStats();
+        return null; // success
+      }
+    } catch (e) {
+      try {
+        final err = e as dynamic;
+        if (err.response != null && err.response.data != null && err.response.data['message'] != null) {
+          return err.response.data['message'].toString();
+        }
+      } catch (_) {}
+      return 'No se pudo tomar el pedido.';
+    }
+    return 'No se pudo tomar el pedido.';
   }
 
   Future<bool> editOrder(String orderId, List<Map<String, dynamic>> items, String reason) async {
@@ -200,6 +260,9 @@ class ActiveOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
         final updatedOrder = Order.fromJson(res.data);
         final currentList = state.value ?? [];
         state = AsyncValue.data(currentList.map((o) => o.id == orderId ? updatedOrder : o).toList());
+
+        _ref.invalidate(orderStatusHistoryProvider(orderId));
+        _ref.invalidate(orderChangeHistoryProvider(orderId));
         _ref.read(statsProvider.notifier).fetchStats();
         return true;
       }

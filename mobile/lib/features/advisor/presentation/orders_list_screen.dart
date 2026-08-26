@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/models.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/orders_provider.dart';
 import 'order_detail_screen.dart';
+import 'widgets/advisor_badges.dart';
+import 'widgets/order_timer_badge.dart';
 
 class OrdersListScreen extends ConsumerStatefulWidget {
   const OrdersListScreen({super.key});
@@ -16,6 +19,7 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
   late TabController _tabController;
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  String _operationalFilter = 'TODOS'; // 'TODOS', 'URGENTE', 'MIS_PEDIDOS', 'SIN_ASIGNAR'
 
   @override
   void initState() {
@@ -33,10 +37,12 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
   @override
   Widget build(BuildContext context) {
     final ordersAsync = ref.watch(activeOrdersProvider);
+    final authState = ref.watch(authProvider);
+    final currentUsername = authState.user?.username;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cola de Pedidos'),
+        title: const Text('Cola de Producción'),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
@@ -53,7 +59,7 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
         children: [
           // Search box
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 6.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -77,13 +83,43 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
               },
             ),
           ),
+
+          // Operational Filter Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: Row(
+              children: [
+                _buildFilterChip('Todos', 'TODOS'),
+                const SizedBox(width: 8),
+                _buildFilterChip('🔥 Prioridad Alta', 'URGENTE', activeColor: AppTheme.strawberryRed),
+                const SizedBox(width: 8),
+                _buildFilterChip('👤 Mis Asignados', 'MIS_PEDIDOS', activeColor: AppTheme.darkGreen),
+                const SizedBox(width: 8),
+                _buildFilterChip('👤 Sin Asignar', 'SIN_ASIGNAR'),
+              ],
+            ),
+          ),
+          const Divider(height: 12),
+
           Expanded(
             child: ordersAsync.when(
               data: (orders) {
-                // Filter orders by search query
+                // Apply search and operational filters
                 var filtered = orders;
+
+                // 1. Operational filter
+                if (_operationalFilter == 'URGENTE') {
+                  filtered = filtered.where((o) => o.isUrgent).toList();
+                } else if (_operationalFilter == 'MIS_PEDIDOS') {
+                  filtered = filtered.where((o) => currentUsername != null && o.assignedAdvisor?.equalsIgnoreCase(currentUsername) == true).toList();
+                } else if (_operationalFilter == 'SIN_ASIGNAR') {
+                  filtered = filtered.where((o) => !o.isAssigned).toList();
+                }
+
+                // 2. Search query filter
                 if (_searchQuery.isNotEmpty) {
-                  filtered = orders.where((o) {
+                  filtered = filtered.where((o) {
                     return o.orderCode.toLowerCase().contains(_searchQuery) ||
                         o.customerName.toLowerCase().contains(_searchQuery) ||
                         o.customerPhone.toLowerCase().contains(_searchQuery);
@@ -93,16 +129,16 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
                 return TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildOrdersListView(filtered), // Todos
-                    _buildOrdersListView(filtered.where((o) => o.status == OrderStatus.received).toList()), // Nuevos
-                    _buildOrdersListView(filtered.where((o) => o.status == OrderStatus.preparing).toList()), // Preparando
-                    _buildOrdersListView(filtered.where((o) => o.status == OrderStatus.almostReady).toList()), // Casi Listos
-                    _buildOrdersListView(filtered.where((o) => o.status == OrderStatus.ready).toList()), // Listos
+                    _buildOrdersListView(filtered, currentUsername), // Todos
+                    _buildOrdersListView(filtered.where((o) => o.status == OrderStatus.received).toList(), currentUsername), // Nuevos
+                    _buildOrdersListView(filtered.where((o) => o.status == OrderStatus.preparing).toList(), currentUsername), // Preparando
+                    _buildOrdersListView(filtered.where((o) => o.status == OrderStatus.almostReady).toList(), currentUsername), // Casi Listos
+                    _buildOrdersListView(filtered.where((o) => o.status == OrderStatus.ready).toList(), currentUsername), // Listos
                   ],
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.darkGreen)),
-              error: (_, __) => const Center(child: Text('Error al cargar pedidos.')),
+              error: (_, __) => const Center(child: Text('Error al cargar la cola de pedidos.')),
             ),
           ),
         ],
@@ -110,7 +146,33 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
     );
   }
 
-  Widget _buildOrdersListView(List<Order> ordersList) {
+  Widget _buildFilterChip(String label, String value, {Color? activeColor}) {
+    final isSelected = _operationalFilter == value;
+    final color = activeColor ?? AppTheme.darkGreen;
+
+    return FilterChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? Colors.white : AppTheme.darkBg,
+        ),
+      ),
+      selected: isSelected,
+      selectedColor: color,
+      backgroundColor: Colors.grey.shade100,
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      onSelected: (selected) {
+        setState(() {
+          _operationalFilter = value;
+        });
+      },
+    );
+  }
+
+  Widget _buildOrdersListView(List<Order> ordersList, String? currentUsername) {
     if (ordersList.isEmpty) {
       return Center(
         child: Padding(
@@ -121,7 +183,7 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
               const Text('🥤', style: TextStyle(fontSize: 48)),
               const SizedBox(height: 12),
               const Text(
-                'No hay pedidos aquí.',
+                'No hay pedidos con estos filtros.',
                 style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textGray),
               ),
             ],
@@ -135,19 +197,25 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
       itemCount: ordersList.length,
       itemBuilder: (context, index) {
         final order = ordersList[index];
-        return _buildOrderCard(order);
+        return _buildOrderCard(order, currentUsername);
       },
     );
   }
 
-  Widget _buildOrderCard(Order order) {
-    final itemsStr = order.items.map((i) => '${i.quantity}x ${i.productName}').join(', ');
+  Widget _buildOrderCard(Order order, String? currentUsername) {
+    final itemsStr = order.items.map((i) => '${i.quantity}x ${i.productName} (${i.flavorName})').join(', ');
     final statusColor = _getStatusColor(order.status);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: order.isUrgent
+            ? const BorderSide(color: AppTheme.strawberryRed, width: 2)
+            : BorderSide.none,
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         onTap: () {
           Navigator.push(
             context,
@@ -164,20 +232,28 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      order.status.nameInSpanish.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        color: statusColor == Colors.white ? AppTheme.darkBg : statusColor,
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          order.status.nameInSpanish.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: statusColor == Colors.white ? AppTheme.darkBg : statusColor,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (order.isUrgent) ...[
+                        const SizedBox(width: 6),
+                        const PriorityBadge(isUrgent: true),
+                      ],
+                    ],
                   ),
                   Text(
                     order.orderCode,
@@ -189,18 +265,28 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                order.customerName,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.darkBg,
-                ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      order.customerName,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.darkBg,
+                      ),
+                    ),
+                  ),
+                  OrderTimerBadge(order: order, isCompact: true),
+                ],
               ),
               const SizedBox(height: 4),
               Text(
                 itemsStr,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppTheme.textGray,
@@ -210,13 +296,19 @@ class _OrdersListScreenState extends ConsumerState<OrdersListScreen> with Single
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '\$${order.total.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: AppTheme.darkGreen,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '\$${order.total.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.darkGreen,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      AdvisorBadge(assignedAdvisor: order.assignedAdvisor, currentUsername: currentUsername, isCompact: true),
+                    ],
                   ),
                   const Row(
                     children: [

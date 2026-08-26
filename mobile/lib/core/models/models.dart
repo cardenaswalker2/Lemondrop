@@ -150,12 +150,14 @@ class User {
   final String name;
   final String username;
   final String role; // "ADMIN" or "ASESOR"
+  final String? phone;
 
   User({
     required this.id,
     required this.name,
     required this.username,
     required this.role,
+    this.phone,
   });
 
   bool get isAdmin => role == 'ADMIN';
@@ -167,6 +169,7 @@ class User {
       name: json['name'] ?? '',
       username: json['username'] ?? '',
       role: json['role'] ?? '',
+      phone: json['phone'] as String?,
     );
   }
 }
@@ -333,6 +336,17 @@ class Order {
   final String observations;
   final String advisorNotes;
   final String? cancellationReason;
+  final String priority; // "NORMAL" or "ALTA"
+  final String? assignedAdvisor;
+  final DateTime? receivedAt;
+  final DateTime? acceptedAt;
+  final DateTime? preparingAt;
+  final DateTime? almostReadyAt;
+  final DateTime? readyAt;
+  final DateTime? deliveredAt;
+  final DateTime? cancelledAt;
+  final String? createdBy;
+  final String? lastModifiedBy;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -348,12 +362,42 @@ class Order {
     required this.observations,
     required this.advisorNotes,
     this.cancellationReason,
+    this.priority = 'NORMAL',
+    this.assignedAdvisor,
+    this.receivedAt,
+    this.acceptedAt,
+    this.preparingAt,
+    this.almostReadyAt,
+    this.readyAt,
+    this.deliveredAt,
+    this.cancelledAt,
+    this.createdBy,
+    this.lastModifiedBy,
     required this.createdAt,
     required this.updatedAt,
   });
 
+  bool get isUrgent => priority.toUpperCase() == 'ALTA';
+
+  bool get isAssigned =>
+      assignedAdvisor != null &&
+      assignedAdvisor!.trim().isNotEmpty &&
+      !assignedAdvisor!.equalsIgnoreCase('Sin asignar') &&
+      !assignedAdvisor!.equalsIgnoreCase('Ninguno');
+
+  Duration get totalDuration {
+    final end = deliveredAt ?? cancelledAt ?? updatedAt;
+    return end.difference(createdAt);
+  }
+
   factory Order.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'] as List? ?? [];
+
+    DateTime? parseDate(dynamic val) {
+      if (val == null) return null;
+      return DateTime.tryParse(val.toString());
+    }
+
     return Order(
       id: json['id'] ?? '',
       orderCode: json['orderCode'] ?? '',
@@ -366,12 +410,96 @@ class Order {
       observations: json['observations'] ?? '',
       advisorNotes: json['advisorNotes'] ?? '',
       cancellationReason: json['cancellationReason'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      priority: (json['priority'] as String?) ?? 'NORMAL',
+      assignedAdvisor: json['assignedAdvisor'] as String?,
+      receivedAt: parseDate(json['receivedAt']),
+      acceptedAt: parseDate(json['acceptedAt']),
+      preparingAt: parseDate(json['preparingAt']),
+      almostReadyAt: parseDate(json['almostReadyAt']),
+      readyAt: parseDate(json['readyAt']),
+      deliveredAt: parseDate(json['deliveredAt']),
+      cancelledAt: parseDate(json['cancelledAt']),
+      createdBy: json['createdBy'] as String?,
+      lastModifiedBy: json['lastModifiedBy'] as String?,
+      createdAt: parseDate(json['createdAt']) ?? DateTime.now(),
+      updatedAt: parseDate(json['updatedAt']) ?? DateTime.now(),
+    );
+  }
+}
+
+extension StringUtils on String {
+  bool equalsIgnoreCase(String other) => toLowerCase() == other.toLowerCase();
+}
+
+class OrderStatusHistoryEntry {
+  final String id;
+  final String orderId;
+  final String orderCode;
+  final OrderStatus? previousStatus;
+  final OrderStatus newStatus;
+  final String updatedBy;
+  final DateTime updatedAt;
+  final String? notes;
+
+  OrderStatusHistoryEntry({
+    required this.id,
+    required this.orderId,
+    required this.orderCode,
+    this.previousStatus,
+    required this.newStatus,
+    required this.updatedBy,
+    required this.updatedAt,
+    this.notes,
+  });
+
+  factory OrderStatusHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return OrderStatusHistoryEntry(
+      id: json['id'] ?? '',
+      orderId: json['orderId'] ?? '',
+      orderCode: json['orderCode'] ?? '',
+      previousStatus: json['previousStatus'] != null ? OrderStatus.fromJson(json['previousStatus']) : null,
+      newStatus: OrderStatus.fromJson(json['newStatus'] ?? 'RECEIVED'),
+      updatedBy: json['updatedBy'] ?? 'SISTEMA',
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now() : DateTime.now(),
+      notes: json['notes'] as String?,
+    );
+  }
+}
+
+class OrderChangeHistoryEntry {
+  final String id;
+  final String orderId;
+  final String orderCode;
+  final String propertyName;
+  final String? oldValue;
+  final String? newValue;
+  final String updatedBy;
+  final DateTime updatedAt;
+  final String reason;
+
+  OrderChangeHistoryEntry({
+    required this.id,
+    required this.orderId,
+    required this.orderCode,
+    required this.propertyName,
+    this.oldValue,
+    this.newValue,
+    required this.updatedBy,
+    required this.updatedAt,
+    required this.reason,
+  });
+
+  factory OrderChangeHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return OrderChangeHistoryEntry(
+      id: json['id'] ?? '',
+      orderId: json['orderId'] ?? '',
+      orderCode: json['orderCode'] ?? '',
+      propertyName: json['propertyName'] ?? '',
+      oldValue: json['oldValue'] as String?,
+      newValue: json['newValue'] as String?,
+      updatedBy: json['updatedBy'] ?? 'SISTEMA',
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now() : DateTime.now(),
+      reason: json['reason'] ?? '',
     );
   }
 }
@@ -381,6 +509,11 @@ class Stats {
   final int readyCount;
   final int preparingCount;
   final int pendingCount;
+  final int cancelledCountToday;
+  final int urgentCount;
+  final int unassignedCount;
+  final int myDeliveredCountToday;
+  final int myActiveCount;
   final double totalSalesToday;
   final int ordersCreatedToday;
   final String topProductToday;
@@ -391,6 +524,11 @@ class Stats {
     required this.readyCount,
     required this.preparingCount,
     required this.pendingCount,
+    this.cancelledCountToday = 0,
+    this.urgentCount = 0,
+    this.unassignedCount = 0,
+    this.myDeliveredCountToday = 0,
+    this.myActiveCount = 0,
     required this.totalSalesToday,
     required this.ordersCreatedToday,
     required this.topProductToday,
@@ -403,6 +541,11 @@ class Stats {
       readyCount: json['readyCount'] ?? 0,
       preparingCount: json['preparingCount'] ?? 0,
       pendingCount: json['pendingCount'] ?? 0,
+      cancelledCountToday: json['cancelledCountToday'] ?? 0,
+      urgentCount: json['urgentCount'] ?? 0,
+      unassignedCount: json['unassignedCount'] ?? 0,
+      myDeliveredCountToday: json['myDeliveredCountToday'] ?? 0,
+      myActiveCount: json['myActiveCount'] ?? 0,
       totalSalesToday: (json['totalSalesToday'] as num?)?.toDouble() ?? 0.0,
       ordersCreatedToday: json['ordersCreatedToday'] ?? 0,
       topProductToday: json['topProductToday'] ?? 'Ninguno',
