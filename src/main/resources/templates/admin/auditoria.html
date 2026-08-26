@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Auditoría y Trazabilidad - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-lemon: #FFE600;
+            --dark-green: #1B5E20;
+            --strawberry: #E53935;
+            --soft-strawberry: #FFEBEE;
+            --orange-alert: #FF9800;
+            --soft-orange: #FFF3E0;
+            --blue-info: #1E88E5;
+            --soft-blue: #E3F2FD;
+            --purple-badge: #7B1FA2;
+            --soft-purple: #F3E5F5;
+            --bg-card: #FFFFFF;
+            --bg-card-alt: #F8FAFC;
+            --text-main: #1E293B;
+            --text-secondary: #64748B;
+            --border-color: #E2E8F0;
+        }
+
+        .audit-filter-bar {
+            background: var(--bg-card);
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .audit-select, .audit-input {
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card-alt);
+            font-size: 0.85rem;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .audit-select:focus, .audit-input:focus {
+            border-color: var(--dark-green);
+            background: #FFF;
+        }
+
+        .audit-table-card {
+            background: var(--bg-card);
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.86rem;
+        }
+
+        .audit-table th {
+            background: var(--bg-card-alt);
+            padding: 12px 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .audit-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .audit-table tr:hover {
+            background-color: #F8FAFC;
+        }
+
+        .badge-cat {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-cat.ESTADO { background: var(--soft-green); color: var(--dark-green); }
+        .badge-cat.PRIORIDAD { background: var(--soft-strawberry); color: var(--strawberry); }
+        .badge-cat.ASIGNACION { background: var(--soft-blue); color: var(--blue-info); }
+        .badge-cat.EDICION { background: var(--soft-orange); color: #D97706; }
+        .badge-cat.REAPERTURA { background: var(--soft-purple); color: var(--purple-badge); }
+        .badge-cat.ELIMINACION { background: #333; color: #FFF; }
+        .badge-cat.RESTAURACION { background: #E0F2FE; color: #0284C7; }
+
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            background: var(--bg-card-alt);
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        .page-btn {
+            background: #FFF;
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.82rem;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .audit-detail-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .audit-detail-modal.active { display: flex; }
+
+        .modal-box {
+            background: #FFF;
+            border-radius: 14px;
+            max-width: 600px;
+            width: 100%;
+            padding: 24px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar-admin :: sidebar}"></div>
+
+        <!-- Main workspace -->
+        <main class="main-content">
+            <header style="margin-bottom: 24px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h1 style="font-size: 2.2rem; margin:0; font-family:'Outfit', sans-serif;">🛡️ Centro de Auditoría Global</h1>
+                        <p style="color: var(--text-secondary); margin-top:4px;">Registro inmutable y trazabilidad transversal de todas las operaciones realizadas en Lemon Drop.</p>
+                    </div>
+                    <button onclick="exportAuditToCsv()" class="btn-custom btn-outline" style="font-size:0.85rem; padding:8px 16px;">
+                        📥 Exportar CSV
+                    </button>
+                </div>
+            </header>
+
+            <!-- FILTER BAR -->
+            <div class="audit-filter-bar">
+                <input type="text" id="auditSearchInput" placeholder="Buscar por código, usuario, motivo..." class="audit-input" style="flex-grow:1; min-width:220px;" oninput="debounceAuditSearch()">
+
+                <select id="auditPeriodSelect" class="audit-select" onchange="toggleCustomDates(); loadAuditLogs(0);">
+                    <option value="today">Rango: Solo Hoy</option>
+                    <option value="yesterday">Ayer</option>
+                    <option value="last7days">Últimos 7 días</option>
+                    <option value="last30days">Últimos 30 días</option>
+                    <option value="all">Todo el historial</option>
+                    <option value="custom">Personalizado...</option>
+                </select>
+
+                <div id="customDateRange" style="display:none; gap:6px;">
+                    <input type="date" id="auditStartDate" class="audit-input" onchange="loadAuditLogs(0)">
+                    <input type="date" id="auditEndDate" class="audit-input" onchange="loadAuditLogs(0)">
+                </div>
+
+                <select id="auditActionTypeSelect" class="audit-select" onchange="loadAuditLogs(0);">
+                    <option value="ALL">Acción: Todas</option>
+                    <option value="ESTADO">Cambios de Estado</option>
+                    <option value="PRIORIDAD">Cambios de Prioridad</option>
+                    <option value="ASIGNACION">Asignaciones / Reasignaciones</option>
+                    <option value="EDICION">Modificaciones de Pedido</option>
+                    <option value="CANCELACION">Cancelaciones</option>
+                    <option value="REAPERTURA">Reaperturas</option>
+                    <option value="ELIMINACION">Eliminaciones a Papelera</option>
+                </select>
+
+                <button class="btn-custom btn-outline" style="padding:8px 12px; font-size:0.8rem;" onclick="resetAuditFilters()">
+                    🔄 Limpiar
+                </button>
+            </div>
+
+            <!-- AUDIT TABLE CARD -->
+            <div class="audit-table-card">
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Actor / Usuario</th>
+                            <th>Pedido</th>
+                            <th>Tipo de Evento</th>
+                            <th>Resumen de Operación</th>
+                            <th>Motivo / Razón</th>
+                            <th>Inspección</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditTableBody">
+                        <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-secondary);">Cargando registros de auditoría...</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="pagination-container">
+                    <span id="auditPaginationInfo" style="font-weight:700; color:var(--text-secondary);">Mostrando 0 de 0 registros</span>
+                    <div style="display:flex; gap:8px;">
+                        <button id="prevPageBtn" class="page-btn" onclick="goToPage(-1)" disabled>&larr; Anterior</button>
+                        <button id="nextPageBtn" class="page-btn" onclick="goToPage(1)" disabled>Siguiente &rarr;</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- DETAIL INSPECTOR MODAL -->
+    <div class="audit-detail-modal" id="auditDetailModal">
+        <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                <h3 style="margin:0; font-family:'Outfit', sans-serif; font-size:1.3rem;">🛡️ Trazabilidad del Evento</h3>
+                <button onclick="closeAuditModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+
+            <div style="margin-bottom:16px; font-size:0.88rem;">
+                <p style="margin:4px 0;"><strong>Fecha / Hora:</strong> <span id="modalTimestamp">-</span></p>
+                <p style="margin:4px 0;"><strong>Usuario Responsable:</strong> <span id="modalActor">-</span></p>
+                <p style="margin:4px 0;"><strong>Código de Pedido:</strong> <span id="modalOrderCode" style="font-weight:800; font-family:monospace;">-</span></p>
+                <p style="margin:4px 0;"><strong>Acción Registrada:</strong> <span id="modalAction" class="badge-cat ESTADO">-</span></p>
+                <p style="margin:4px 0;"><strong>Motivo Declarado:</strong> <span id="modalReason" style="font-style:italic;">-</span></p>
+            </div>
+
+            <div style="background:var(--bg-card-alt); border-radius:8px; padding:12px; border:1px solid var(--border-color); margin-bottom:16px;">
+                <strong style="font-size:0.8rem; text-transform:uppercase; color:var(--text-secondary); display:block; margin-bottom:6px;">Valor Anterior:</strong>
+                <pre id="modalOldValue" style="margin:0; font-size:0.82rem; white-space:pre-wrap; color:#666;">-</pre>
+            </div>
+
+            <div style="background:#FFF9C4; border-radius:8px; padding:12px; border:1px solid #FFE082; margin-bottom:20px;">
+                <strong style="font-size:0.8rem; text-transform:uppercase; color:var(--dark-green); display:block; margin-bottom:6px;">Nuevo Valor / Estado Resultante:</strong>
+                <pre id="modalNewValue" style="margin:0; font-size:0.82rem; white-space:pre-wrap; font-weight:700; color:#1B5E20;">-</pre>
+            </div>
+
+            <button onclick="closeAuditModal()" class="btn-custom btn-outline" style="width:100%;">Cerrar Inspector</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('side-audit').classList.add('active');
+
+        let currentPage = 0;
+        let totalPages = 1;
+        let currentLogsCache = [];
+        let searchDebounceTimer = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadAuditLogs(0);
+        });
+
+        function debounceAuditSearch() {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                loadAuditLogs(0);
+            }, 300);
+        }
+
+        function toggleCustomDates() {
+            const period = document.getElementById("auditPeriodSelect").value;
+            document.getElementById("customDateRange").style.display = (period === 'custom') ? "flex" : "none";
+        }
+
+        function resetAuditFilters() {
+            document.getElementById("auditSearchInput").value = "";
+            document.getElementById("auditPeriodSelect").value = "today";
+            document.getElementById("auditActionTypeSelect").value = "ALL";
+            toggleCustomDates();
+            loadAuditLogs(0);
+        }
+
+        function loadAuditLogs(page) {
+            currentPage = page;
+            const period = document.getElementById("auditPeriodSelect").value;
+            const actionType = document.getElementById("auditActionTypeSelect").value;
+            const query = document.getElementById("auditSearchInput").value.trim();
+            const start = document.getElementById("auditStartDate").value;
+            const end = document.getElementById("auditEndDate").value;
+
+            const tbody = document.getElementById("auditTableBody");
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-secondary);">Consultando eventos de auditoría...</td></tr>`;
+
+            const url = `/admin/api/auditoria/query?period=${period}&actionType=${actionType}&query=${encodeURIComponent(query)}&startDate=${start}&endDate=${end}&page=${page}&size=15`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    currentLogsCache = data.content || [];
+                    totalPages = data.totalPages || 1;
+                    renderAuditTable(currentLogsCache, data.totalElements, data.currentPage, data.pageSize);
+                })
+                .catch(err => {
+                    console.error("Audit query error:", err);
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--strawberry); padding:20px;">Error al consultar registros de auditoría.</td></tr>`;
+                });
+        }
+
+        function renderAuditTable(logs, totalElements, page, size) {
+            const tbody = document.getElementById("auditTableBody");
+            tbody.innerHTML = "";
+
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-secondary);">No se encontraron eventos con los filtros aplicados.</td></tr>`;
+                document.getElementById("auditPaginationInfo").innerText = "Mostrando 0 de 0 registros";
+                document.getElementById("prevPageBtn").disabled = true;
+                document.getElementById("nextPageBtn").disabled = true;
+                return;
+            }
+
+            logs.forEach((l, index) => {
+                const date = new Date(l.timestamp);
+                const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                const summary = (l.category === 'ESTADO') ? `${l.oldValue} &rarr; <strong>${l.newValue}</strong>` : (l.newValue || l.action);
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color:var(--text-secondary); font-size:0.8rem; white-space:nowrap;">${dateStr}</td>
+                        <td><strong>👤 ${l.actor}</strong></td>
+                        <td style="font-family:monospace; font-weight:800; color:var(--dark-green);">${l.orderCode || '-'}</td>
+                        <td><span class="badge-cat ${l.category}">${l.category}</span></td>
+                        <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${summary}</td>
+                        <td style="color:var(--text-secondary); font-style:italic;">${l.reason || 'Sin observación'}</td>
+                        <td>
+                            <button class="btn-custom btn-outline" style="padding:4px 8px; font-size:0.75rem;" onclick="openAuditInspector(${index})">
+                                🔍 Ver
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            const startItem = page * size + 1;
+            const endItem = Math.min((page + 1) * size, totalElements);
+            document.getElementById("auditPaginationInfo").innerText = `Mostrando ${startItem} - ${endItem} de ${totalElements} registros (Pág ${page + 1} de ${totalPages})`;
+            
+            document.getElementById("prevPageBtn").disabled = (page <= 0);
+            document.getElementById("nextPageBtn").disabled = (page >= totalPages - 1);
+        }
+
+        function goToPage(delta) {
+            const target = currentPage + delta;
+            if (target >= 0 && target < totalPages) {
+                loadAuditLogs(target);
+            }
+        }
+
+        function openAuditInspector(index) {
+            const log = currentLogsCache[index];
+            if (!log) return;
+
+            document.getElementById("modalTimestamp").innerText = new Date(log.timestamp).toLocaleString();
+            document.getElementById("modalActor").innerText = log.actor;
+            document.getElementById("modalOrderCode").innerText = log.orderCode || "N/A";
+            
+            const badge = document.getElementById("modalAction");
+            badge.className = `badge-cat ${log.category}`;
+            badge.innerText = `${log.category} - ${log.action}`;
+
+            document.getElementById("modalReason").innerText = log.reason || "Sin motivo declarado";
+            document.getElementById("modalOldValue").innerText = log.oldValue || "Ninguno / Inicial";
+            document.getElementById("modalNewValue").innerText = log.newValue || "Operación ejecutada";
+
+            document.getElementById("auditDetailModal").classList.add("active");
+        }
+
+        function closeAuditModal() {
+            document.getElementById("auditDetailModal").classList.remove("active");
+        }
+
+        function exportAuditToCsv() {
+            if (!currentLogsCache || currentLogsCache.length === 0) {
+                alert("No hay registros para exportar.");
+                return;
+            }
+
+            let csv = "Fecha,Actor,Pedido,Categoria,Accion,Motivo,ValorAnterior,ValorNuevo\n";
+            currentLogsCache.forEach(l => {
+                const line = [
+                    `"${l.timestamp}"`,
+                    `"${l.actor}"`,
+                    `"${l.orderCode}"`,
+                    `"${l.category}"`,
+                    `"${l.action}"`,
+                    `"${(l.reason || '').replace(/"/g, '""')}"`,
+                    `"${(l.oldValue || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+                    `"${(l.newValue || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
+                ].join(",");
+                csv += line + "\n";
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `auditoria_lemondrop_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

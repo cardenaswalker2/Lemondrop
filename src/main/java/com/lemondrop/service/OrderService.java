@@ -51,7 +51,7 @@ public class OrderService {
         this.notificationService = notificationService;
     }
 
-    public Order createOrder(CreateOrderRequest request) {
+    public synchronized Order createOrder(CreateOrderRequest request) {
         if (request.getRequestId() != null && !request.getRequestId().trim().isEmpty()) {
             Optional<Order> existing = orderRepository.findByRequestId(request.getRequestId());
             if (existing.isPresent()) {

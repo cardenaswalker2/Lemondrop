@@ -49,6 +49,10 @@ public class AdminDashboardController {
         Map<String, Object> stats = statsService.getTodayStats();
         model.addAllAttributes(stats);
 
+        // Add real-time live operational overview & advisor load
+        model.addAttribute("opsOverview", statsService.getLiveOperationsOverview());
+        model.addAttribute("advisorsLoad", statsService.getLiveAdvisorsLoad());
+
         // Add recent logs for security/operation audits
         List<Order> allOrders = orderService.getAllOrders();
         model.addAttribute("recentOrders", allOrders.stream().limit(5).collect(Collectors.toList()));

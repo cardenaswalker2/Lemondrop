@@ -4,40 +4,34 @@ import com.lemondrop.dto.order.CreateOrderRequest;
 import com.lemondrop.dto.order.OrderItemDto;
 import com.lemondrop.model.*;
 import com.lemondrop.repository.*;
+import com.lemondrop.service.CounterService;
+import com.lemondrop.service.InventoryService;
+import com.lemondrop.service.NotificationService;
 import com.lemondrop.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-
-import org.springframework.test.context.ActiveProfiles;
+import org.mockito.Mockito;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.when;
 
-@SpringBootTest
-@ActiveProfiles("test")
 class LemondropApplicationTests {
 
-    @Autowired
     private OrderService orderService;
-
-    @Autowired
     private ProductRepository productRepository;
-
-    @Autowired
     private FlavorRepository flavorRepository;
-
-    @Autowired
     private AddonRepository addonRepository;
-
-    @Autowired
     private OrderRepository orderRepository;
+    private OrderStatusHistoryRepository statusHistoryRepository;
+    private OrderChangeHistoryRepository changeHistoryRepository;
+    private CounterService counterService;
+    private InventoryService inventoryService;
+    private NotificationService notificationService;
 
     private Product testProduct;
     private Flavor testFlavor;
@@ -45,42 +39,88 @@ class LemondropApplicationTests {
 
     @BeforeEach
     void setUp() {
-        orderRepository.deleteAll();
+        productRepository = Mockito.mock(ProductRepository.class);
+        flavorRepository = Mockito.mock(FlavorRepository.class);
+        addonRepository = Mockito.mock(AddonRepository.class);
+        orderRepository = Mockito.mock(OrderRepository.class);
+        statusHistoryRepository = Mockito.mock(OrderStatusHistoryRepository.class);
+        changeHistoryRepository = Mockito.mock(OrderChangeHistoryRepository.class);
+        counterService = Mockito.mock(CounterService.class);
+        inventoryService = Mockito.mock(InventoryService.class);
+        notificationService = Mockito.mock(NotificationService.class);
 
-        // Ensure we have seeded test data
-        testProduct = productRepository.findByActiveTrue().stream().findFirst().orElseGet(() -> {
-            Map<ProductSize, BigDecimal> prices = new HashMap<>();
-            prices.put(ProductSize.SMALL, new BigDecimal("4000"));
-            prices.put(ProductSize.MEDIUM, new BigDecimal("6000"));
-            prices.put(ProductSize.LARGE, new BigDecimal("8000"));
-            
-            return productRepository.save(Product.builder()
-                    .name("Test Granizado")
-                    .description("Test Description")
-                    .category("Granizados")
-                    .sizePrices(prices)
-                    .available(true)
-                    .active(true)
-                    .build());
+        when(counterService.getNextOrderCode(anyInt())).thenReturn("LD-2026-00001");
+
+        orderService = new OrderService(
+                orderRepository,
+                productRepository,
+                flavorRepository,
+                addonRepository,
+                statusHistoryRepository,
+                changeHistoryRepository,
+                counterService,
+                inventoryService,
+                notificationService
+        );
+
+        Map<ProductSize, BigDecimal> prices = new HashMap<>();
+        prices.put(ProductSize.SMALL, new BigDecimal("4000"));
+        prices.put(ProductSize.MEDIUM, new BigDecimal("6000"));
+        prices.put(ProductSize.LARGE, new BigDecimal("8000"));
+
+        testProduct = Product.builder()
+                .id("prod-1")
+                .name("Test Granizado")
+                .description("Test Description")
+                .category("Granizados")
+                .sizePrices(prices)
+                .active(true)
+                .available(true)
+                .build();
+
+        testFlavor = Flavor.builder()
+                .id("flav-1")
+                .name("Limón")
+                .description("Test")
+                .additionalPrice(BigDecimal.ZERO)
+                .available(true)
+                .build();
+
+        testAddon = Addon.builder()
+                .id("add-1")
+                .name("Leche Condensada")
+                .description("Test")
+                .additionalPrice(new BigDecimal("1000"))
+                .available(true)
+                .build();
+
+        when(productRepository.findById("prod-1")).thenReturn(Optional.of(testProduct));
+        when(productRepository.findAll()).thenReturn(List.of(testProduct));
+        when(flavorRepository.findById("flav-1")).thenReturn(Optional.of(testFlavor));
+        when(addonRepository.findById("add-1")).thenReturn(Optional.of(testAddon));
+        
+        java.util.concurrent.ConcurrentHashMap<String, Order> orderDb = new java.util.concurrent.ConcurrentHashMap<>();
+
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order o = invocation.getArgument(0);
+            if (o.getId() == null) {
+                o.setId("order-" + UUID.randomUUID().toString().substring(0, 8));
+            }
+            orderDb.put(o.getId(), o);
+            return o;
         });
 
-        testFlavor = flavorRepository.findByAvailableTrue().stream().findFirst().orElseGet(() -> 
-            flavorRepository.save(Flavor.builder()
-                    .name("Limón Test")
-                    .description("Test")
-                    .available(true)
-                    .additionalPrice(BigDecimal.ZERO)
-                    .build())
-        );
+        when(orderRepository.findById(any())).thenAnswer(invocation -> {
+            String id = invocation.getArgument(0);
+            return Optional.ofNullable(orderDb.get(id));
+        });
 
-        testAddon = addonRepository.findByAvailableTrue().stream().findFirst().orElseGet(() -> 
-            addonRepository.save(Addon.builder()
-                    .name("Leche Test")
-                    .description("Test")
-                    .available(true)
-                    .additionalPrice(new BigDecimal("1000"))
-                    .build())
-        );
+        when(orderRepository.findAll()).thenAnswer(invocation -> new ArrayList<>(orderDb.values()));
+
+        when(orderRepository.findByRequestId(any())).thenAnswer(invocation -> {
+            String reqId = invocation.getArgument(0);
+            return orderDb.values().stream().filter(o -> reqId != null && reqId.equals(o.getRequestId())).findFirst();
+        });
     }
 
     @Test
