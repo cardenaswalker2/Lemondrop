@@ -188,8 +188,8 @@ public class AdvisorDashboardController {
         List<Map<String, Object>> statusList = statusHist.stream().map(h -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id", h.getId());
-            m.put("status", h.getStatus().name());
-            m.put("statusDisplay", h.getStatus().getDisplayName());
+            m.put("status", h.getNewStatus() != null ? h.getNewStatus().name() : "");
+            m.put("statusDisplay", h.getNewStatus() != null ? h.getNewStatus().getDisplayName() : "");
             m.put("notes", h.getNotes() != null ? h.getNotes() : "");
             m.put("updatedBy", h.getUpdatedBy() != null ? h.getUpdatedBy() : "SISTEMA");
             m.put("updatedAt", h.getUpdatedAt() != null ? h.getUpdatedAt().toString() : null);

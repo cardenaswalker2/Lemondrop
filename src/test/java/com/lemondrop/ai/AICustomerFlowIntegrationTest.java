@@ -48,7 +48,9 @@ class AICustomerFlowIntegrationTest {
                 Mockito.mock(com.lemondrop.service.ProductService.class),
                 Mockito.mock(com.lemondrop.service.FlavorService.class),
                 Mockito.mock(com.lemondrop.service.AddonService.class),
-                whatsAppService
+                whatsAppService,
+                Mockito.mock(com.lemondrop.repository.OrderStatusHistoryRepository.class),
+                Mockito.mock(com.lemondrop.repository.OrderChangeHistoryRepository.class)
         );
     }
 
