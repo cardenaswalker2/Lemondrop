@@ -3,1229 +3,2338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Preparación - Lemon Drop</title>
+    <title>Centro de Operaciones y Cocina - Lemon Drop</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-lemon: #FFE600;
-            --soft-lemon: #FFF9C4;
+            --lemon-dark: #F5D000;
+            --soft-lemon: #FFFDE7;
             --dark-green: #1B5E20;
+            --green-medium: #2E7D32;
             --soft-green: #E8F5E9;
             --strawberry: #E53935;
             --soft-strawberry: #FFEBEE;
-            --text-main: #212121;
-            --text-secondary: #757575;
-            --bg-cream: #FCFBF4;
-            --border-radius-sm: 8px;
-            --border-radius-md: 16px;
-            --border-radius-lg: 24px;
+            --orange-alert: #FF9800;
+            --soft-orange: #FFF3E0;
+            --blue-info: #1E88E5;
+            --soft-blue: #E3F2FD;
+            --purple-badge: #7B1FA2;
+            --soft-purple: #F3E5F5;
+            
+            --bg-body: #F4F6F8;
+            --bg-card: #FFFFFF;
+            --bg-card-alt: #FAFAFA;
+            --text-main: #1E293B;
+            --text-secondary: #64748B;
+            --text-muted: #94A3B8;
+            --border-color: #E2E8F0;
+            --border-highlight: #CBD5E1;
+            
+            --radius-xs: 6px;
+            --radius-sm: 10px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-pill: 999px;
+            
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.07);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --shadow-urgent: 0 0 18px rgba(229, 57, 53, 0.35);
+            
+            --drawer-width: 520px;
         }
 
-        /* Layout Grid and Components */
-        .dashboard-layout {
+        /* DARK OPERATIVE THEME */
+        body.dark-mode {
+            --bg-body: #0F172A;
+            --bg-card: #1E293B;
+            --bg-card-alt: #162032;
+            --text-main: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --border-color: #334155;
+            --border-highlight: #475569;
+            --soft-green: rgba(46, 125, 50, 0.25);
+            --soft-strawberry: rgba(229, 57, 53, 0.25);
+            --soft-orange: rgba(255, 152, 0, 0.25);
+            --soft-blue: rgba(30, 136, 229, 0.25);
+            --soft-lemon: rgba(255, 230, 0, 0.15);
+            --shadow-sm: 0 2px 5px rgba(0,0,0,0.3);
+            --shadow-md: 0 6px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 12px 30px rgba(0,0,0,0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        h1, h2, h3, h4, h5, h6, .brand-font {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            overflow-x: hidden;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        /* TOP COMMAND BAR */
+        .ops-header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
             display: flex;
-            min-height: 100vh;
-            background-color: var(--bg-cream);
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
         }
 
-        .main-content {
-            flex-grow: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        /* Turn Indicator Stats Header */
-        .stats-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card-widget {
-            background: white;
-            padding: 16px 20px;
-            border-radius: var(--border-radius-md);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            border-left: 5px solid var(--primary-lemon);
+        .ops-header-left {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            gap: 16px;
         }
 
-        .stat-card-widget.stat-received { border-left-color: var(--primary-lemon); }
-        .stat-card-widget.stat-preparing { border-left-color: #FF9800; }
-        .stat-card-widget.stat-ready { border-left-color: var(--dark-green); }
-        .stat-card-widget.stat-delivered { border-left-color: #2196F3; }
+        .ops-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+            text-decoration: none;
+        }
 
-        .stat-widget-title {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            font-weight: 700;
+        .ops-brand-badge {
+            background: var(--primary-lemon);
+            color: #000;
+            font-size: 0.68rem;
+            font-weight: 900;
+            padding: 3px 8px;
+            border-radius: var(--radius-pill);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .stat-widget-value {
-            font-size: 1.8rem;
+        .ops-nav-tabs {
+            display: flex;
+            gap: 6px;
+            background-color: var(--bg-card-alt);
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .ops-nav-tab {
+            border: none;
+            background: none;
+            padding: 7px 14px;
+            border-radius: var(--radius-xs);
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .ops-nav-tab.active {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .ops-nav-tab:hover:not(.active) {
+            color: var(--text-main);
+        }
+
+        .ops-header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ops-btn-icon {
+            background: var(--bg-card-alt);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .ops-btn-icon:hover {
+            background: var(--border-color);
+        }
+
+        .user-tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            background: var(--bg-card-alt);
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .user-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #22C55E;
+            box-shadow: 0 0 8px #22C55E;
+        }
+
+        /* MAIN CONTAINER */
+        .ops-container {
+            max-width: 1750px;
+            margin: 0 auto;
+            padding: 20px 24px;
+        }
+
+        /* KPI INTERACTIVE COMMAND BAR */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-highlight);
+        }
+
+        .kpi-card.active {
+            border-color: var(--text-main);
+            box-shadow: 0 0 0 2px var(--text-main);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: var(--border-color);
+        }
+
+        .kpi-received::before { background-color: var(--primary-lemon); }
+        .kpi-accepted::before { background-color: #06B6D4; }
+        .kpi-preparing::before { background-color: var(--orange-alert); }
+        .kpi-almost::before { background-color: #8B5CF6; }
+        .kpi-ready::before { background-color: #10B981; }
+        .kpi-unassigned::before { background-color: #EAB308; }
+        .kpi-urgent::before { background-color: var(--strawberry); }
+
+        .kpi-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kpi-value {
+            font-size: 1.7rem;
             font-weight: 900;
+            line-height: 1.1;
             margin-top: 4px;
             color: var(--text-main);
         }
 
-        /* Kanban Columns and Cards */
-        .kanban-board {
+        .kpi-urgent .kpi-value {
+            color: var(--strawberry);
+        }
+
+        /* FILTER & SEARCH TOOLBAR */
+        .ops-toolbar {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+            max-width: 900px;
+            flex-wrap: wrap;
+        }
+
+        .search-box-wrapper {
+            position: relative;
+            flex-grow: 1;
+            min-width: 240px;
+        }
+
+        .search-box-wrapper input {
+            width: 100%;
+            padding: 8px 12px 8px 34px;
+            border-radius: var(--radius-xs);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-card-alt);
+            color: var(--text-main);
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .search-box-wrapper input:focus {
+            border-color: var(--primary-lemon);
+            background-color: var(--bg-card);
+        }
+
+        .search-box-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .ops-select {
+            padding: 8px 12px;
+            border-radius: var(--radius-xs);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-card-alt);
+            color: var(--text-main);
+            font-size: 0.82rem;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .ops-select:focus {
+            border-color: var(--border-highlight);
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .view-switch-btn {
+            border: 1px solid var(--border-color);
+            background: var(--bg-card-alt);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: var(--radius-xs);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .view-switch-btn.active {
+            background: var(--text-main);
+            color: var(--bg-card);
+            border-color: var(--text-main);
+        }
+
+        /* KANBAN BOARD */
+        .ops-kanban-board {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(5, minmax(260px, 1fr));
+            gap: 16px;
             align-items: start;
         }
 
-        .kanban-col {
-            background-color: rgba(0,0,0,0.02);
-            border-radius: var(--border-radius-md);
-            padding: 14px;
-            min-height: 500px;
+        .kanban-column {
+            background-color: var(--bg-card-alt);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
         }
 
-        .kanban-header {
+        .kanban-col-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
         }
 
-        .kanban-title {
-            font-weight: 800;
-            font-size: 0.95rem;
+        .kanban-col-title {
+            font-weight: 900;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .kanban-count {
-            background: rgba(0,0,0,0.05);
+        .kanban-col-badge {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-size: 0.75rem;
+            font-weight: 800;
             padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
+            border-radius: var(--radius-pill);
         }
 
-        .kanban-cards {
+        .kanban-col-cards {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
+            flex-grow: 1;
         }
 
-        /* Kanban Card */
-        .kanban-card {
-            background: white;
-            border-radius: var(--border-radius-sm);
-            padding: 14px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-            border: 1px solid rgba(0,0,0,0.04);
+        /* COMMAND DIGITAL TICKET (CARD) */
+        .ticket-card {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         }
 
-        .kanban-card:hover {
+        .ticket-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-highlight);
         }
 
-        /* Priority High card marker */
-        .kanban-card.priority-high {
-            border: 2px solid var(--strawberry);
+        .ticket-card.priority-high {
+            border: 2px solid var(--strawberry) !important;
             background-color: var(--soft-strawberry);
+            box-shadow: var(--shadow-urgent);
         }
 
-        .card-code {
-            font-size: 0.9rem;
+        .ticket-card.has-admin-change {
+            border-left: 4px solid var(--orange-alert);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .ticket-code {
             font-weight: 900;
+            font-size: 0.92rem;
             color: var(--text-main);
+            font-family: 'Outfit', monospace;
         }
 
-        .card-price {
-            font-weight: 700;
+        .ticket-price {
+            font-weight: 900;
+            font-size: 0.95rem;
             color: var(--dark-green);
         }
 
-        .card-customer {
-            font-weight: 700;
-            margin-top: 4px;
-            font-size: 0.85rem;
+        body.dark-mode .ticket-price {
+            color: #4ADE80;
         }
 
-        .card-timer-badge {
+        .ticket-badges-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .badge-tag {
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-urgent {
+            background: var(--strawberry);
+            color: #FFFFFF;
+            animation: pulse-urgent 1.5s infinite;
+        }
+
+        @keyframes pulse-urgent {
+            0% { opacity: 1; }
+            50% { opacity: 0.75; }
+            100% { opacity: 1; }
+        }
+
+        .badge-admin-mod {
+            background: var(--orange-alert);
+            color: #000000;
+        }
+
+        .badge-advisor {
+            background: var(--soft-blue);
+            color: var(--blue-info);
+            border: 1px solid rgba(30, 136, 229, 0.2);
+        }
+
+        .badge-unassigned {
+            background: var(--soft-orange);
+            color: #D97706;
+            border: 1px dashed #D97706;
+        }
+
+        .ticket-customer {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ticket-items-preview {
+            background: var(--bg-card-alt);
+            border-radius: var(--radius-xs);
+            padding: 6px 8px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .ticket-item-line {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+        }
+
+        .ticket-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 6px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.74rem;
+        }
+
+        .ticket-timer {
+            font-weight: 800;
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            font-size: 0.75rem;
-            background-color: #ECEFF1;
-            padding: 3px 8px;
-            border-radius: 12px;
-            margin-top: 8px;
-            font-weight: 700;
-            color: #37474F;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
         }
 
-        .priority-high .card-timer-badge {
-            background-color: var(--strawberry);
-            color: white;
+        .timer-normal {
+            background: var(--soft-green);
+            color: var(--green-medium);
         }
 
-        .card-items-preview {
-            font-size: 0.8rem;
+        .timer-warning {
+            background: var(--soft-orange);
+            color: #D97706;
+        }
+
+        .timer-danger {
+            background: var(--soft-strawberry);
+            color: var(--strawberry);
+        }
+
+        .ticket-quick-claim {
+            background: var(--primary-lemon);
+            border: none;
+            color: #000;
+            font-size: 0.72rem;
+            font-weight: 900;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .ticket-quick-claim:hover {
+            background: var(--lemon-dark);
+            transform: scale(1.03);
+        }
+
+        /* TABLE VIEW */
+        .ops-table-view {
+            display: none;
+            background-color: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .ops-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        .ops-table th {
+            background: var(--bg-card-alt);
+            padding: 12px 16px;
+            font-weight: 800;
             color: var(--text-secondary);
-            margin-top: 6px;
-            border-top: 1px dashed rgba(0,0,0,0.05);
-            padding-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        /* Modals and forms */
-        .modal-overlay {
+        .ops-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        .ops-table tr:hover {
+            background-color: var(--bg-card-alt);
+        }
+
+        /* KITCHEN MODE (FULLSCREEN HIGH-CONTRAST) */
+        body.kitchen-mode {
+            background-color: #000000;
+            color: #FFFFFF;
+        }
+
+        body.kitchen-mode .ops-header,
+        body.kitchen-mode .kpi-grid,
+        body.kitchen-mode .ops-toolbar {
+            display: none;
+        }
+
+        .kitchen-mode-header {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            background: #111;
+            padding: 16px 24px;
+            border-bottom: 2px solid #333;
+        }
+
+        body.kitchen-mode .kitchen-mode-header {
+            display: flex;
+        }
+
+        body.kitchen-mode .ops-kanban-board {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 16px;
+        }
+
+        body.kitchen-mode .kanban-column {
+            background: #111;
+            border: 2px solid #333;
+        }
+
+        body.kitchen-mode .ticket-card {
+            background: #1C1C1C;
+            border: 2px solid #444;
+            padding: 16px;
+        }
+
+        body.kitchen-mode .ticket-code {
+            font-size: 1.3rem;
+            color: var(--primary-lemon);
+        }
+
+        body.kitchen-mode .ticket-customer {
+            font-size: 1.1rem;
+        }
+
+        body.kitchen-mode .ticket-items-preview {
+            font-size: 1rem;
+            background: #000;
+            border: 1px solid #333;
+            color: #FFF;
+        }
+
+        body.kitchen-mode .ticket-timer {
+            font-size: 1rem;
+            padding: 4px 8px;
+        }
+
+        /* ORDER DETAIL DRAWER (CONTEXTUAL LATERAL PANEL) */
+        .drawer-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.4);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            padding: 16px;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .modal-overlay.active {
-            display: flex;
+        .drawer-overlay.open {
+            opacity: 1;
+            visibility: visible;
         }
 
-        .modal-container {
-            background: white;
-            border-radius: var(--border-radius-md);
-            padding: 24px;
+        .order-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
             width: 100%;
-            max-width: 500px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            max-height: 90vh;
+            max-width: var(--drawer-width);
+            background-color: var(--bg-card);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.2);
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer-overlay.open .order-drawer {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-card-alt);
+        }
+
+        .drawer-body {
+            padding: 20px;
             overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
         }
 
-        /* Detail Modal Items View */
-        .detail-item-box {
-            background: var(--bg-cream);
-            border-radius: var(--border-radius-sm);
-            padding: 12px;
-            margin-bottom: 12px;
-            border: 1px solid rgba(0,0,0,0.03);
-        }
-
-        /* Mobile layout styling */
-        .mobile-kanban-tabs {
-            display: none;
-            gap: 8px;
-            overflow-x: auto;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-        }
-
-        .mobile-tab-button {
-            padding: 8px 16px;
-            border-radius: 20px;
-            background-color: white;
-            border: 1px solid rgba(0,0,0,0.08);
-            font-weight: 700;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-
-        .mobile-tab-button.active {
-            background-color: var(--primary-lemon);
-            border-color: var(--primary-lemon);
-            color: var(--dark-green);
-        }
-
-        /* Action Buttons */
-        .btn-action-row {
+        .drawer-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-card-alt);
             display: flex;
             flex-direction: column;
             gap: 8px;
-            margin-top: 16px;
+        }
+
+        .drawer-section {
+            background-color: var(--bg-card-alt);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        .drawer-section-title {
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* TIMELINE TRACEABILITY */
+        .timeline-trace {
+            position: relative;
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .timeline-trace::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 4px;
+            bottom: 4px;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-step {
+            position: relative;
+            margin-bottom: 12px;
+            font-size: 0.8rem;
+        }
+
+        .timeline-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -20px;
+            top: 3px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--border-color);
+            border: 2px solid var(--bg-card);
+        }
+
+        .timeline-step.active .timeline-dot {
+            background: var(--green-medium);
+            box-shadow: 0 0 8px rgba(46, 125, 50, 0.4);
+        }
+
+        .timeline-step.cancelled .timeline-dot {
+            background: var(--strawberry);
+        }
+
+        /* AUDIT CHANGE LOG */
+        .audit-item {
+            font-size: 0.78rem;
+            padding: 8px 10px;
+            background: var(--bg-card);
+            border-radius: var(--radius-xs);
+            border: 1px solid var(--border-color);
+            margin-bottom: 6px;
+        }
+
+        .audit-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* MODAL STYLES (EDIT MULTI, CANCEL, DELIVER) */
+        .ops-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .ops-modal-overlay.active {
+            display: flex;
+        }
+
+        .ops-modal-box {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        /* MULTI-ITEM EDITOR STYLES */
+        .editor-item-card {
+            background: var(--bg-card-alt);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 12px;
+            position: relative;
         }
 
         .btn-action-primary {
             background-color: var(--primary-lemon);
-            color: var(--dark-green);
-            padding: 12px;
-            border-radius: var(--border-radius-sm);
+            color: #000;
             font-weight: 800;
             border: none;
+            padding: 12px;
+            border-radius: var(--radius-xs);
             cursor: pointer;
-            text-align: center;
             font-size: 0.9rem;
-            min-height: 44px;
+            width: 100%;
+            transition: all 0.15s ease;
+        }
+
+        .btn-action-primary:hover {
+            background-color: var(--lemon-dark);
         }
 
         .btn-action-secondary {
-            background-color: #ECEFF1;
-            color: #37474F;
-            padding: 10px;
-            border-radius: var(--border-radius-sm);
+            background-color: var(--bg-card-alt);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
             font-weight: 700;
-            border: none;
+            padding: 10px;
+            border-radius: var(--radius-xs);
             cursor: pointer;
-            text-align: center;
             font-size: 0.85rem;
-            min-height: 44px;
+            width: 100%;
         }
 
         .btn-action-danger {
             background-color: var(--soft-strawberry);
             color: var(--strawberry);
-            padding: 10px;
-            border-radius: var(--border-radius-sm);
+            border: 1px solid rgba(229, 57, 53, 0.2);
             font-weight: 700;
-            border: none;
+            padding: 10px;
+            border-radius: var(--radius-xs);
             cursor: pointer;
-            text-align: center;
             font-size: 0.85rem;
-            min-height: 44px;
-        }
-
-        /* History and Search Layout */
-        .history-section {
-            display: none;
-        }
-
-        .search-filter-bar {
-            background: white;
-            padding: 16px;
-            border-radius: var(--border-radius-md);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .search-input {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: var(--border-radius-sm);
-            font-size: 0.9rem;
-        }
-
-        .filter-select {
-            padding: 10px;
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: var(--border-radius-sm);
-            font-size: 0.9rem;
-            background: white;
-        }
-
-        .history-table-container {
-            background: white;
-            border-radius: var(--border-radius-md);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-            overflow-x: auto;
-        }
-
-        .history-table {
             width: 100%;
-            border-collapse: collapse;
-            text-align: left;
         }
 
-        .history-table th, .history-table td {
+        /* TOAST NOTIFICATION */
+        .ops-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1E293B;
+            color: #FFF;
             padding: 14px 20px;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
             font-size: 0.9rem;
+            border-left: 5px solid var(--primary-lemon);
         }
 
-        .history-table th {
-            background: rgba(0,0,0,0.02);
-            font-weight: 800;
-        }
-
-        /* Responsive Breakpoints */
-        @media (max-width: 1024px) {
-            .kanban-board {
-                grid-template-columns: repeat(3, 1fr);
+        /* RESPONSIVE */
+        @media (max-width: 1300px) {
+            .kpi-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .ops-kanban-board {
+                grid-template-columns: repeat(3, minmax(240px, 1fr));
             }
         }
 
-        @media (max-width: 768px) {
-            .stats-summary-grid {
+        @media (max-width: 900px) {
+            .kpi-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            .mobile-kanban-tabs {
-                display: flex;
+            .ops-kanban-board {
+                grid-template-columns: 1fr;
             }
-            .kanban-board {
-                display: block;
-            }
-            .kanban-col {
-                display: none;
-                min-height: auto;
-            }
-            .kanban-col.mobile-active {
-                display: block;
-            }
-            .main-content {
-                padding: 16px;
+            .ops-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
             }
         }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-layout">
-        
-        <!-- Sidebar Menu -->
-        <aside class="sidebar">
-            <div class="sidebar-logo">
+    <!-- TOP OPERATIONS COMMAND HEADER -->
+    <header class="ops-header">
+        <div class="ops-header-left">
+            <a href="/asesor/dashboard" class="ops-brand">
                 <span>🍧 LEMON DROP</span>
+                <span class="ops-brand-badge">Command Center</span>
+            </a>
+
+            <div class="ops-nav-tabs">
+                <button class="ops-nav-tab active" id="tabKanban" onclick="switchView('kanban')">
+                    📋 Tablero Operativo
+                </button>
+                <button class="ops-nav-tab" id="tabTable" onclick="switchView('table')">
+                    📊 Vista Tabla
+                </button>
+                <button class="ops-nav-tab" id="tabHistory" onclick="switchView('history')">
+                    📜 Historial Completo
+                </button>
             </div>
+        </div>
+
+        <div class="ops-header-right">
+            <button class="ops-btn-icon" id="soundBtn" onclick="toggleSound()">
+                <span id="soundIcon">🔊</span> <span id="soundText">Audio ON</span>
+            </button>
             
-            <ul class="sidebar-menu">
-                <li class="sidebar-item active" id="menuItemKanban">
-                    <a href="#" onclick="showSection('kanban')">📋 Panel de Operación</a>
-                </li>
-                <li class="sidebar-item" id="menuItemHistory">
-                    <a href="#" onclick="showSection('history')">📋 Historial de Pedidos</a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="/">🌐 Ver Web Pública</a>
-                </li>
-            </ul>
+            <button class="ops-btn-icon" id="kitchenBtn" onclick="toggleKitchenMode()">
+                🖥️ Kitchen Mode
+            </button>
 
-            <!-- Assigned Advisor Dashboard Widget -->
-            <div class="sidebar-user" style="flex-direction:column; gap:8px; border-top:1px solid rgba(0,0,0,0.05); padding-top:16px;">
-                <div style="width:100%; display:flex; align-items:center; gap:8px;">
-                    <div class="user-avatar" sec:authentication="name">A</div>
-                    <div style="flex-grow: 1;">
-                        <p style="font-weight: 700; font-size: 0.9rem; color: var(--dark);" sec:authentication="name">Asesor</p>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary);">Asesor de Ventas</p>
-                    </div>
-                    <form th:action="@{/logout}" method="post">
-                        <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem;" title="Cerrar Sesión">🚪</button>
-                    </form>
-                </div>
-            </div>
-        </aside>
+            <button class="ops-btn-icon" id="themeBtn" onclick="toggleDarkMode()">
+                🌙 Modo Oscuro
+            </button>
 
-        <!-- Main Workspace -->
-        <main class="main-content">
-            
-            <!-- Section 1: Kanban Grid -->
-            <div id="section-kanban">
-                <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-                    <div>
-                        <h1 style="font-size: 2rem; font-weight:900;">📋 Cola de Preparación</h1>
-                        <p style="color: var(--text-secondary);">Recibe, acepta y despacha los granizados en tiempo real.</p>
-                    </div>
-                    <div style="display:flex; gap: 12px; align-items:center;">
-                        <button class="btn-custom btn-outline" id="soundToggle" onclick="toggleSound()" style="padding: 8px 16px; font-size: 0.8rem; font-weight:700;">
-                            🔊 Sonido ON
-                        </button>
-                        <span style="font-size: 0.8rem; background-color: var(--soft-green); color: var(--dark-green); padding: 8px 15px; border-radius: 50px; font-weight:800;">
-                            🟢 Sistema conectado
-                        </span>
-                    </div>
-                </header>
-
-                <!-- Turn Indicators Header widget -->
-                <div class="stats-summary-grid">
-                    <div class="stat-card-widget stat-received">
-                        <span class="stat-widget-title">🆕 Nuevos</span>
-                        <span class="stat-widget-value" th:text="${receivedOrders.size()}">0</span>
-                    </div>
-                    <div class="stat-card-widget stat-preparing">
-                        <span class="stat-widget-title">👨‍🍳 Preparando</span>
-                        <span class="stat-widget-value" th:text="${preparingOrders.size()}">0</span>
-                    </div>
-                    <div class="stat-card-widget stat-ready">
-                        <span class="stat-widget-title">🟢 Listos</span>
-                        <span class="stat-widget-value" th:text="${readyOrders.size()}">0</span>
-                    </div>
-                    <div class="stat-card-widget stat-delivered">
-                        <span class="stat-widget-title">✓ Entregados hoy</span>
-                        <span class="stat-widget-value" th:text="${deliveredOrders.size()}">0</span>
-                    </div>
-                </div>
-
-                <!-- Mobile Column Select Tabs -->
-                <div class="mobile-kanban-tabs">
-                    <button class="mobile-tab-button active" onclick="showMobileColumn('col-RECEIVED', this)">Nuevos</button>
-                    <button class="mobile-tab-button" onclick="showMobileColumn('col-ACCEPTED', this)">Aceptados</button>
-                    <button class="mobile-tab-button" onclick="showMobileColumn('col-PREPARING', this)">Preparando</button>
-                    <button class="mobile-tab-button" onclick="showMobileColumn('col-ALMOST_READY', this)">Casi Listos</button>
-                    <button class="mobile-tab-button" onclick="showMobileColumn('col-READY', this)">Listos</button>
-                </div>
-
-                <!-- Kanban Grid -->
-                <div class="kanban-board">
-
-                    <!-- Column 1: RECEIVED -->
-                    <div class="kanban-col mobile-active" id="col-RECEIVED">
-                        <div class="kanban-header">
-                            <span class="kanban-title">Nuevos</span>
-                            <span class="kanban-count" th:text="${receivedOrders.size()}">0</span>
-                        </div>
-                        <div class="kanban-cards">
-                            <div th:each="order : ${receivedOrders}" 
-                                 th:classappend="${order.priority == 'ALTA'} ? 'priority-high' : ''"
-                                 class="kanban-card" 
-                                 th:attr="onclick=|openDetailModal('${order.id}')|">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span class="card-code" th:text="${order.orderCode}">LD-26-00001</span>
-                                    <span class="card-price" th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
-                                </div>
-                                <div class="card-customer" th:text="${order.customerName}">Pedro</div>
-                                
-                                <div class="card-timer-badge" th:attr="data-timestamp=${order.createdAt.toString()},data-timer-type='received'">
-                                    ⏱️ Calculando...
-                                </div>
-
-                                <div class="card-items-preview">
-                                    <div th:each="item : ${order.items}">
-                                        <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column 2: ACCEPTED -->
-                    <div class="kanban-col" id="col-ACCEPTED">
-                        <div class="kanban-header">
-                            <span class="kanban-title">Aceptados</span>
-                            <span class="kanban-count" th:text="${acceptedOrders.size()}">0</span>
-                        </div>
-                        <div class="kanban-cards">
-                            <div th:each="order : ${acceptedOrders}" 
-                                 th:classappend="${order.priority == 'ALTA'} ? 'priority-high' : ''"
-                                 class="kanban-card" 
-                                 th:attr="onclick=|openDetailModal('${order.id}')|">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span class="card-code" th:text="${order.orderCode}">LD-26-00001</span>
-                                    <span class="card-price" th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
-                                </div>
-                                <div class="card-customer" th:text="${order.customerName}">Pedro</div>
-
-                                <div class="card-items-preview">
-                                    <div th:each="item : ${order.items}">
-                                        <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column 3: PREPARING -->
-                    <div class="kanban-col" id="col-PREPARING">
-                        <div class="kanban-header">
-                            <span class="kanban-title">Preparando</span>
-                            <span class="kanban-count" th:text="${preparingOrders.size()}">0</span>
-                        </div>
-                        <div class="kanban-cards">
-                            <div th:each="order : ${preparingOrders}" 
-                                 th:classappend="${order.priority == 'ALTA'} ? 'priority-high' : ''"
-                                 class="kanban-card" 
-                                 th:attr="onclick=|openDetailModal('${order.id}')|">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span class="card-code" th:text="${order.orderCode}">LD-26-00001</span>
-                                    <span class="card-price" th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
-                                </div>
-                                <div class="card-customer" th:text="${order.customerName}">Pedro</div>
-                                
-                                <div class="card-timer-badge" th:attr="data-timestamp=${order.preparingAt != null ? order.preparingAt.toString() : ''},data-timer-type='preparing'">
-                                    ⏱️ Calculando...
-                                </div>
-
-                                <div class="card-items-preview">
-                                    <div th:each="item : ${order.items}">
-                                        <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column 4: ALMOST_READY -->
-                    <div class="kanban-col" id="col-ALMOST_READY">
-                        <div class="kanban-header">
-                            <span class="kanban-title">Casi Listos</span>
-                            <span class="kanban-count" th:text="${almostReadyOrders.size()}">0</span>
-                        </div>
-                        <div class="kanban-cards">
-                            <div th:each="order : ${almostReadyOrders}" 
-                                 th:classappend="${order.priority == 'ALTA'} ? 'priority-high' : ''"
-                                 class="kanban-card" 
-                                 th:attr="onclick=|openDetailModal('${order.id}')|">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span class="card-code" th:text="${order.orderCode}">LD-26-00001</span>
-                                    <span class="card-price" th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
-                                </div>
-                                <div class="card-customer" th:text="${order.customerName}">Pedro</div>
-
-                                <div class="card-items-preview">
-                                    <div th:each="item : ${order.items}">
-                                        <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column 5: READY -->
-                    <div class="kanban-col" id="col-READY">
-                        <div class="kanban-header">
-                            <span class="kanban-title">Listos</span>
-                            <span class="kanban-count" th:text="${readyOrders.size()}">0</span>
-                        </div>
-                        <div class="kanban-cards">
-                            <div th:each="order : ${readyOrders}" 
-                                 th:classappend="${order.priority == 'ALTA'} ? 'priority-high' : ''"
-                                 class="kanban-card" 
-                                 th:attr="onclick=|openDetailModal('${order.id}')|">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span class="card-code" th:text="${order.orderCode}">LD-26-00001</span>
-                                    <span class="card-price" th:text="${'$' + #numbers.formatDecimal(order.total, 0, 'POINT', 0, 'COMMA')}">$8.000</span>
-                                </div>
-                                <div class="card-customer" th:text="${order.customerName}">Pedro</div>
-                                
-                                <div class="card-timer-badge" th:attr="data-timestamp=${order.readyAt != null ? order.readyAt.toString() : ''},data-timer-type='ready'">
-                                    ⏱️ Calculando...
-                                </div>
-
-                                <div class="card-items-preview">
-                                    <div th:each="item : ${order.items}">
-                                        <strong th:text="${item.productName + ' (' + item.flavorName + ') x' + item.quantity}">Granizado</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
+            <div class="user-tag">
+                <span class="user-dot"></span>
+                <span id="headerAdvisorUsername" th:text="${currentUsername}">Carlos</span>
             </div>
 
-            <!-- Section 2: History Search Workspace -->
-            <div id="section-history" class="history-section">
-                <header style="margin-bottom:24px;">
-                    <h1 style="font-size: 2rem; font-weight:900;">📋 Historial de Pedidos</h1>
-                    <p style="color: var(--text-secondary);">Consulta y busca pedidos finalizados del sistema.</p>
-                </header>
+            <form th:action="@{/logout}" method="post" style="margin:0;">
+                <button type="submit" class="ops-btn-icon" style="color:var(--strawberry);" title="Cerrar Sesión">🚪</button>
+            </form>
+        </div>
+    </header>
 
-                <div class="search-filter-bar">
-                    <input type="text" id="historySearchInput" placeholder="Buscar por código, nombre o teléfono..." class="search-input" oninput="loadHistory()">
-                    <select id="historyFilterSelect" class="filter-select" onchange="loadHistory()">
-                        <option value="TODOS">Todos los registros</option>
+    <!-- KITCHEN MODE HEADER -->
+    <div class="kitchen-mode-header">
+        <div style="display:flex; align-items:center; gap:16px;">
+            <span style="font-size:1.6rem; font-weight:900; color:var(--primary-lemon);">🍧 LEMON DROP • MODO COCINA</span>
+            <span style="background:#22C55E; color:#000; font-weight:900; font-size:0.8rem; padding:4px 10px; border-radius:4px;">PRODUCCIÓN ACTIVA</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+            <span id="kitchenClock" style="font-size:1.4rem; font-weight:900; font-family:monospace;">12:00:00</span>
+            <button onclick="toggleKitchenMode()" style="background:#333; color:#FFF; border:1px solid #555; padding:8px 16px; border-radius:4px; font-weight:800; cursor:pointer;">
+                ✕ Salir Modo Cocina
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="ops-container">
+        
+        <!-- SECTION: DASHBOARD KPIS -->
+        <section class="kpi-grid" id="kpiContainer">
+            <div class="kpi-card kpi-received" onclick="applyQuickFilter('RECEIVED', this)">
+                <div class="kpi-label">
+                    <span>Nuevos</span>
+                    <span>📥</span>
+                </div>
+                <div class="kpi-value" id="kpiValReceived">0</div>
+            </div>
+
+            <div class="kpi-card kpi-accepted" onclick="applyQuickFilter('ACCEPTED', this)">
+                <div class="kpi-label">
+                    <span>Aceptados</span>
+                    <span>👍</span>
+                </div>
+                <div class="kpi-value" id="kpiValAccepted">0</div>
+            </div>
+
+            <div class="kpi-card kpi-preparing" onclick="applyQuickFilter('PREPARING', this)">
+                <div class="kpi-label">
+                    <span>Preparando</span>
+                    <span>👨‍🍳</span>
+                </div>
+                <div class="kpi-value" id="kpiValPreparing">0</div>
+            </div>
+
+            <div class="kpi-card kpi-almost" onclick="applyQuickFilter('ALMOST_READY', this)">
+                <div class="kpi-label">
+                    <span>Casi Listos</span>
+                    <span>⏳</span>
+                </div>
+                <div class="kpi-value" id="kpiValAlmost">0</div>
+            </div>
+
+            <div class="kpi-card kpi-ready" onclick="applyQuickFilter('READY', this)">
+                <div class="kpi-label">
+                    <span>Listos</span>
+                    <span>🎉</span>
+                </div>
+                <div class="kpi-value" id="kpiValReady">0</div>
+            </div>
+
+            <div class="kpi-card kpi-unassigned" onclick="applyQuickFilter('UNASSIGNED', this)">
+                <div class="kpi-label">
+                    <span>Sin Asignar</span>
+                    <span>⚠️</span>
+                </div>
+                <div class="kpi-value" id="kpiValUnassigned">0</div>
+            </div>
+
+            <div class="kpi-card kpi-urgent" onclick="applyQuickFilter('URGENT', this)">
+                <div class="kpi-label">
+                    <span>🔥 Urgentes</span>
+                    <span>⚡</span>
+                </div>
+                <div class="kpi-value" id="kpiValUrgent">0</div>
+            </div>
+        </section>
+
+        <!-- TOOLBAR FILTERS & SEARCH -->
+        <section class="ops-toolbar" id="toolbarContainer">
+            <div class="toolbar-left">
+                <div class="search-box-wrapper">
+                    <span class="search-box-icon">🔍</span>
+                    <input type="text" id="globalSearchInput" placeholder="Buscar por código (ej: LD-26), cliente, teléfono o asesor..." oninput="handleFilterChange()">
+                </div>
+
+                <select id="priorityFilterSelect" class="ops-select" onchange="handleFilterChange()">
+                    <option value="ALL">Prioridad: Todas</option>
+                    <option value="ALTA">🔥 Solo Alta Prioridad</option>
+                    <option value="NORMAL">Normal</option>
+                </select>
+
+                <select id="advisorFilterSelect" class="ops-select" onchange="handleFilterChange()">
+                    <option value="ALL">Asesor: Todos</option>
+                    <option value="UNASSIGNED">⚠️ Sin asignar</option>
+                    <option value="MINE" th:attr="data-username=${currentUsername}">👤 Solo mis pedidos</option>
+                </select>
+
+                <select id="timeFilterSelect" class="ops-select" onchange="handleFilterChange()">
+                    <option value="ALL">Tiempo: Cualquiera</option>
+                    <option value="5">> 5 min esperando</option>
+                    <option value="10">> 10 min esperando</option>
+                    <option value="15">> 15 min crítico</option>
+                </select>
+
+                <button class="ops-btn-icon" style="padding:6px 10px;" onclick="resetFilters()" title="Limpiar Filtros">
+                    🔄 Reset
+                </button>
+            </div>
+
+            <div class="toolbar-right">
+                <span id="activeOrdersCountLabel" style="font-size:0.8rem; font-weight:800; color:var(--text-secondary);">
+                    0 pedidos activos
+                </span>
+            </div>
+        </section>
+
+        <!-- VIEW 1: KANBAN BOARD -->
+        <section id="kanbanViewContainer" class="ops-kanban-board">
+            <!-- COL 1: RECEIVED -->
+            <div class="kanban-column" id="col-RECEIVED">
+                <div class="kanban-col-header">
+                    <span class="kanban-col-title">📥 Recibidos</span>
+                    <span class="kanban-col-badge" id="badge-RECEIVED">0</span>
+                </div>
+                <div class="kanban-col-cards" id="cards-RECEIVED"></div>
+            </div>
+
+            <!-- COL 2: ACCEPTED -->
+            <div class="kanban-column" id="col-ACCEPTED">
+                <div class="kanban-col-header">
+                    <span class="kanban-col-title">👍 Aceptados</span>
+                    <span class="kanban-col-badge" id="badge-ACCEPTED">0</span>
+                </div>
+                <div class="kanban-col-cards" id="cards-ACCEPTED"></div>
+            </div>
+
+            <!-- COL 3: PREPARING -->
+            <div class="kanban-column" id="col-PREPARING">
+                <div class="kanban-col-header">
+                    <span class="kanban-col-title">👨‍🍳 Preparando</span>
+                    <span class="kanban-col-badge" id="badge-PREPARING">0</span>
+                </div>
+                <div class="kanban-col-cards" id="cards-PREPARING"></div>
+            </div>
+
+            <!-- COL 4: ALMOST READY -->
+            <div class="kanban-column" id="col-ALMOST_READY">
+                <div class="kanban-col-header">
+                    <span class="kanban-col-title">⏳ Casi Listos</span>
+                    <span class="kanban-col-badge" id="badge-ALMOST_READY">0</span>
+                </div>
+                <div class="kanban-col-cards" id="cards-ALMOST_READY"></div>
+            </div>
+
+            <!-- COL 5: READY -->
+            <div class="kanban-column" id="col-READY">
+                <div class="kanban-col-header">
+                    <span class="kanban-col-title">🎉 Listos</span>
+                    <span class="kanban-col-badge" id="badge-READY">0</span>
+                </div>
+                <div class="kanban-col-cards" id="cards-READY"></div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: TABLE VIEW -->
+        <section id="tableViewContainer" class="ops-table-view">
+            <table class="ops-table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Cliente</th>
+                        <th>Estado</th>
+                        <th>Prioridad</th>
+                        <th>Asesor Asignado</th>
+                        <th>Tiempo de Espera</th>
+                        <th>Total</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                    <tr><td colspan="8" style="text-align:center; color:var(--text-secondary);">Cargando pedidos...</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- VIEW 3: HISTORIAL VIEW -->
+        <section id="historyViewContainer" style="display:none;">
+            <div class="ops-toolbar">
+                <div class="toolbar-left">
+                    <input type="text" id="historySearchInput" placeholder="Buscar en historial por código, cliente o asesor..." class="ops-select" style="min-width:300px;" oninput="fetchHistoryOrders()">
+                    <select id="historyFilterSelect" class="ops-select" onchange="fetchHistoryOrders()">
+                        <option value="TODOS">Todos los cerrados</option>
                         <option value="HOY">Solo Hoy</option>
                         <option value="AYER">Ayer</option>
                         <option value="7_DIAS">Últimos 7 días</option>
                     </select>
                 </div>
-
-                <div class="history-table-container">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Cliente</th>
-                                <th>Total</th>
-                                <th>Estado</th>
-                                <th>Fecha/Hora</th>
-                                <th>Asesor a cargo</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody">
-                            <tr>
-                                <td colspan="7" style="text-align:center; color:var(--text-secondary);">Cargando historial...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="toolbar-right">
+                    <span id="historyCountLabel" style="font-size:0.82rem; font-weight:800; color:var(--text-secondary);">Historial sincronizado</span>
                 </div>
             </div>
 
-        </main>
-    </div>
-
-    <!-- Details View Modal -->
-    <div class="modal-overlay" id="detailModal">
-        <div class="modal-container">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(0,0,0,0.08); padding-bottom:10px;">
-                <h2 style="margin:0; font-weight:900;" id="detailOrderCode">PEDIDO</h2>
-                <button onclick="closeModal('detailModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <div class="ops-table-view" style="display:block;">
+                <table class="ops-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Cliente</th>
+                            <th>Total</th>
+                            <th>Estado Final</th>
+                            <th>Fecha y Hora</th>
+                            <th>Atendido por</th>
+                            <th>Trazabilidad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr><td colspan="7" style="text-align:center;">Cargando historial...</td></tr>
+                    </tbody>
+                </table>
             </div>
-            
-            <div style="margin-bottom:16px;">
-                <p style="margin:4px 0;"><span style="font-weight:700;">Cliente:</span> <span id="detailCustomerName"></span></p>
-                <p style="margin:4px 0;"><span style="font-weight:700;">Teléfono:</span> <span id="detailCustomerPhone"></span></p>
-                <p style="margin:4px 0;"><span style="font-weight:700;">Hora de creación:</span> <span id="detailCreatedAt"></span></p>
-                <p style="margin:4px 0;"><span style="font-weight:700;">Estado:</span> <span style="font-weight:800;" id="detailStatus"></span></p>
+        </section>
+
+    </main>
+
+    <!-- CONTEXTUAL LATERAL ORDER DRAWER -->
+    <div class="drawer-overlay" id="orderDrawerOverlay" onclick="closeOrderDrawer(event)">
+        <div class="order-drawer" id="orderDrawerContent" onclick="event.stopPropagation()">
+            <div class="drawer-header">
+                <div>
+                    <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--text-secondary);">Comanda Digital</span>
+                    <h2 style="margin:0; font-size:1.3rem; font-weight:900;" id="drawerOrderCode">LD-00-00000</h2>
+                </div>
+                <button onclick="closeOrderDrawerDirect()" style="background:none; border:none; font-size:1.5rem; color:var(--text-secondary); cursor:pointer;">&times;</button>
             </div>
 
-            <h3 style="margin:16px 0 8px 0; border-bottom:1px dashed rgba(0,0,0,0.1); padding-bottom:4px;">Productos</h3>
-            <div id="detailItemsContainer"></div>
-
-            <div style="background-color: var(--soft-lemon); padding: 12px; border-radius: var(--border-radius-sm); margin:16px 0;">
-                <p style="margin:0; font-size:0.85rem; font-weight:800; color:var(--dark-green);">Observaciones de preparación:</p>
-                <p style="margin:4px 0 0 0; font-style:italic;" id="detailObservations">Ninguna</p>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:900; margin-bottom:20px;">
-                <span>Total del Pedido:</span>
-                <span id="detailTotal" style="color:var(--dark-green);"></span>
-            </div>
-
-            <div class="btn-action-row" id="detailActions">
-                <!-- Buttons are injected here dynamically based on status -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Rejection Reason Modal -->
-    <div class="modal-overlay" id="cancelModal">
-        <div class="modal-container" style="max-width: 450px;">
-            <h3 style="margin-bottom:15px;">❌ Rechazar Pedido <span id="cancelOrderCode"></span></h3>
-            <form id="cancelForm" method="post" onsubmit="preventDoubleSubmit(this)">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                <input type="hidden" name="status" value="CANCELLED">
-                <div class="form-group">
-                    <label class="form-label">Motivo de Rechazo *</label>
-                    <select name="notes" id="cancelNotesSelect" class="form-control" onchange="toggleCustomReason(this)" required>
-                        <option value="Sabor agotado">Sabor agotado</option>
-                        <option value="Insumos insuficientes">Insumos insuficientes</option>
-                        <option value="Falta de hielo">Falta de hielo</option>
-                        <option value="Cliente canceló">Cliente canceló</option>
-                        <option value="Otro">Otro motivo</option>
-                    </select>
-                </div>
-                <div class="form-group" id="customReasonWrapper" style="display:none; margin-top:12px;">
-                    <label class="form-label">Especificar Motivo *</label>
-                    <input type="text" id="cancelNotesText" name="notesCustom" placeholder="Especifica el motivo del rechazo..." class="form-control">
-                </div>
-                <div class="modal-footer-action" style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
-                    <button type="button" class="btn-custom btn-outline" style="padding: 8px 18px;" onclick="closeModal('cancelModal')">Cancelar</button>
-                    <button type="submit" class="btn-custom btn-strawberry" style="padding: 8px 18px;">Confirmar Rechazo</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Delivery Confirmation Modal -->
-    <div class="modal-overlay" id="confirmDeliveryModal">
-        <div class="modal-container" style="max-width: 400px;">
-            <h3 style="margin-bottom:12px;">✓ Confirmar Entrega</h3>
-            <p style="margin: 8px 0;">¿Estás seguro de que deseas marcar este pedido como entregado?</p>
-            <div style="background:#f9f9f9; padding: 12px; border-radius: var(--border-radius-sm); margin-bottom:20px;">
-                <p style="margin:2px 0;"><span style="font-weight:700;">Pedido:</span> <span id="confirmDeliveryCode"></span></p>
-                <p style="margin:2px 0;"><span style="font-weight:700;">Cliente:</span> <span id="confirmDeliveryCustomer"></span></p>
-            </div>
-            <form id="confirmDeliveryForm" method="post" onsubmit="preventDoubleSubmit(this)">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                <input type="hidden" name="status" value="DELIVERED">
-                <div style="display:flex; gap:10px; justify-content:flex-end;">
-                    <button type="button" class="btn-custom btn-outline" onclick="closeModal('confirmDeliveryModal')">Cancelar</button>
-                    <button type="submit" class="btn-custom btn-lemon">✓ Confirmar entrega</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Edit Order Modal (Asesor bounds check) -->
-    <div class="modal-overlay" id="editOrderModal">
-        <div class="modal-container">
-            <h3 style="margin-bottom:15px;">✏️ Modificar e Intercambiar Pedido</h3>
-            <form id="editOrderForm" method="post" onsubmit="preventDoubleSubmit(this)">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                <div class="form-group">
-                    <label class="form-label">Producto Base</label>
-                    <select name="productId" id="editProductId" class="form-control">
-                        <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name}"></option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Sabor</label>
-                    <select name="flavorId" id="editFlavorId" class="form-control">
-                        <option th:each="f : ${flavors}" th:value="${f.id}" th:text="${f.name}"></option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tamaño</label>
-                    <select name="size" id="editSize" class="form-control">
-                        <option value="SMALL">Pequeño</option>
-                        <option value="MEDIUM">Mediano</option>
-                        <option value="LARGE">Grande</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Cantidad</label>
-                    <input type="number" name="quantity" id="editQty" class="form-control" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Complementos (Seleccionar los deseados)</label>
-                    <div class="addon-selection-list">
-                        <label class="addon-item" th:each="a : ${addons}">
-                            <span>
-                                <input type="checkbox" name="addonIds" th:value="${a.id}">
-                                <span th:text="${' ' + a.name}">Leche condensada</span>
-                            </span>
-                        </label>
+            <div class="drawer-body">
+                <!-- CLIENT & CONTACT INFO -->
+                <div class="drawer-section">
+                    <div class="drawer-section-title">
+                        <span>👤 Información del Cliente</span>
+                        <span id="drawerPriorityBadge"></span>
+                    </div>
+                    <p style="margin:4px 0; font-weight:800; font-size:1rem;" id="drawerCustomerName">-</p>
+                    <p style="margin:4px 0; color:var(--text-secondary); font-size:0.85rem;" id="drawerCustomerPhone">-</p>
+                    <div style="display:flex; gap:8px; margin-top:10px;">
+                        <a id="drawerCallBtn" href="#" class="ops-btn-icon" style="flex:1; justify-content:center; text-decoration:none;">📞 Llamar</a>
+                        <a id="drawerWhatsAppBtn" href="#" target="_blank" class="ops-btn-icon" style="flex:1; justify-content:center; text-decoration:none; background:var(--soft-green); color:var(--dark-green);">💬 WhatsApp</a>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Observación adicional</label>
-                    <input type="text" name="observations" id="editObs" class="form-control">
+
+                <!-- ASSIGNED ADVISOR STATUS -->
+                <div class="drawer-section">
+                    <div class="drawer-section-title">
+                        <span>👨‍🍳 Operador de Producción</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700;" id="drawerAdvisorName">Sin asignar</span>
+                        <div id="drawerClaimAction"></div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Motivo del Cambio * (Obligatorio para auditoría)</label>
-                    <input type="text" name="reason" placeholder="Ej: Cambió tamaño o sabor" class="form-control" required>
+
+                <!-- ORDER ITEMS -->
+                <div class="drawer-section">
+                    <div class="drawer-section-title">
+                        <span>🍧 Detalle de Productos</span>
+                        <span id="drawerItemsCount" style="color:var(--text-secondary);">0 items</span>
+                    </div>
+                    <div id="drawerItemsContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:10px; border-top:1px dashed var(--border-color); font-weight:900; font-size:1.1rem;">
+                        <span>Total:</span>
+                        <span style="color:var(--dark-green);" id="drawerOrderTotal">$0</span>
+                    </div>
                 </div>
-                <div class="modal-footer-action" style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
-                    <button type="button" class="btn-custom btn-outline" onclick="closeModal('editOrderModal')">Cancelar</button>
-                    <button type="submit" class="btn-custom btn-lemon">Guardar Cambios</button>
+
+                <!-- OBSERVATIONS -->
+                <div class="drawer-section" id="drawerObsSection">
+                    <div class="drawer-section-title">
+                        <span>📝 Observaciones del Pedido</span>
+                    </div>
+                    <p style="margin:0; font-size:0.85rem; font-style:italic;" id="drawerObservations">Ninguna</p>
                 </div>
-            </form>
+
+                <!-- STATUS TRACEABILITY TIMELINE -->
+                <div class="drawer-section">
+                    <div class="drawer-section-title">
+                        <span>⏱️ Línea de Tiempo y Trazabilidad</span>
+                    </div>
+                    <div class="timeline-trace" id="drawerStatusTimeline"></div>
+                </div>
+
+                <!-- AUDIT CHANGE HISTORY -->
+                <div class="drawer-section" id="drawerAuditSection">
+                    <div class="drawer-section-title">
+                        <span>🛡️ Historial de Modificaciones</span>
+                    </div>
+                    <div id="drawerChangeHistory">
+                        <p style="margin:0; font-size:0.8rem; color:var(--text-secondary);">Sin modificaciones registradas.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DRAWER OPERATIONAL ACTIONS -->
+            <div class="drawer-footer" id="drawerActionsBox"></div>
         </div>
     </div>
 
-    <!-- Notification Alerts Toast -->
-    <div class="alert-new-order-toast" id="newOrderToast">
-        <span id="toastAlertMessage">🔔 ¡LLEGÓ UN NUEVO PEDIDO!</span>
-        <button onclick="dismissToast()" style="background:none; border:none; color:white; font-size:1.1rem; cursor:pointer;">&times;</button>
+    <!-- MODAL: MULTI-ITEM EDIT -->
+    <div class="ops-modal-overlay" id="multiEditModal">
+        <div class="ops-modal-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0; font-size:1.2rem; font-weight:900;">✏️ Modificar Comanda Multi-Ítem</h3>
+                <button onclick="closeModal('multiEditModal')" style="background:none; border:none; font-size:1.4rem; cursor:pointer;">&times;</button>
+            </div>
+
+            <div id="multiEditItemsContainer"></div>
+
+            <button type="button" class="btn-action-secondary" style="margin-bottom:16px; border-style:dashed;" onclick="addEmptyEditItem()">
+                ➕ Agregar Otro Granizado
+            </button>
+
+            <!-- LIVE PREVIEW BOX -->
+            <div class="drawer-section" style="margin-bottom:16px; background:var(--soft-lemon);">
+                <span class="drawer-section-title" style="color:var(--dark-green);">🔍 Previsualización de Cambio</span>
+                <div id="editPreviewText" style="font-size:0.82rem; font-family:monospace; white-space:pre-wrap;">Calculando...</div>
+                <div style="display:flex; justify-content:space-between; margin-top:8px; font-weight:900;">
+                    <span>Nuevo Total Calculado:</span>
+                    <span id="editPreviewTotal" style="color:var(--dark-green);">$0</span>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:16px;">
+                <label class="form-label" style="font-size:0.85rem; font-weight:800;">Motivo de la Modificación * (Auditoría obligatoria)</label>
+                <input type="text" id="editReasonInput" class="ops-select" style="width:100%;" placeholder="Ej: Cliente cambió sabor a Cereza y añadió Leche Condensada" required>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="button" class="btn-action-secondary" onclick="closeModal('multiEditModal')">Cancelar</button>
+                <button type="button" class="btn-action-primary" id="saveEditBtn" onclick="submitMultiItemEdit()">💾 Confirmar Modificación</button>
+            </div>
+        </div>
     </div>
 
-    <script th:inline="javascript">
-        // Pre-fetched structures for detail modal mappings
-        let activeOrdersCache = [];
-        let soundEnabled = true;
-        let lastReceivedCount = /*[[${receivedOrders.size()}]]*/ 0;
-
-        // Initialize Settings
-        document.addEventListener("DOMContentLoaded", () => {
-            const savedSound = localStorage.getItem("lemonSoundEnabled");
-            if (savedSound !== null) {
-                soundEnabled = (savedSound === "true");
-            }
-            updateSoundToggleButton();
+    <!-- MODAL: REJECT / CANCEL -->
+    <div class="ops-modal-overlay" id="cancelModal">
+        <div class="ops-modal-box" style="max-width:450px;">
+            <h3 style="margin-top:0; color:var(--strawberry);">❌ Rechazar / Cancelar Comanda</h3>
+            <p style="font-size:0.85rem; color:var(--text-secondary);">Indica el motivo de rechazo. Esta acción notificará al sistema y registrará la auditoría.</p>
             
-            // Run reactive preparation timer intervals
-            setInterval(updateAllTimers, 1000);
-            updateAllTimers();
+            <div class="form-group" style="margin-bottom:16px;">
+                <label class="form-label">Motivo *</label>
+                <select id="cancelReasonSelect" class="ops-select" style="width:100%; margin-bottom:8px;" onchange="toggleCustomCancelReason(this)">
+                    <option value="Sabor agotado">Sabor agotado</option>
+                    <option value="Insumos insuficientes">Insumos insuficientes</option>
+                    <option value="Falta de hielo">Falta de hielo</option>
+                    <option value="Cliente canceló">Cliente canceló</option>
+                    <option value="Otro">Otro motivo</option>
+                </select>
+                <input type="text" id="cancelCustomReason" class="ops-select" style="width:100%; display:none;" placeholder="Especifica el motivo...">
+            </div>
 
-            // Store current order state for comparisons
-            fetch('/asesor/api/pedidos/updates')
-                .then(res => res.json())
-                .then(data => { activeOrdersCache = data; })
-                .catch(err => console.error(err));
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" class="btn-action-secondary" onclick="closeModal('cancelModal')">Volver</button>
+                <button type="button" class="btn-action-danger" id="confirmCancelBtn" onclick="submitCancelOrder()">Confirmar Cancelación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIRM DELIVERY -->
+    <div class="ops-modal-overlay" id="deliverModal">
+        <div class="ops-modal-box" style="max-width:420px;">
+            <h3 style="margin-top:0; color:var(--dark-green);">✓ Confirmar Entrega de Pedido</h3>
+            <p style="font-size:0.88rem;">¿Confirmas que el cliente ha recibido su pedido y se cierra la orden?</p>
+            <div style="background:var(--bg-card-alt); padding:12px; border-radius:var(--radius-xs); margin-bottom:16px; font-size:0.85rem;">
+                <p style="margin:2px 0;"><strong id="deliverModalCode">LD-00</strong> - <span id="deliverModalCustomer">Cliente</span></p>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" class="btn-action-secondary" onclick="closeModal('deliverModal')">Cancelar</button>
+                <button type="button" class="btn-action-primary" id="confirmDeliverBtn" onclick="submitDeliverOrder()">✓ Confirmar Entrega</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO BEEP FOR ALERTS -->
+    <div id="toastContainer" class="ops-toast">
+        <span id="toastIcon">🔔</span>
+        <span id="toastMessage">Nuevo pedido recibido</span>
+    </div>
+
+    <!-- CSRF DATA -->
+    <input type="hidden" id="csrfToken" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+    <!-- CLIENT JAVASCRIPT ARCHITECTURE -->
+    <script th:inline="javascript">
+        // 1. DATA CACHE & STATE
+        let activeOrders = [];
+        let previousOrdersMap = new Map();
+        let currentSelectedOrderId = null;
+        let soundEnabled = (localStorage.getItem("lemonSoundEnabled") !== "false");
+        let activeView = 'kanban';
+        let quickFilterKpi = null;
+        
+        // Products catalog cache for client multi-item editor
+        const catalogProducts = /*[[${products}]]*/ [];
+        const catalogFlavors = /*[[${flavors}]]*/ [];
+        const catalogAddons = /*[[${addons}]]*/ [];
+        const currentAdvisorUsername = /*[[${currentUsername}]]*/ "Asesor";
+
+        // 2. INITIALIZATION
+        document.addEventListener("DOMContentLoaded", () => {
+            updateSoundButtonUI();
+            
+            // Check dark mode preference
+            if (localStorage.getItem("lemonDarkMode") === "true") {
+                document.body.classList.add("dark-mode");
+            }
+
+            // Start reactive sync & real timers
+            syncAllOrders();
+            setInterval(syncAllOrders, 3500); // Efficient polling
+            setInterval(updateRealTimers, 1000);
+            
+            // Start clock for kitchen mode
+            setInterval(() => {
+                const now = new Date();
+                const clockEl = document.getElementById("kitchenClock");
+                if (clockEl) clockEl.innerText = now.toLocaleTimeString();
+            }, 1000);
         });
 
-        function preventDoubleSubmit(form) {
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerText = "⏳ Procesando...";
+        // 3. CENTRALIZED SYNCHRONIZATION ENGINE
+        function syncAllOrders() {
+            fetch('/asesor/api/pedidos/updates')
+                .then(res => res.json())
+                .then(data => {
+                    detectRealChangesAndAlert(data);
+                    activeOrders = data;
+                    renderKPIs();
+                    renderFilteredViews();
+                    
+                    // If Drawer is open, refresh its data seamlessly
+                    if (currentSelectedOrderId) {
+                        const currentOrder = activeOrders.find(o => o.id === currentSelectedOrderId);
+                        if (currentOrder) {
+                            populateOrderDrawer(currentOrder);
+                        }
+                    }
+                })
+                .catch(err => console.error("Error sincronizando órdenes:", err));
+        }
+
+        // 4. INTELLIGENT ALERT DETECTOR (No false repeats)
+        function detectRealChangesAndAlert(newOrders) {
+            if (previousOrdersMap.size > 0) {
+                newOrders.forEach(order => {
+                    const prev = previousOrdersMap.get(order.id);
+                    if (!prev) {
+                        // Brand new order
+                        triggerOperationalAlert("🔔", `¡Nuevo pedido recibido! ${order.code} (${order.customerName})`, "new");
+                    } else {
+                        // Check if priority escalated to ALTA
+                        if (prev.priority !== "ALTA" && order.priority === "ALTA") {
+                            triggerOperationalAlert("🔥", `¡Pedido ${order.code} marcado como PRIORIDAD ALTA!`, "urgent");
+                        }
+                        // Check if modified by admin
+                        if (prev.lastModifiedBy !== order.lastModifiedBy && order.lastModifiedBy !== currentAdvisorUsername && order.lastModifiedBy !== "GUEST") {
+                            triggerOperationalAlert("⚠️", `Pedido ${order.code} modificado por ${order.lastModifiedBy}`, "admin_mod");
+                        }
+                        // Check if claimed by someone else
+                        if (prev.assignedAdvisor !== order.assignedAdvisor && order.assignedAdvisor !== currentAdvisorUsername && order.assignedAdvisor !== "Sin asignar") {
+                            triggerOperationalAlert("👤", `Pedido ${order.code} tomado por ${order.assignedAdvisor}`, "claimed");
+                        }
+                    }
+                });
             }
+
+            // Update state map
+            previousOrdersMap.clear();
+            newOrders.forEach(o => previousOrdersMap.set(o.id, o));
         }
 
-        function updateSoundToggleButton() {
-            const btn = document.getElementById('soundToggle');
-            btn.innerText = soundEnabled ? "🔊 Sonido ON" : "🔇 Sonido OFF";
-            btn.className = soundEnabled ? "btn-custom btn-outline" : "btn-custom btn-strawberry";
-        }
-
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            localStorage.setItem("lemonSoundEnabled", soundEnabled);
-            updateSoundToggleButton();
-        }
-
-        // Clean UI section switching (Kanban vs History)
-        function showSection(sectionId) {
-            if (sectionId === 'kanban') {
-                document.getElementById('section-kanban').style.display = 'block';
-                document.getElementById('section-history').style.display = 'none';
-                document.getElementById('menuItemKanban').classList.add('active');
-                document.getElementById('menuItemHistory').classList.remove('active');
-            } else {
-                document.getElementById('section-kanban').style.display = 'none';
-                document.getElementById('section-history').style.display = 'block';
-                document.getElementById('menuItemKanban').classList.remove('active');
-                document.getElementById('menuItemHistory').classList.add('active');
-                loadHistory();
-            }
-        }
-
-        // Mobile active column selector
-        function showMobileColumn(colId, tabButton) {
-            const cols = document.querySelectorAll('.kanban-col');
-            cols.forEach(c => c.classList.remove('mobile-active'));
-            document.getElementById(colId).classList.add('mobile-active');
-
-            const tabs = document.querySelectorAll('.mobile-tab-button');
-            tabs.forEach(t => t.classList.remove('active'));
-            tabButton.classList.add('active');
-        }
-
-        // Dynamic timer calculations based on real server dates
-        function updateAllTimers() {
-            const badges = document.querySelectorAll('.card-timer-badge');
-            const now = new Date();
+        function triggerOperationalAlert(icon, message, type) {
+            const toast = document.getElementById("toastContainer");
+            document.getElementById("toastIcon").innerText = icon;
+            document.getElementById("toastMessage").innerText = message;
+            toast.style.display = "flex";
             
-            badges.forEach(badge => {
-                const stampStr = badge.getAttribute('data-timestamp');
-                if (!stampStr) return;
+            if (soundEnabled) playAlertSound(type);
+
+            setTimeout(() => {
+                toast.style.display = "none";
+            }, 4500);
+        }
+
+        function playAlertSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
                 
-                const createdTime = new Date(stampStr);
-                const diffMs = now - createdTime;
+                if (type === "urgent") {
+                    osc.frequency.setValueAtTime(950, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                } else {
+                    osc.frequency.setValueAtTime(650, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.2);
+                }
+            } catch(e) {
+                console.warn("Audio Context blocked", e);
+            }
+        }
+
+        // 5. KPI RENDERER & COUNTERS
+        function renderKPIs() {
+            let received = 0, accepted = 0, preparing = 0, almost = 0, ready = 0, unassigned = 0, urgent = 0;
+
+            activeOrders.forEach(o => {
+                if (o.status === "RECEIVED") received++;
+                if (o.status === "ACCEPTED") accepted++;
+                if (o.status === "PREPARING") preparing++;
+                if (o.status === "ALMOST_READY") almost++;
+                if (o.status === "READY") ready++;
+                if (o.assignedAdvisor === "Sin asignar" || !o.assignedAdvisor) unassigned++;
+                if (o.priority === "ALTA") urgent++;
+            });
+
+            document.getElementById("kpiValReceived").innerText = received;
+            document.getElementById("kpiValAccepted").innerText = accepted;
+            document.getElementById("kpiValPreparing").innerText = preparing;
+            document.getElementById("kpiValAlmost").innerText = almost;
+            document.getElementById("kpiValReady").innerText = ready;
+            document.getElementById("kpiValUnassigned").innerText = unassigned;
+            document.getElementById("kpiValUrgent").innerText = urgent;
+
+            document.getElementById("activeOrdersCountLabel").innerText = `${activeOrders.length} pedidos activos`;
+        }
+
+        // 6. FILTERS & SEARCH ENGINE
+        function getFilteredOrders() {
+            const query = document.getElementById("globalSearchInput").value.trim().toLowerCase();
+            const priorityFilter = document.getElementById("priorityFilterSelect").value;
+            const advisorFilter = document.getElementById("advisorFilterSelect").value;
+            const timeFilter = document.getElementById("timeFilterSelect").value;
+
+            return activeOrders.filter(o => {
+                // Quick KPI Filter
+                if (quickFilterKpi) {
+                    if (quickFilterKpi === "UNASSIGNED" && (o.assignedAdvisor && o.assignedAdvisor !== "Sin asignar")) return false;
+                    else if (quickFilterKpi === "URGENT" && o.priority !== "ALTA") return false;
+                    else if (quickFilterKpi !== "UNASSIGNED" && quickFilterKpi !== "URGENT" && o.status !== quickFilterKpi) return false;
+                }
+
+                // Global Search
+                if (query) {
+                    const matchCode = o.code.toLowerCase().includes(query);
+                    const matchCustomer = o.customerName.toLowerCase().includes(query);
+                    const matchPhone = o.customerPhone && o.customerPhone.includes(query);
+                    const matchAdvisor = o.assignedAdvisor && o.assignedAdvisor.toLowerCase().includes(query);
+                    if (!matchCode && !matchCustomer && !matchPhone && !matchAdvisor) return false;
+                }
+
+                // Priority Filter
+                if (priorityFilter !== "ALL" && o.priority !== priorityFilter) return false;
+
+                // Advisor Filter
+                if (advisorFilter === "UNASSIGNED" && (o.assignedAdvisor && o.assignedAdvisor !== "Sin asignar")) return false;
+                if (advisorFilter === "MINE" && o.assignedAdvisor !== currentAdvisorUsername) return false;
+
+                // Time Filter
+                if (timeFilter !== "ALL") {
+                    const thresholdMin = parseInt(timeFilter, 10);
+                    const orderDate = new Date(o.createdAt);
+                    const minutesElapsed = (new Date() - orderDate) / (1000 * 60);
+                    if (minutesElapsed < thresholdMin) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function handleFilterChange() {
+            renderFilteredViews();
+        }
+
+        function applyQuickFilter(kpiType, cardElement) {
+            if (quickFilterKpi === kpiType) {
+                quickFilterKpi = null;
+                cardElement.classList.remove("active");
+            } else {
+                quickFilterKpi = kpiType;
+                document.querySelectorAll(".kpi-card").forEach(c => c.classList.remove("active"));
+                cardElement.classList.add("active");
+            }
+            renderFilteredViews();
+        }
+
+        function resetFilters() {
+            document.getElementById("globalSearchInput").value = "";
+            document.getElementById("priorityFilterSelect").value = "ALL";
+            document.getElementById("advisorFilterSelect").value = "ALL";
+            document.getElementById("timeFilterSelect").value = "ALL";
+            quickFilterKpi = null;
+            document.querySelectorAll(".kpi-card").forEach(c => c.classList.remove("active"));
+            renderFilteredViews();
+        }
+
+        // 7. VIEW SWITCHING & RENDERING (Kanban vs Table vs History)
+        function switchView(viewName) {
+            activeView = viewName;
+            document.querySelectorAll(".ops-nav-tab").forEach(t => t.classList.remove("active"));
+            
+            document.getElementById("kanbanViewContainer").style.display = (viewName === 'kanban') ? "grid" : "none";
+            document.getElementById("tableViewContainer").style.display = (viewName === 'table') ? "block" : "none";
+            document.getElementById("historyViewContainer").style.display = (viewName === 'history') ? "block" : "none";
+            document.getElementById("kpiContainer").style.display = (viewName === 'history') ? "none" : "grid";
+            document.getElementById("toolbarContainer").style.display = (viewName === 'history') ? "none" : "flex";
+
+            if (viewName === 'kanban') document.getElementById("tabKanban").classList.add("active");
+            if (viewName === 'table') document.getElementById("tabTable").classList.add("active");
+            if (viewName === 'history') {
+                document.getElementById("tabHistory").classList.add("active");
+                fetchHistoryOrders();
+            }
+
+            renderFilteredViews();
+        }
+
+        function renderFilteredViews() {
+            const list = getFilteredOrders();
+            
+            if (activeView === 'kanban') {
+                renderKanban(list);
+            } else if (activeView === 'table') {
+                renderTable(list);
+            }
+        }
+
+        // 8. KANBAN COLUMN CARDS RENDERER
+        function renderKanban(orders) {
+            const columns = ["RECEIVED", "ACCEPTED", "PREPARING", "ALMOST_READY", "READY"];
+            
+            columns.forEach(col => {
+                const container = document.getElementById(`cards-${col}`);
+                const badge = document.getElementById(`badge-${col}`);
+                const colOrders = orders.filter(o => o.status === col);
                 
-                if (isNaN(diffMs) || diffMs < 0) {
-                    badge.innerText = "⏱️ Justo ahora";
+                badge.innerText = colOrders.length;
+                container.innerHTML = "";
+
+                if (colOrders.length === 0) {
+                    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.8rem; font-style:italic;">Sin pedidos</div>`;
                     return;
                 }
+
+                // Sort: Urgent first, then oldest first
+                colOrders.sort((a, b) => {
+                    if (a.priority === "ALTA" && b.priority !== "ALTA") return -1;
+                    if (a.priority !== "ALTA" && b.priority === "ALTA") return 1;
+                    return new Date(a.createdAt) - new Date(b.createdAt);
+                });
+
+                colOrders.forEach(order => {
+                    container.appendChild(createTicketCardElement(order));
+                });
+            });
+        }
+
+        function createTicketCardElement(order) {
+            const card = document.createElement("div");
+            card.className = `ticket-card ${order.priority === 'ALTA' ? 'priority-high' : ''}`;
+            card.onclick = () => openOrderDrawer(order.id);
+
+            let itemsSummaryHtml = "";
+            if (order.items && order.items.length > 0) {
+                itemsSummaryHtml = order.items.map(i => {
+                    return `<div class="ticket-item-line"><strong>${i.quantity}x</strong> ${i.productName} (${i.flavorName})</div>`;
+                }).join("");
+            } else {
+                itemsSummaryHtml = "<div>Granizados</div>";
+            }
+
+            const isUnassigned = (!order.assignedAdvisor || order.assignedAdvisor === "Sin asignar");
+
+            card.innerHTML = `
+                <div class="ticket-header">
+                    <span class="ticket-code">${order.code}</span>
+                    <span class="ticket-price">$${Number(order.total).toLocaleString('es-CO')}</span>
+                </div>
+
+                <div class="ticket-badges-row">
+                    ${order.priority === 'ALTA' ? `<span class="badge-tag badge-urgent">🔥 ALTA PRIORIDAD</span>` : ''}
+                    ${isUnassigned ? `<span class="badge-tag badge-unassigned">⚠️ SIN ASIGNAR</span>` : `<span class="badge-tag badge-advisor">👤 ${order.assignedAdvisor}</span>`}
+                </div>
+
+                <div class="ticket-customer">
+                    <span>${order.customerName}</span>
+                </div>
+
+                <div class="ticket-items-preview">
+                    ${itemsSummaryHtml}
+                </div>
+
+                <div class="ticket-footer">
+                    <span class="ticket-timer timer-normal" data-timestamp="${order.createdAt}" data-status="${order.status}">
+                        ⏱️ Calculando...
+                    </span>
+                    ${isUnassigned ? `<button class="ticket-quick-claim" onclick="quickClaimOrder(event, '${order.id}')">✋ Tomar</button>` : ''}
+                </div>
+            `;
+            return card;
+        }
+
+        // 9. TABLE VIEW RENDERER
+        function renderTable(orders) {
+            const tbody = document.getElementById("ordersTableBody");
+            tbody.innerHTML = "";
+
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-secondary); padding:20px;">No hay pedidos que coincidan con los filtros.</td></tr>`;
+                return;
+            }
+
+            orders.forEach(o => {
+                const tr = document.createElement("tr");
+                tr.style.cursor = "pointer";
+                tr.onclick = () => openOrderDrawer(o.id);
                 
-                const totalSeconds = Math.floor(diffMs / 1000);
-                const minutes = Math.floor(totalSeconds / 60);
-                const seconds = totalSeconds % 60;
-                
-                const formattedTime = (minutes < 10 ? '0' + minutes : minutes) + ':' + (seconds < 10 ? '0' + seconds : seconds);
-                const timerType = badge.getAttribute('data-timer-type');
-                
-                if (timerType === 'received') {
-                    badge.innerText = '⏱️ Espera: ' + formattedTime;
-                } else if (timerType === 'preparing') {
-                    badge.innerText = '👨‍🍳 Prep: ' + formattedTime;
-                } else if (timerType === 'ready') {
-                    badge.innerText = '🟢 Listo hace ' + formattedTime;
+                tr.innerHTML = `
+                    <td style="font-weight:900; font-family:monospace;">${o.code}</td>
+                    <td><strong>${o.customerName}</strong> (${o.customerPhone || 'Sin tel'})</td>
+                    <td><span class="badge-tag badge-advisor">${o.statusDisplay || o.status}</span></td>
+                    <td>${o.priority === 'ALTA' ? '<span class="badge-tag badge-urgent">🔥 ALTA</span>' : '<span style="color:var(--text-secondary);">Normal</span>'}</td>
+                    <td>${o.assignedAdvisor}</td>
+                    <td><span class="ticket-timer timer-normal" data-timestamp="${o.createdAt}" data-status="${o.status}">Calculando...</span></td>
+                    <td style="font-weight:900; color:var(--dark-green);">$${Number(o.total).toLocaleString('es-CO')}</td>
+                    <td><button class="ops-btn-icon" style="padding:4px 8px; font-size:0.75rem;" onclick="openOrderDrawer('${o.id}'); event.stopPropagation();">Detalles</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 10. REAL-TIME CALCULATED TIMERS
+        function updateRealTimers() {
+            const now = new Date();
+            document.querySelectorAll(".ticket-timer").forEach(el => {
+                const stamp = el.getAttribute("data-timestamp");
+                if (!stamp) return;
+
+                const date = new Date(stamp);
+                const diffMs = now - date;
+                if (isNaN(diffMs) || diffMs < 0) {
+                    el.innerText = "⏱️ Justo ahora";
+                    return;
+                }
+
+                const totalSec = Math.floor(diffMs / 1000);
+                const min = Math.floor(totalSec / 60);
+                const sec = totalSec % 60;
+                const formatted = `${min < 10 ? '0' + min : min}:${sec < 10 ? '0' + sec : sec}`;
+
+                el.innerText = `⏱️ ${formatted}`;
+
+                // Color urgency thresholds
+                el.classList.remove("timer-normal", "timer-warning", "timer-danger");
+                if (min >= 15) {
+                    el.classList.add("timer-danger");
+                } else if (min >= 8) {
+                    el.classList.add("timer-warning");
+                } else {
+                    el.classList.add("timer-normal");
                 }
             });
         }
 
-        // Reject Custom notes trigger
-        function toggleCustomReason(select) {
-            const wrapper = document.getElementById('customReasonWrapper');
-            const textInput = document.getElementById('cancelNotesText');
-            if (select.value === 'Otro') {
-                wrapper.style.display = 'block';
-                textInput.required = true;
-            } else {
-                wrapper.style.display = 'none';
-                textInput.required = false;
-                textInput.value = '';
-            }
-        }
-
-        // Intercept cancellation submit to assign notes correctly
-        document.getElementById('cancelForm').addEventListener('submit', function(e) {
-            const selectVal = document.getElementById('cancelNotesSelect').value;
-            if (selectVal === 'Otro') {
-                const customNotes = document.getElementById('cancelNotesText').value.trim();
-                if (!customNotes) {
-                    e.preventDefault();
-                    alert("Por favor especifica el motivo del rechazo.");
-                    return;
-                }
-                // Overwrite the hidden status input parameter or name mapping
-                const notesInput = document.createElement('input');
-                notesInput.type = 'hidden';
-                notesInput.name = 'notes';
-                notesInput.value = customNotes;
-                this.appendChild(notesInput);
-                
-                // Disable the select to avoid sending two 'notes' parameters
-                document.getElementById('cancelNotesSelect').disabled = true;
-            }
-        });
-
-        // Detail Modal display with active states
-        function openDetailModal(orderId) {
-            // Fetch order detail from the updates list or call API
-            fetch('/asesor/api/pedidos/updates')
+        // 11. ORDER DRAWER LOGIC & TRACEABILITY TIMELINE
+        function openOrderDrawer(orderId) {
+            currentSelectedOrderId = orderId;
+            document.getElementById("orderDrawerOverlay").classList.add("open");
+            
+            // Fetch deep details including Status History and Change History
+            fetch(`/asesor/api/pedidos/${orderId}/detalle`)
                 .then(res => res.json())
-                .then(orders => {
-                    const order = orders.find(o => o.id === orderId);
-                    if (!order) {
-                        // If not active, it might be historical, load via generic query
-                        loadHistoryDetail(orderId);
-                        return;
-                    }
-                    displayOrderDetail(order);
+                .then(order => {
+                    populateOrderDrawer(order);
                 })
-                .catch(err => console.error(err));
+                .catch(err => console.error("Error cargando detalle:", err));
         }
 
-        function loadHistoryDetail(orderId) {
-            // Re-fetch all orders to find historical ones
-            fetch('/asesor/api/pedidos/historial')
-                .then(res => res.json())
-                .then(orders => {
-                    const order = orders.find(o => o.code === orderId || o.id === orderId);
-                    if (order) {
-                        displayOrderDetail(order, true);
-                    }
-                });
+        function closeOrderDrawerDirect() {
+            currentSelectedOrderId = null;
+            document.getElementById("orderDrawerOverlay").classList.remove("open");
         }
 
-        function displayOrderDetail(order, isHistorical = false) {
-            document.getElementById('detailOrderCode').innerText = "PEDIDO " + order.code;
-            document.getElementById('detailCustomerName').innerText = order.customerName;
-            document.getElementById('detailCustomerPhone').innerText = order.customerPhone || "Sin teléfono";
+        function closeOrderDrawer(e) {
+            if (e.target.id === "orderDrawerOverlay") {
+                closeOrderDrawerDirect();
+            }
+        }
+
+        function populateOrderDrawer(order) {
+            document.getElementById("drawerOrderCode").innerText = order.code;
+            document.getElementById("drawerCustomerName").innerText = order.customerName;
+            document.getElementById("drawerCustomerPhone").innerText = order.customerPhone || "Sin teléfono";
+            document.getElementById("drawerOrderTotal").innerText = `$${Number(order.total).toLocaleString('es-CO')}`;
+            document.getElementById("drawerObservations").innerText = order.observations || "Ninguna";
+            document.getElementById("drawerAdvisorName").innerText = order.assignedAdvisor;
+
+            // Direct Call & WhatsApp Link
+            document.getElementById("drawerCallBtn").href = `tel:${order.customerPhone || ''}`;
             
-            const date = new Date(order.createdAt);
-            document.getElementById('detailCreatedAt').innerText = date.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'});
-            document.getElementById('detailStatus').innerText = order.statusDisplay || order.status;
-            document.getElementById('detailTotal').innerText = '$' + Number(order.total).toLocaleString('es-CO');
-            document.getElementById('detailObservations').innerText = order.observations || "Ninguna";
-            
-            // Build items markup
-            const container = document.getElementById('detailItemsContainer');
-            container.innerHTML = '';
+            let phone = (order.customerPhone || "").replace(/\D/g, "");
+            if (phone.length === 10 && !phone.startsWith("57")) phone = "57" + phone;
+            const waMsg = encodeURIComponent(`🍧 ¡Hola ${order.customerName}! Te contactamos de Lemon Drop sobre tu pedido ${order.code}. Estado actual: ${order.statusDisplay || order.status}.`);
+            document.getElementById("drawerWhatsAppBtn").href = `https://api.whatsapp.com/send?phone=${phone}&text=${waMsg}`;
+
+            // Priority Badge
+            const prioBadge = document.getElementById("drawerPriorityBadge");
+            if (order.priority === "ALTA") {
+                prioBadge.innerHTML = `<span class="badge-tag badge-urgent">🔥 ALTA PRIORIDAD</span>`;
+            } else {
+                prioBadge.innerHTML = `<span class="badge-tag badge-advisor">NORMAL</span>`;
+            }
+
+            // Claim Action
+            const claimBox = document.getElementById("drawerClaimAction");
+            if (!order.assignedAdvisor || order.assignedAdvisor === "Sin asignar") {
+                claimBox.innerHTML = `<button class="ticket-quick-claim" onclick="claimOrderDrawer('${order.id}')">✋ Tomar Pedido</button>`;
+            } else if (order.assignedAdvisor === currentAdvisorUsername) {
+                claimBox.innerHTML = `<span style="font-size:0.75rem; color:var(--dark-green); font-weight:800;">✓ Asignado a ti</span>`;
+            } else {
+                claimBox.innerHTML = `<span style="font-size:0.75rem; color:var(--text-secondary);">Asignado a ${order.assignedAdvisor}</span>`;
+            }
+
+            // Render Items
+            const itemsContainer = document.getElementById("drawerItemsContainer");
+            itemsContainer.innerHTML = "";
+            document.getElementById("drawerItemsCount").innerText = `${(order.items || []).length} items`;
             
             if (order.items && order.items.length > 0) {
-                order.items.forEach(item => {
+                order.items.forEach(i => {
                     let addonsStr = "";
-                    if (item.addons && item.addons.length > 0) {
-                        addonsStr = "<p style='margin:2px 0 0 0; font-size:0.8rem; color:var(--text-secondary);'>+ " + item.addons.map(a => a.addonName).join(', ') + "</p>";
+                    if (i.addons && i.addons.length > 0) {
+                        addonsStr = `<div style="font-size:0.78rem; color:var(--text-secondary); margin-top:2px;">+ ${i.addons.map(a => a.addonName).join(', ')}</div>`;
                     }
-                    container.innerHTML += `
-                        <div class="detail-item-box">
-                            <strong style="font-size:0.95rem;">${item.productName} (${item.flavorName}) x${item.quantity}</strong>
-                            <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-secondary);">Tamaño: ${item.size}</p>
+                    itemsContainer.innerHTML += `
+                        <div style="background:var(--bg-card); padding:10px; border-radius:var(--radius-xs); border:1px solid var(--border-color);">
+                            <div style="display:flex; justify-content:space-between; font-weight:800; font-size:0.88rem;">
+                                <span>${i.productName} (${i.flavorName})</span>
+                                <span>x${i.quantity}</span>
+                            </div>
+                            <div style="font-size:0.78rem; color:var(--text-muted);">Tamaño: ${i.size} | Subtotal: $${Number(i.subtotal).toLocaleString('es-CO')}</div>
                             ${addonsStr}
-                            ${item.observations ? `<p style="margin:4px 0 0 0; font-size:0.8rem; font-style:italic; color:var(--dark-green);">"${item.observations}"</p>` : ''}
+                            ${i.observations ? `<div style="font-size:0.75rem; font-style:italic; color:var(--dark-green); margin-top:4px;">"${i.observations}"</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            // Render Status Traceability Timeline
+            const timeline = document.getElementById("drawerStatusTimeline");
+            timeline.innerHTML = "";
+            const statusHistory = order.statusHistory || [];
+            
+            if (statusHistory.length > 0) {
+                statusHistory.forEach(h => {
+                    const date = new Date(h.updatedAt);
+                    const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    timeline.innerHTML += `
+                        <div class="timeline-step active">
+                            <span class="timeline-dot"></span>
+                            <div><strong>${h.statusDisplay || h.status}</strong> - <span style="color:var(--text-muted);">${timeStr}</span></div>
+                            <div style="color:var(--text-secondary); font-size:0.74rem;">Por: ${h.updatedBy} ${h.notes ? `(${h.notes})` : ''}</div>
                         </div>
                     `;
                 });
             } else {
-                container.innerHTML = '<p style="color:var(--text-secondary);">Detalles de productos cargando...</p>';
-                // Fetch full order to populate items if missing
-                fetch('/asesor/dashboard')
-                    .then(res => res.text())
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        // Find the card mapping in the DOM to scrape items
-                        const cards = doc.querySelectorAll('.kanban-card');
-                        cards.forEach(card => {
-                            const codeTxt = card.querySelector('.card-code')?.innerText;
-                            if (codeTxt === order.code) {
-                                const preview = card.querySelector('.order-card-detail')?.innerHTML;
-                                if (preview) {
-                                    container.innerHTML = preview;
-                                }
-                            }
-                        });
-                    });
+                timeline.innerHTML = `<p style="font-size:0.8rem; color:var(--text-muted); margin:0;">Trazabilidad en curso.</p>`;
             }
 
-            // Build action buttons according to status
-            const actionsBox = document.getElementById('detailActions');
-            actionsBox.innerHTML = '';
-
-            if (isHistorical) {
-                actionsBox.innerHTML = '<p style="text-align:center; color:var(--text-secondary); font-style:italic;">Pedido finalizado (Solo Lectura)</p>';
+            // Render Change History (Audit)
+            const changeBox = document.getElementById("drawerChangeHistory");
+            const changeHistory = order.changeHistory || [];
+            if (changeHistory.length > 0) {
+                changeBox.innerHTML = "";
+                changeHistory.forEach(c => {
+                    const date = new Date(c.updatedAt);
+                    const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    changeBox.innerHTML += `
+                        <div class="audit-item">
+                            <div style="display:flex; justify-content:space-between; font-weight:700;">
+                                <span>${c.propertyName}</span>
+                                <span style="color:var(--text-muted);">${timeStr}</span>
+                            </div>
+                            <div style="color:var(--text-secondary); margin-top:2px;">Por ${c.updatedBy}: "${c.reason}"</div>
+                        </div>
+                    `;
+                });
             } else {
-                if (order.status === 'RECEIVED') {
-                    actionsBox.innerHTML += `
-                        <form action="/asesor/pedidos/${order.id}/estado" method="post" onsubmit="preventDoubleSubmit(this)">
-                            <input type="hidden" name="_csrf" value="${document.querySelector('#cancelForm input[name=_csrf]').value}">
-                            <input type="hidden" name="status" value="ACCEPTED">
-                            <button type="submit" class="btn-action-primary" style="width:100%;">✓ Aceptar Pedido</button>
-                        </form>
-                        <button class="btn-action-danger" onclick="triggerCancelModal('${order.id}', '${order.code}')">✕ Rechazar</button>
-                        <button class="btn-action-secondary" onclick="triggerEditModal('${order.id}', '${order.code}')">✏️ Modificar Pedido</button>
-                    `;
-                } else if (order.status === 'ACCEPTED') {
-                    actionsBox.innerHTML += `
-                        <form action="/asesor/pedidos/${order.id}/estado" method="post" onsubmit="preventDoubleSubmit(this)">
-                            <input type="hidden" name="_csrf" value="${document.querySelector('#cancelForm input[name=_csrf]').value}">
-                            <input type="hidden" name="status" value="PREPARING">
-                            <button type="submit" class="btn-action-primary" style="width:100%;">👨‍🍳 Iniciar Preparación</button>
-                        </form>
-                    `;
-                } else if (order.status === 'PREPARING') {
-                    actionsBox.innerHTML += `
-                        <form action="/asesor/pedidos/${order.id}/estado" method="post" onsubmit="preventDoubleSubmit(this)">
-                            <input type="hidden" name="_csrf" value="${document.querySelector('#cancelForm input[name=_csrf]').value}">
-                            <input type="hidden" name="status" value="ALMOST_READY">
-                            <button type="submit" class="btn-action-primary" style="width:100%;">⏳ Casi listo</button>
-                        </form>
-                    `;
-                } else if (order.status === 'ALMOST_READY') {
-                    actionsBox.innerHTML += `
-                        <form action="/asesor/pedidos/${order.id}/estado" method="post" onsubmit="preventDoubleSubmit(this)">
-                            <input type="hidden" name="_csrf" value="${document.querySelector('#cancelForm input[name=_csrf]').value}">
-                            <input type="hidden" name="status" value="READY">
-                            <button type="submit" class="btn-action-primary" style="width:100%;">🎉 Listo para Recoger</button>
-                        </form>
-                    `;
-                } else if (order.status === 'READY') {
-                    // International Colombian prefix sanitization
-                    let phone = order.customerPhone || "";
-                    phone = phone.replace(/\D/g, "");
-                    if (phone.length === 10 && !phone.startsWith("57")) {
-                        phone = "57" + phone;
-                    }
-                    const waText = encodeURIComponent(`🍋 ¡Hola ${order.customerName}!\n\nTu pedido ${order.code} de Lemon Drop ya está listo para recoger. 🍧\n\n¡Te esperamos! 💛`);
-                    const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${waText}`;
+                changeBox.innerHTML = `<p style="margin:0; font-size:0.8rem; color:var(--text-secondary);">Sin modificaciones registradas.</p>`;
+            }
 
-                    actionsBox.innerHTML += `
-                        <a href="${waUrl}" target="_blank" class="btn-action-primary" style="display:block; text-decoration:none;">📲 Avisar por WhatsApp</a>
-                        <button class="btn-action-primary" style="background-color:var(--dark-green); color:white;" onclick="triggerDeliveryModal('${order.id}', '${order.code}', '${order.customerName}')">✓ Marcar como entregado</button>
-                    `;
+            // Render Dynamic Operational Actions
+            renderDrawerActions(order);
+        }
+
+        function renderDrawerActions(order) {
+            const box = document.getElementById("drawerActionsBox");
+            box.innerHTML = "";
+
+            if (order.status === "DELIVERED" || order.status === "CANCELLED") {
+                box.innerHTML = `<p style="text-align:center; color:var(--text-secondary); font-weight:700; font-size:0.85rem; margin:8px 0;">Comanda cerrada (Solo Lectura)</p>`;
+                return;
+            }
+
+            if (order.status === "RECEIVED") {
+                box.innerHTML = `
+                    <button class="btn-action-primary" onclick="updateOrderStatusAjax('${order.id}', 'ACCEPTED')">👍 Aceptar Comanda</button>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn-action-secondary" onclick="openMultiItemEditor('${order.id}')">✏️ Modificar Pedido</button>
+                        <button class="btn-action-danger" onclick="openCancelModal('${order.id}')">✕ Rechazar</button>
+                    </div>
+                `;
+            } else if (order.status === "ACCEPTED") {
+                box.innerHTML = `
+                    <button class="btn-action-primary" onclick="updateOrderStatusAjax('${order.id}', 'PREPARING')">👨‍🍳 Iniciar Preparación</button>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn-action-secondary" onclick="openMultiItemEditor('${order.id}')">✏️ Modificar</button>
+                        <button class="btn-action-danger" onclick="openCancelModal('${order.id}')">✕ Cancelar</button>
+                    </div>
+                `;
+            } else if (order.status === "PREPARING") {
+                box.innerHTML = `
+                    <button class="btn-action-primary" style="background:#8B5CF6; color:#FFF;" onclick="updateOrderStatusAjax('${order.id}', 'ALMOST_READY')">⏳ Marcar Casi Listo</button>
+                `;
+            } else if (order.status === "ALMOST_READY") {
+                box.innerHTML = `
+                    <button class="btn-action-primary" style="background:#10B981; color:#FFF;" onclick="updateOrderStatusAjax('${order.id}', 'READY')">🎉 Marcar LISTO</button>
+                `;
+            } else if (order.status === "READY") {
+                box.innerHTML = `
+                    <button class="btn-action-primary" style="background:var(--dark-green); color:#FFF;" onclick="openDeliverModal('${order.id}', '${order.code}', '${order.customerName}')">✓ Marcar como ENTREGADO</button>
+                `;
+            }
+        }
+
+        // 12. ATOMIC CLAIM OPERATION
+        function quickClaimOrder(e, orderId) {
+            e.stopPropagation();
+            claimOrderDrawer(orderId);
+        }
+
+        function claimOrderDrawer(orderId) {
+            fetch(`/asesor/api/pedidos/${orderId}/claim`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.getElementById("csrfToken").value
+                }
+            })
+            .then(res => {
+                if (res.status === 409) {
+                    return res.json().then(data => { throw new Error(data.error); });
+                }
+                if (!res.ok) throw new Error("No se pudo tomar el pedido.");
+                return res.json();
+            })
+            .then(updated => {
+                triggerOperationalAlert("👤", `Tomaste la comanda ${updated.code} para preparación`, "claimed");
+                syncAllOrders();
+            })
+            .catch(err => {
+                alert(err.message || "Error al tomar pedido");
+                syncAllOrders();
+            });
+        }
+
+        // 13. AJAX STATUS TRANSITIONS
+        function updateOrderStatusAjax(orderId, nextStatus, notes = "") {
+            fetch(`/asesor/api/pedidos/${orderId}/estado`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.getElementById("csrfToken").value
+                },
+                body: JSON.stringify({ status: nextStatus, notes: notes })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("No se pudo actualizar el estado.");
+                return res.json();
+            })
+            .then(updated => {
+                triggerOperationalAlert("✓", `Comanda ${updated.code} actualizada a ${updated.statusDisplay || updated.status}`, "status");
+                syncAllOrders();
+            })
+            .catch(err => {
+                alert("Error al actualizar comanda: " + err.message);
+                syncAllOrders();
+            });
+        }
+
+        // 14. MULTI-ITEM EDITOR
+        let editCurrentOrderId = null;
+
+        function openMultiItemEditor(orderId) {
+            editCurrentOrderId = orderId;
+            const order = activeOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const container = document.getElementById("multiEditItemsContainer");
+            container.innerHTML = "";
+
+            if (order.items && order.items.length > 0) {
+                order.items.forEach((item, index) => {
+                    container.appendChild(createItemEditorCard(item, index));
+                });
+            } else {
+                addEmptyEditItem();
+            }
+
+            document.getElementById("editReasonInput").value = "";
+            recalculateEditPreview();
+            document.getElementById("multiEditModal").classList.add("active");
+        }
+
+        function createItemEditorCard(item = null, index = 0) {
+            const card = document.createElement("div");
+            card.className = "editor-item-card";
+
+            const productOptions = catalogProducts.map(p => `<option value="${p.id}" ${item && item.productId === p.id ? 'selected' : ''}>${p.name}</option>`).join("");
+            const flavorOptions = catalogFlavors.map(f => `<option value="${f.id}" ${item && item.flavorId === f.id ? 'selected' : ''}>${f.name}</option>`).join("");
+            
+            const selectedAddonIds = item && item.addons ? item.addons.map(a => a.addonId) : [];
+            const addonCheckboxes = catalogAddons.map(a => `
+                <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.78rem; margin-right:10px;">
+                    <input type="checkbox" name="editItemAddon" value="${a.id}" ${selectedAddonIds.includes(a.id) ? 'checked' : ''} onchange="recalculateEditPreview()">
+                    <span>${a.name} (+$${Number(a.additionalPrice).toLocaleString('es-CO')})</span>
+                </label>
+            `).join("");
+
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong style="font-size:0.85rem;">Granizado #${index + 1}</strong>
+                    <button type="button" onclick="this.closest('.editor-item-card').remove(); recalculateEditPreview();" style="background:none; border:none; color:var(--strawberry); font-weight:800; cursor:pointer;">✕ Eliminar</button>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:8px;">
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700;">Producto</label>
+                        <select class="ops-select edit-item-prod" style="width:100%;" onchange="recalculateEditPreview()">${productOptions}</select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700;">Sabor</label>
+                        <select class="ops-select edit-item-flavor" style="width:100%;" onchange="recalculateEditPreview()">${flavorOptions}</select>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:8px;">
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700;">Tamaño</label>
+                        <select class="ops-select edit-item-size" style="width:100%;" onchange="recalculateEditPreview()">
+                            <option value="SMALL" ${item && item.size === 'SMALL' ? 'selected' : ''}>Pequeño</option>
+                            <option value="MEDIUM" ${!item || item.size === 'MEDIUM' ? 'selected' : ''}>Mediano</option>
+                            <option value="LARGE" ${item && item.size === 'LARGE' ? 'selected' : ''}>Grande</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700;">Cantidad</label>
+                        <input type="number" class="ops-select edit-item-qty" style="width:100%;" min="1" value="${item ? item.quantity : 1}" oninput="recalculateEditPreview()">
+                    </div>
+                </div>
+                <div style="margin-bottom:8px;">
+                    <label style="font-size:0.75rem; font-weight:700; display:block; margin-bottom:4px;">Adicionales</label>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;">${addonCheckboxes}</div>
+                </div>
+            `;
+            return card;
+        }
+
+        function addEmptyEditItem() {
+            const container = document.getElementById("multiEditItemsContainer");
+            container.appendChild(createItemEditorCard(null, container.children.length));
+            recalculateEditPreview();
+        }
+
+        function recalculateEditPreview() {
+            const cards = document.querySelectorAll(".editor-item-card");
+            let total = 0;
+            let previewLines = [];
+
+            cards.forEach((c, idx) => {
+                const prodId = c.querySelector(".edit-item-prod").value;
+                const flavorId = c.querySelector(".edit-item-flavor").value;
+                const size = c.querySelector(".edit-item-size").value;
+                const qty = parseInt(c.querySelector(".edit-item-qty").value, 10) || 1;
+
+                const product = catalogProducts.find(p => p.id === prodId);
+                const flavor = catalogFlavors.find(f => f.id === flavorId);
+                
+                let unitPrice = 0;
+                if (product && product.sizePrices && product.sizePrices[size]) {
+                    unitPrice = product.sizePrices[size];
+                }
+                if (flavor && flavor.additionalPrice) {
+                    unitPrice += flavor.additionalPrice;
+                }
+
+                let addonsTotal = 0;
+                let addonsNames = [];
+                c.querySelectorAll("input[name=editItemAddon]:checked").forEach(cb => {
+                    const add = catalogAddons.find(a => a.id === cb.value);
+                    if (add) {
+                        addonsTotal += (add.additionalPrice || 0);
+                        addonsNames.push(add.name);
+                    }
+                });
+
+                const itemSubtotal = (unitPrice + addonsTotal) * qty;
+                total += itemSubtotal;
+
+                previewLines.push(`[#${idx + 1}] ${qty}x ${product ? product.name : ''} (${flavor ? flavor.name : ''}) [${size}] = $${itemSubtotal.toLocaleString('es-CO')}`);
+            });
+
+            document.getElementById("editPreviewText").innerText = previewLines.join("\n");
+            document.getElementById("editPreviewTotal").innerText = `$${total.toLocaleString('es-CO')}`;
+        }
+
+        function submitMultiItemEdit() {
+            const reason = document.getElementById("editReasonInput").value.trim();
+            if (!reason) {
+                alert("Por favor ingresa el motivo obligatorio para registrar la auditoría.");
+                return;
+            }
+
+            const cards = document.querySelectorAll(".editor-item-card");
+            if (cards.length === 0) {
+                alert("El pedido debe contener al menos un producto.");
+                return;
+            }
+
+            const items = [];
+            cards.forEach(c => {
+                const productId = c.querySelector(".edit-item-prod").value;
+                const flavorId = c.querySelector(".edit-item-flavor").value;
+                const size = c.querySelector(".edit-item-size").value;
+                const quantity = parseInt(c.querySelector(".edit-item-qty").value, 10) || 1;
+                
+                const addonIds = [];
+                c.querySelectorAll("input[name=editItemAddon]:checked").forEach(cb => addonIds.push(cb.value));
+
+                items.push({
+                    productId,
+                    flavorId,
+                    size,
+                    quantity,
+                    addonIds,
+                    observations: ""
+                });
+            });
+
+            const btn = document.getElementById("saveEditBtn");
+            btn.disabled = true;
+            btn.innerText = "⏳ Guardando...";
+
+            fetch(`/asesor/api/pedidos/${editCurrentOrderId}/editar-multi`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.getElementById("csrfToken").value
+                },
+                body: JSON.stringify({ reason: reason, items: items })
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(data => { throw new Error(data.error); });
+                return res.json();
+            })
+            .then(updated => {
+                closeModal("multiEditModal");
+                triggerOperationalAlert("✏️", `Comanda ${updated.code} modificada con éxito.`, "status");
+                syncAllOrders();
+            })
+            .catch(err => {
+                alert("Error al modificar pedido: " + err.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerText = "💾 Confirmar Modificación";
+            });
+        }
+
+        // 15. CANCEL & DELIVER MODALS
+        let actionTargetOrderId = null;
+
+        function openCancelModal(orderId) {
+            actionTargetOrderId = orderId;
+            document.getElementById("cancelModal").classList.add("active");
+        }
+
+        function toggleCustomCancelReason(select) {
+            const custom = document.getElementById("cancelCustomReason");
+            custom.style.display = (select.value === "Otro") ? "block" : "none";
+        }
+
+        function submitCancelOrder() {
+            let reason = document.getElementById("cancelReasonSelect").value;
+            if (reason === "Otro") {
+                reason = document.getElementById("cancelCustomReason").value.trim();
+                if (!reason) {
+                    alert("Especifica el motivo de la cancelación.");
+                    return;
                 }
             }
-
-            document.getElementById('detailModal').classList.add('active');
+            closeModal("cancelModal");
+            updateOrderStatusAjax(actionTargetOrderId, "CANCELLED", reason);
         }
 
-        function triggerCancelModal(id, code) {
-            closeModal('detailModal');
-            document.getElementById('cancelOrderCode').innerText = "#" + code;
-            document.getElementById('cancelForm').action = "/asesor/pedidos/" + id + "/estado";
-            document.getElementById('cancelModal').classList.add('active');
+        function openDeliverModal(id, code, customer) {
+            actionTargetOrderId = id;
+            document.getElementById("deliverModalCode").innerText = code;
+            document.getElementById("deliverModalCustomer").innerText = customer;
+            document.getElementById("deliverModal").classList.add("active");
         }
 
-        function triggerDeliveryModal(id, code, customer) {
-            closeModal('detailModal');
-            document.getElementById('confirmDeliveryCode').innerText = code;
-            document.getElementById('confirmDeliveryCustomer').innerText = customer;
-            document.getElementById('confirmDeliveryForm').action = "/asesor/pedidos/" + id + "/estado";
-            document.getElementById('confirmDeliveryModal').classList.add('active');
-        }
-
-        function triggerEditModal(id, code) {
-            closeModal('detailModal');
-            document.getElementById('editOrderForm').action = "/asesor/pedidos/" + id + "/editar";
-            document.getElementById('editOrderModal').classList.add('active');
+        function submitDeliverOrder() {
+            closeModal("deliverModal");
+            updateOrderStatusAjax(actionTargetOrderId, "DELIVERED", "Entregado en punto de venta");
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-            // Re-enable cancellation select just in case
-            document.getElementById('cancelNotesSelect').disabled = false;
+            document.getElementById(modalId).classList.remove("active");
         }
 
-        function dismissToast() {
-            document.getElementById('newOrderToast').style.display = 'none';
-        }
+        // 16. HISTORIAL API QUERY
+        function fetchHistoryOrders() {
+            const q = document.getElementById("historySearchInput").value.trim();
+            const filter = document.getElementById("historyFilterSelect").value;
+            const tbody = document.getElementById("historyTableBody");
 
-        function playBeep() {
-            if (!soundEnabled) return;
-            try {
-                const context = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = context.createOscillator();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, context.currentTime); // A5 note
-                osc.connect(context.destination);
-                osc.start();
-                osc.stop(context.currentTime + 0.15);
-            } catch(e) {
-                console.error("Audio blocked", e);
-            }
-        }
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Sincronizando historial...</td></tr>`;
 
-        // History API fetch
-        function loadHistory() {
-            const query = document.getElementById('historySearchInput').value;
-            const filter = document.getElementById('historyFilterSelect').value;
-            const body = document.getElementById('historyTableBody');
-            
-            body.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-secondary);">Cargando historial...</td></tr>';
-            
-            fetch(`/asesor/api/pedidos/historial?query=${encodeURIComponent(query)}&filter=${filter}`)
+            fetch(`/asesor/api/pedidos/historial?query=${encodeURIComponent(q)}&filter=${filter}`)
                 .then(res => res.json())
-                .then(orders => {
-                    body.innerHTML = '';
-                    if (orders.length === 0) {
-                        body.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-secondary);">No se encontraron pedidos finalizados.</td></tr>';
+                .then(data => {
+                    tbody.innerHTML = "";
+                    if (data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-secondary);">No se encontraron pedidos finalizados.</td></tr>`;
                         return;
                     }
-                    orders.forEach(o => {
+                    data.forEach(o => {
                         const date = new Date(o.createdAt);
-                        const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        const totalStr = '$' + Number(o.total).toLocaleString('es-CO');
-                        
-                        body.innerHTML += `
-                            <tr>
-                                <td style="font-weight:900;">${o.code}</td>
+                        const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                        tbody.innerHTML += `
+                            <tr style="cursor:pointer;" onclick="openOrderDrawer('${o.id}')">
+                                <td style="font-weight:900; font-family:monospace;">${o.code}</td>
                                 <td>${o.customerName}</td>
-                                <td style="font-weight:700; color:var(--dark-green);">${totalStr}</td>
-                                <td><span style="font-size:0.8rem; font-weight:700; color:${o.status === 'DELIVERED' ? 'var(--dark-green)' : 'var(--strawberry)'}">${o.statusDisplay}</span></td>
+                                <td style="font-weight:900; color:var(--dark-green);">$${Number(o.total).toLocaleString('es-CO')}</td>
+                                <td><span class="badge-tag ${o.status === 'DELIVERED' ? 'badge-advisor' : 'badge-urgent'}">${o.statusDisplay || o.status}</span></td>
                                 <td>${dateStr}</td>
-                                <td>${o.lastModifiedBy}</td>
-                                <td><button class="btn-action-secondary" style="padding:4px 8px; min-height:auto;" onclick="openDetailModal('${o.code}')">Ver detalles</button></td>
+                                <td>${o.assignedAdvisor}</td>
+                                <td><button class="ops-btn-icon" style="padding:4px 8px; font-size:0.75rem;" onclick="openOrderDrawer('${o.id}'); event.stopPropagation();">Trazabilidad</button></td>
                             </tr>
                         `;
                     });
                 })
                 .catch(err => {
-                    console.error("History err", err);
-                    body.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--strawberry);">Error al conectar con la base de datos.</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--strawberry);">Error al consultar historial.</td></tr>`;
                 });
         }
 
-        // Polling and concurrent modifications monitor loop
-        setInterval(() => {
-            fetch('/asesor/api/pedidos/updates')
-                .then(res => res.json())
-                .then(orders => {
-                    // 1. Check for newly arrived orders
-                    const received = orders.filter(o => o.status === 'RECEIVED');
-                    if (received.length > lastReceivedCount) {
-                        playBeep();
-                        document.getElementById('toastAlertMessage').innerText = "🔔 ¡LLEGÓ UN NUEVO PEDIDO!";
-                        document.getElementById('newOrderToast').style.display = 'flex';
-                        setTimeout(() => { window.location.reload(); }, 1500);
-                    }
-                    lastReceivedCount = received.length;
+        // 17. PREFERENCES: SOUND, DARK MODE, KITCHEN MODE
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem("lemonSoundEnabled", soundEnabled);
+            updateSoundButtonUI();
+        }
 
-                    // 2. Check for concurrent modifications by Admin
-                    if (activeOrdersCache.length > 0) {
-                        orders.forEach(newOrder => {
-                            const oldOrder = activeOrdersCache.find(o => o.id === newOrder.id);
-                            if (oldOrder) {
-                                // If status or total changed (e.g. by admin intervention)
-                                if (oldOrder.status !== newOrder.status || oldOrder.total !== newOrder.total) {
-                                    playBeep();
-                                    document.getElementById('toastAlertMessage').innerText = `⚠️ Pedido ${newOrder.code} modificado por el administrador.`;
-                                    document.getElementById('newOrderToast').style.display = 'flex';
-                                    setTimeout(() => { window.location.reload(); }, 3000);
-                                }
-                            }
-                        });
+        function updateSoundButtonUI() {
+            document.getElementById("soundIcon").innerText = soundEnabled ? "🔊" : "🔇";
+            document.getElementById("soundText").innerText = soundEnabled ? "Audio ON" : "Audio OFF";
+        }
 
-                        // Check for cancellations
-                        activeOrdersCache.forEach(oldOrder => {
-                            const newOrder = orders.find(o => o.id === oldOrder.id);
-                            // If order was in queue but now disappeared from active endpoint, check why
-                            if (!newOrder) {
-                                fetch(`/asesor/api/pedidos/historial?query=${oldOrder.code}`)
-                                    .then(res => res.json())
-                                    .then(historyList => {
-                                        const cancelled = historyList.find(o => o.code === oldOrder.code && o.status === 'CANCELLED');
-                                        if (cancelled) {
-                                            playBeep();
-                                            document.getElementById('toastAlertMessage').innerText = `❌ Pedido ${oldOrder.code} cancelado.`;
-                                            document.getElementById('newOrderToast').style.display = 'flex';
-                                            setTimeout(() => { window.location.reload(); }, 3000);
-                                        }
-                                    });
-                            }
-                        });
-                    }
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+            localStorage.setItem("lemonDarkMode", document.body.classList.contains("dark-mode"));
+        }
 
-                    activeOrdersCache = orders;
-                })
-                .catch(err => console.error("Poll err", err));
-        }, 4000);
+        function toggleKitchenMode() {
+            document.body.classList.toggle("kitchen-mode");
+            if (document.body.classList.contains("kitchen-mode")) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                }
+            }
+        }
     </script>
 </body>
 </html>
