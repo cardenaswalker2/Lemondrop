@@ -26,6 +26,64 @@ enum OrderStatus {
     }
   }
 
+  String get trackingTitle {
+    switch (this) {
+      case OrderStatus.received:
+        return 'Pedido recibido';
+      case OrderStatus.accepted:
+        return 'Tu pedido fue aceptado';
+      case OrderStatus.preparing:
+        return 'Estamos preparando tu pedido';
+      case OrderStatus.almostReady:
+        return 'Tu pedido está casi listo';
+      case OrderStatus.ready:
+        return 'Tu pedido está listo para recoger';
+      case OrderStatus.delivered:
+        return 'Pedido entregado';
+      case OrderStatus.cancelled:
+        return 'Pedido cancelado';
+    }
+  }
+
+  String get trackingMessage {
+    switch (this) {
+      case OrderStatus.received:
+        return '¡Recibimos tu pedido! 👋\nNuestro equipo ya lo tiene en la lista de preparación.';
+      case OrderStatus.accepted:
+        return '¡Tu pedido fue aceptado! 💚\nMuy pronto comenzaremos a prepararlo.';
+      case OrderStatus.preparing:
+        return '¡Estamos preparando tu granizado! 🍋\nEstamos trabajando para que llegue perfecto.';
+      case OrderStatus.almostReady:
+        return '¡Ya casi! ✨\nTu pedido está tomando los últimos detalles.';
+      case OrderStatus.ready:
+        return '¡Tu pedido está listo! 🎉\nYa puedes acercarte a recogerlo.';
+      case OrderStatus.delivered:
+        return '¡Pedido entregado! 💚\nGracias por disfrutar Lemon Drop.';
+      case OrderStatus.cancelled:
+        return 'Este pedido fue cancelado.';
+    }
+  }
+
+  /// 1-based step index for the normal pipeline (1..6) or -1 for cancelled
+  int get trackingStepIndex {
+    switch (this) {
+      case OrderStatus.received:
+        return 1;
+      case OrderStatus.accepted:
+        return 2;
+      case OrderStatus.preparing:
+        return 3;
+      case OrderStatus.almostReady:
+        return 4;
+      case OrderStatus.ready:
+        return 5;
+      case OrderStatus.delivered:
+        return 6;
+      case OrderStatus.cancelled:
+        return -1;
+    }
+  }
+
   String toJson() {
     if (this == OrderStatus.almostReady) {
       return 'ALMOST_READY';
@@ -224,6 +282,7 @@ class OrderItem {
   final String flavorName;
   final ProductSize size;
   final int quantity;
+  final double unitPrice;
   final List<OrderItemAddon> addons;
   final double subtotal;
   final String observations;
@@ -235,6 +294,7 @@ class OrderItem {
     required this.flavorName,
     required this.size,
     required this.quantity,
+    this.unitPrice = 0.0,
     required this.addons,
     required this.subtotal,
     required this.observations,
@@ -242,15 +302,20 @@ class OrderItem {
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     final rawAddons = json['addons'] as List? ?? [];
+    final qty = json['quantity'] as int? ?? 1;
+    final sub = (json['subtotal'] as num?)?.toDouble() ?? 0.0;
+    final uPrice = (json['unitPrice'] as num?)?.toDouble() ?? (qty > 0 ? (sub / qty) : 0.0);
+
     return OrderItem(
       productId: json['productId'] ?? '',
       productName: json['productName'] ?? '',
       flavorId: json['flavorId'] ?? '',
       flavorName: json['flavorName'] ?? '',
       size: ProductSize.fromJson(json['size'] ?? 'MEDIUM'),
-      quantity: json['quantity'] ?? 1,
-      addons: rawAddons.map((e) => OrderItemAddon.fromJson(e)).toList(),
-      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      quantity: qty,
+      unitPrice: uPrice,
+      addons: rawAddons.map((e) => OrderItemAddon.fromJson(e as Map<String, dynamic>)).toList(),
+      subtotal: sub,
       observations: json['observations'] ?? '',
     );
   }
@@ -294,18 +359,18 @@ class Order {
       orderCode: json['orderCode'] ?? '',
       customerName: json['customerName'] ?? '',
       customerPhone: json['customerPhone'] ?? '',
-      items: rawItems.map((e) => OrderItem.fromJson(e)).toList(),
-      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      items: rawItems.map((e) => OrderItem.fromJson(e as Map<String, dynamic>)).toList(),
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? (json['total'] as num?)?.toDouble() ?? 0.0,
       total: (json['total'] as num?)?.toDouble() ?? 0.0,
       status: OrderStatus.fromJson(json['status'] ?? 'RECEIVED'),
       observations: json['observations'] ?? '',
       advisorNotes: json['advisorNotes'] ?? '',
-      cancellationReason: json['cancellationReason'],
+      cancellationReason: json['cancellationReason'] as String?,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'])
+          ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
     );
   }

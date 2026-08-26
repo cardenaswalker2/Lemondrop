@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/models/models.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../lemon_ai/presentation/widgets/lemon_ai_fab.dart';
 import '../../lemon_ai/presentation/widgets/lemon_ai_sheet.dart';
+import '../../tracking/presentation/order_tracking_detail_screen.dart';
+import '../../tracking/presentation/widgets/interactive_order_card.dart';
 import 'customer_wizard_screen.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final _codeController = TextEditingController();
   bool _isLoading = false;
   Map<String, dynamic>? _trackedOrder;
@@ -26,10 +29,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     super.dispose();
   }
 
-  void _trackOrder(WidgetRef ref) async {
+  void _trackOrder() async {
     final code = _codeController.text.trim();
     if (code.isEmpty) {
-      setState(() => _errorMessage = 'Ingresa el código de tu pedido.');
+      setState(() => _errorMessage = 'Ingresa el código o celular de tu pedido.');
       return;
     }
 
@@ -42,18 +45,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     try {
       final client = ref.read(apiClientProvider);
       final res = await client.dio.get('/api/public/pedidos/track/$code');
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200 && res.data is Map<String, dynamic>) {
         setState(() {
-          _trackedOrder = res.data;
+          _trackedOrder = res.data as Map<String, dynamic>;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'No se encontró ningún pedido con ese código.';
+        _errorMessage = 'No se encontró ningún pedido con los datos ingresados.';
       });
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  void _openOrderDetail(Order order) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderTrackingDetailScreen(initialOrder: order),
+      ),
+    );
   }
 
   @override
@@ -325,16 +337,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           hintText: 'Ej. LD-2026-0012 o 3001234567',
                           prefixIcon: Icon(Icons.search_rounded),
                         ),
+                        onSubmitted: (_) => _trackOrder(),
                       ),
                       const SizedBox(height: 16),
-                      Consumer(
-                        builder: (context, ref, child) => _isLoading
-                            ? const Center(child: CircularProgressIndicator(color: AppTheme.darkGreen))
-                            : ElevatedButton(
-                                onPressed: () => _trackOrder(ref),
-                                child: const Text('VER ESTADO DEL PEDIDO'),
-                              ),
-                      ),
+                      _isLoading
+                          ? const Center(child: CircularProgressIndicator(color: AppTheme.darkGreen))
+                          : ElevatedButton(
+                              onPressed: _trackOrder,
+                              child: const Text('VER ESTADO DEL PEDIDO'),
+                            ),
                       if (_errorMessage != null) ...[
                         const SizedBox(height: 12),
                         Text(
@@ -441,132 +452,56 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final isMultiple = _trackedOrder!['multiple'] as bool? ?? false;
 
     if (isMultiple) {
-      final ordersList = _trackedOrder!['orders'] as List? ?? [];
+      final ordersRaw = _trackedOrder!['orders'] as List? ?? [];
+      final orders = ordersRaw
+          .map((o) => Order.fromJson(o as Map<String, dynamic>))
+          .toList();
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
-            child: Text(
-              'Pedidos Encontrados:',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.darkBg),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Pedidos Encontrados 📋',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.darkBg),
+                ),
+                Text(
+                  '${orders.length} pedido(s)',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.darkGreen),
+                ),
+              ],
             ),
           ),
-          ...ordersList.map((o) => _buildSingleOrderResultCard(o as Map<String, dynamic>)),
+          const SizedBox(height: 4),
+          ...orders.map((order) => InteractiveOrderCard(
+                order: order,
+                onTap: () => _openOrderDetail(order),
+              )),
         ],
       );
     }
 
-    return _buildSingleOrderResultCard(_trackedOrder!);
-  }
-
-  Widget _buildSingleOrderResultCard(Map<String, dynamic> orderData) {
-    final statusDisplay = orderData['statusDisplay'] as String? ?? '';
-    final status = orderData['status'] as String? ?? 'RECEIVED';
-    final customerName = orderData['customerName'] as String? ?? '';
-    final code = orderData['orderCode'] as String? ?? '';
-    final total = orderData['total'] as num? ?? 0;
-    final itemsList = orderData['items'] as List? ?? [];
-
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  code,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textGray),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(status).withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    statusDisplay.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: _getStatusColor(status),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '¡Hola, $customerName! 👋',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.darkBg),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Tu pedido está siendo preparado con toda la frescura de Lemon Drop.',
-              style: TextStyle(fontSize: 12, color: AppTheme.textGray),
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            ...itemsList.map((item) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${item['quantity']}x ${item['productName']} (${item['flavorName']})',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '\$${item['subtotal']}',
-                      style: const TextStyle(fontSize: 13, color: AppTheme.textGray),
-                    ),
-                  ],
-                ),
-              );
-            }),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Total:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                Text(
-                  '\$${total.toStringAsFixed(0)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.darkGreen),
-                ),
-              ],
-            ),
-          ],
+    final singleOrder = Order.fromJson(_trackedOrder!);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: Text(
+            'Pedido Encontrado 📋',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.darkBg),
+          ),
         ),
-      ),
+        InteractiveOrderCard(
+          order: singleOrder,
+          onTap: () => _openOrderDetail(singleOrder),
+        ),
+      ],
     );
   }
-
-  Color _getStatusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'RECEIVED':
-        return AppTheme.primaryLemon;
-      case 'ACCEPTED':
-        return Colors.blue;
-      case 'PREPARING':
-        return Colors.orange;
-      case 'ALMOST_READY':
-        return Colors.lightGreen;
-      case 'READY':
-        return AppTheme.darkGreen;
-      case 'DELIVERED':
-        return AppTheme.textGray;
-      default:
-        return AppTheme.textGray;
-    }
-  }
 }
+

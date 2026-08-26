@@ -11,7 +11,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -653,5 +656,55 @@ public class OrderService {
         changeHistoryRepository.save(changeHistory);
 
         return orderRepository.save(order);
+    }
+
+    public Map<String, Object> mapOrderToTrackingDetails(Order order) {
+        if (order == null) return Collections.emptyMap();
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", order.getId() != null ? order.getId() : "");
+        map.put("orderCode", order.getOrderCode() != null ? order.getOrderCode() : "");
+        map.put("customerName", order.getCustomerName() != null ? order.getCustomerName() : "");
+        map.put("customerPhone", order.getCustomerPhone() != null ? order.getCustomerPhone() : "");
+        map.put("status", order.getStatus() != null ? order.getStatus().name() : "RECEIVED");
+        map.put("statusDisplay", order.getStatus() != null ? order.getStatus().getDisplayName() : "Pedido Recibido");
+        map.put("subtotal", order.getSubtotal() != null ? order.getSubtotal() : BigDecimal.ZERO);
+        map.put("total", order.getTotal() != null ? order.getTotal() : BigDecimal.ZERO);
+        map.put("observations", order.getObservations() != null ? order.getObservations() : "");
+        map.put("advisorNotes", order.getAdvisorNotes() != null ? order.getAdvisorNotes() : "");
+        map.put("cancellationReason", order.getCancellationReason() != null ? order.getCancellationReason() : "");
+        map.put("createdAt", order.getCreatedAt() != null ? order.getCreatedAt().toString() : null);
+        map.put("updatedAt", order.getUpdatedAt() != null ? order.getUpdatedAt().toString() : null);
+
+        List<Map<String, Object>> itemsList = new ArrayList<>();
+        if (order.getItems() != null) {
+            for (OrderItem item : order.getItems()) {
+                Map<String, Object> itemMap = new HashMap<>();
+                itemMap.put("productId", item.getProductId() != null ? item.getProductId() : "");
+                itemMap.put("productName", item.getProductName() != null ? item.getProductName() : "");
+                itemMap.put("flavorId", item.getFlavorId() != null ? item.getFlavorId() : "");
+                itemMap.put("flavorName", item.getFlavorName() != null ? item.getFlavorName() : "");
+                itemMap.put("size", item.getSize() != null ? item.getSize().name() : "MEDIUM");
+                itemMap.put("quantity", item.getQuantity() != null ? item.getQuantity() : 1);
+                itemMap.put("unitPrice", item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO);
+                itemMap.put("subtotal", item.getSubtotal() != null ? item.getSubtotal() : BigDecimal.ZERO);
+                itemMap.put("observations", item.getObservations() != null ? item.getObservations() : "");
+
+                List<Map<String, Object>> addonsList = new ArrayList<>();
+                if (item.getAddons() != null) {
+                    for (OrderItemAddon addon : item.getAddons()) {
+                        Map<String, Object> addonMap = new HashMap<>();
+                        addonMap.put("addonId", addon.getAddonId() != null ? addon.getAddonId() : "");
+                        addonMap.put("addonName", addon.getAddonName() != null ? addon.getAddonName() : "");
+                        addonMap.put("unitPrice", addon.getUnitPrice() != null ? addon.getUnitPrice() : BigDecimal.ZERO);
+                        addonMap.put("quantity", addon.getQuantity() != null ? addon.getQuantity() : 1);
+                        addonsList.add(addonMap);
+                    }
+                }
+                itemMap.put("addons", addonsList);
+                itemsList.add(itemMap);
+            }
+        }
+        map.put("items", itemsList);
+        return map;
     }
 }

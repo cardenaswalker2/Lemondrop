@@ -97,28 +97,9 @@ public class CatalogController {
         if (isNumeric) {
             java.util.List<Order> orders = orderService.getOrdersByPhone(cleanQuery);
             if (!orders.isEmpty()) {
-                java.util.List<Map<String, Object>> responseList = orders.stream().map(order -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("orderCode", order.getOrderCode());
-                    map.put("customerName", order.getCustomerName());
-                    map.put("status", order.getStatus().name());
-                    map.put("statusDisplay", order.getStatus().getDisplayName());
-                    map.put("total", order.getTotal());
-                    
-                    java.util.List<Map<String, Object>> itemsList = order.getItems().stream().map(item -> {
-                        Map<String, Object> itemMap = new HashMap<>();
-                        itemMap.put("productName", item.getProductName());
-                        itemMap.put("flavorName", item.getFlavorName());
-                        itemMap.put("size", item.getSize().name());
-                        itemMap.put("quantity", item.getQuantity());
-                        itemMap.put("subtotal", item.getSubtotal());
-                        return itemMap;
-                    }).collect(java.util.stream.Collectors.toList());
-                    
-                    map.put("items", itemsList);
-                    return map;
-                }).collect(java.util.stream.Collectors.toList());
-                
+                java.util.List<Map<String, Object>> responseList = orders.stream()
+                        .map(orderService::mapOrderToTrackingDetails)
+                        .collect(java.util.stream.Collectors.toList());
                 return ResponseEntity.ok(Map.of("success", true, "multiple", true, "orders", responseList));
             } else {
                 Map<String, Object> response = new HashMap<>();
@@ -129,27 +110,9 @@ public class CatalogController {
         } else {
             Optional<Order> orderOpt = orderService.getOrderByCode(cleanQuery.toUpperCase());
             if (orderOpt.isPresent()) {
-                Order order = orderOpt.get();
-                Map<String, Object> response = new HashMap<>();
+                Map<String, Object> response = new HashMap<>(orderService.mapOrderToTrackingDetails(orderOpt.get()));
                 response.put("success", true);
                 response.put("multiple", false);
-                response.put("orderCode", order.getOrderCode());
-                response.put("customerName", order.getCustomerName());
-                response.put("status", order.getStatus().name());
-                response.put("statusDisplay", order.getStatus().getDisplayName());
-                response.put("total", order.getTotal());
-                
-                java.util.List<Map<String, Object>> itemsList = order.getItems().stream().map(item -> {
-                    Map<String, Object> itemMap = new HashMap<>();
-                    itemMap.put("productName", item.getProductName());
-                    itemMap.put("flavorName", item.getFlavorName());
-                    itemMap.put("size", item.getSize().name());
-                    itemMap.put("quantity", item.getQuantity());
-                    itemMap.put("subtotal", item.getSubtotal());
-                    return itemMap;
-                }).collect(java.util.stream.Collectors.toList());
-                
-                response.put("items", itemsList);
                 return ResponseEntity.ok(response);
             } else {
                 Map<String, Object> response = new HashMap<>();
