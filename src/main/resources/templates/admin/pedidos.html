@@ -119,19 +119,25 @@
 
         <!-- Main workspace -->
         <main class="main-content">
-            <header style="margin-bottom:30px; display:flex; justify-content:space-between; align-items:center;">
+            <header style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 15px;">
                 <div>
                     <h1 style="font-size: 2.2rem;">🛍️ Historial General de Pedidos</h1>
-                    <p style="color: var(--text-secondary);">Consulta, audita y corrige errores de pedidos realizados.</p>
+                    <p style="color: var(--text-secondary);">Consulta, audita y gestiona pedidos activos en tiempo real.</p>
                 </div>
-                <a href="/admin/pedidos/eliminados" class="btn-custom btn-outline" style="font-size:0.9rem;">🗑️ Ver Papelera</a>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span class="badge-custom badge-mint" style="font-size:0.85rem; padding: 6px 14px;" th:text="${totalItems + ' pedido(s) registrado(s)'}">0 pedidos</span>
+                    <a href="/admin/pedidos/eliminados" class="btn-custom btn-outline" style="font-size:0.9rem;">🗑️ Ver Papelera</a>
+                </div>
             </header>
 
             <!-- Filters -->
             <form action="/admin/pedidos" method="get" class="filter-bar">
+                <input type="hidden" name="page" value="0">
+                <input type="hidden" name="size" th:value="${pageSize}">
+
                 <div class="filter-group">
                     <label class="form-label" style="font-size:0.85rem; font-weight:600;">Buscar</label>
-                    <input type="text" name="query" class="form-control" placeholder="Código, Cliente, Teléfono o Asesor" th:value="${searchQuery}">
+                    <input type="text" name="query" class="form-control" placeholder="Código, Cliente o Teléfono" th:value="${searchQuery}">
                 </div>
                 
                 <div class="filter-group">
@@ -145,8 +151,17 @@
                 <div class="filter-group">
                     <label class="form-label" style="font-size:0.85rem; font-weight:600;">Asesor Asignado</label>
                     <select name="advisor" class="form-control">
-                        <option value="all" th:selected="${selectedAdvisor == null || selectedAdvisor == 'all'}">Todos</option>
+                        <option value="all" th:selected="${selectedAdvisor == null || selectedAdvisor == 'all'}">Todos los asesores</option>
                         <option th:each="adv : ${advisors}" th:value="${adv.username}" th:text="${adv.name}" th:selected="${adv.username == selectedAdvisor}"></option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Prioridad</label>
+                    <select name="priority" class="form-control">
+                        <option value="" th:selected="${selectedPriority == null || selectedPriority == ''}">Todas</option>
+                        <option value="NORMAL" th:selected="${selectedPriority == 'NORMAL'}">Normal</option>
+                        <option value="ALTA" th:selected="${selectedPriority == 'ALTA'}">⚡ Alta</option>
                     </select>
                 </div>
 
@@ -176,12 +191,13 @@
                         <option value="oldest" th:selected="${selectedSort == 'oldest'}">Más antiguos</option>
                         <option value="highest" th:selected="${selectedSort == 'highest'}">Mayor valor</option>
                         <option value="lowest" th:selected="${selectedSort == 'lowest'}">Menor valor</option>
+                        <option value="priority" th:selected="${selectedSort == 'priority'}">Mayor prioridad</option>
                     </select>
                 </div>
 
                 <div style="display:flex; gap:10px;">
-                    <button type="submit" class="btn-custom btn-lemon" style="padding: 11px 20px; flex:1;">Buscar</button>
-                    <a href="/admin/pedidos" class="btn-custom btn-outline" style="padding: 11px 20px;">Limpiar</a>
+                    <button type="submit" class="btn-custom btn-lemon" style="padding: 11px 20px; flex:1;">Buscar 🔍</button>
+                    <a href="/admin/pedidos" class="btn-custom btn-outline" style="padding: 11px 20px;">Limpiar 🔄</a>
                 </div>
             </form>
 
@@ -193,6 +209,7 @@
                             <tr style="border-bottom: 2px solid var(--mint);">
                                 <th style="padding:15px;">Código</th>
                                 <th style="padding:15px;">Cliente</th>
+                                <th style="padding:15px;">Teléfono</th>
                                 <th style="padding:15px;">Prioridad</th>
                                 <th style="padding:15px;">Estado</th>
                                 <th style="padding:15px;">Asesor</th>
@@ -208,6 +225,7 @@
                                     <span th:if="${o.closed}" class="badge-custom badge-closed" style="font-size:0.65rem; padding: 2px 6px; margin-left: 5px;">🔒 Cerrado</span>
                                 </td>
                                 <td style="padding:15px;" th:text="${o.customerName}">Juan</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.customerPhone != null ? o.customerPhone : 'N/A'}">3001234567</td>
                                 <td style="padding:15px;">
                                     <span th:text="${o.priority == 'ALTA' ? '⚡ ALTA' : 'NORMAL'}" 
                                           class="badge-custom" 
@@ -220,15 +238,49 @@
                                 <td style="padding:15px; font-size:0.85rem;" th:text="${o.assignedAdvisor != null ? o.assignedAdvisor : 'Sin asignar'}">Sin asignar</td>
                                 <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
                                 <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}">Hora</td>
-                                <td style="padding:15px;">
-                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="'openOrderDetails(\'' + ${o.id} + '\')'">Administrar ⚙️</button>
+                                <td style="padding:15px; display:flex; gap:6px;">
+                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="'openOrderDetails(\'' + ${o.id} + '\')'">Ver 👁️</button>
+                                    <button class="btn-custom btn-outline" style="padding: 6px 10px; font-size: 0.8rem; color:#e53e3e; border-color:#fed7d7;" th:onclick="'promptDeleteOrder(\'' + ${o.id} + '\', \'' + ${o.orderCode} + '\')'">🗑️</button>
                                 </td>
                             </tr>
-                            <tr th:if="${orders.size() == 0}">
-                                <td colspan="8" style="text-align:center; padding: 30px; color:var(--text-secondary);">No se encontraron pedidos con los filtros aplicados.</td>
+                            <tr th:if="${orders == null || orders.isEmpty()}">
+                                <td colspan="9" style="text-align:center; padding: 40px; color:var(--text-secondary);">
+                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">📭</div>
+                                    <h3 style="font-size: 1.1rem; color: #4a5568; margin-bottom: 5px;" 
+                                        th:text="${(searchQuery != null && !searchQuery.isEmpty()) || selectedStatus != null || (dateFilter != null && !dateFilter.isEmpty()) ? 'No se encontraron pedidos con los filtros aplicados.' : 'Actualmente no hay pedidos en el historial.'}">
+                                        Actualmente no hay pedidos en el historial.
+                                    </h3>
+                                    <p style="font-size: 0.85rem;" th:if="${(searchQuery != null && !searchQuery.isEmpty()) || selectedStatus != null || (dateFilter != null && !dateFilter.isEmpty())}">
+                                        Prueba ajustando tus términos de búsqueda o <a href="/admin/pedidos" style="color:var(--green-dark); font-weight:700;">limpia los filtros</a>.
+                                    </p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination Widget -->
+                <div th:if="${totalPages > 1}" style="display:flex; justify-content:space-between; align-items:center; padding: 18px 20px; border-top: 1px solid #edf2f7; flex-wrap:wrap; gap:10px;">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                        Mostrando página <strong th:text="${currentPage + 1}">1</strong> de <strong th:text="${totalPages}">1</strong> (<span th:text="${totalItems}">0</span> pedidos)
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <a th:if="${!isFirst}" 
+                           th:href="@{/admin/pedidos(page=0, size=${pageSize}, query=${searchQuery}, status=${selectedStatus}, advisor=${selectedAdvisor}, priority=${selectedPriority}, dateFilter=${dateFilter}, startDate=${startDate}, endDate=${endDate}, sort=${selectedSort})}" 
+                           class="btn-custom btn-outline" style="padding: 6px 12px; font-size:0.8rem;">« Primera</a>
+                        <a th:if="${hasPrevious}" 
+                           th:href="@{/admin/pedidos(page=${currentPage - 1}, size=${pageSize}, query=${searchQuery}, status=${selectedStatus}, advisor=${selectedAdvisor}, priority=${selectedPriority}, dateFilter=${dateFilter}, startDate=${startDate}, endDate=${endDate}, sort=${selectedSort})}" 
+                           class="btn-custom btn-outline" style="padding: 6px 12px; font-size:0.8rem;">‹ Anterior</a>
+                        
+                        <span class="badge-custom badge-mint" style="padding: 6px 12px; font-size:0.85rem;" th:text="${'Página ' + (currentPage + 1)}">Página 1</span>
+                        
+                        <a th:if="${hasNext}" 
+                           th:href="@{/admin/pedidos(page=${currentPage + 1}, size=${pageSize}, query=${searchQuery}, status=${selectedStatus}, advisor=${selectedAdvisor}, priority=${selectedPriority}, dateFilter=${dateFilter}, startDate=${startDate}, endDate=${endDate}, sort=${selectedSort})}" 
+                           class="btn-custom btn-outline" style="padding: 6px 12px; font-size:0.8rem;">Siguiente ›</a>
+                        <a th:if="${!isLast}" 
+                           th:href="@{/admin/pedidos(page=${totalPages - 1}, size=${pageSize}, query=${searchQuery}, status=${selectedStatus}, advisor=${selectedAdvisor}, priority=${selectedPriority}, dateFilter=${dateFilter}, startDate=${startDate}, endDate=${endDate}, sort=${selectedSort})}" 
+                           class="btn-custom btn-outline" style="padding: 6px 12px; font-size:0.8rem;">Última »</a>
+                    </div>
                 </div>
             </div>
         </main>
@@ -846,19 +898,37 @@
                 });
         }
 
-        function deleteOrderAction() {
-            const reason = prompt("Ingrese el motivo por el cual desea eliminar lógicamente este pedido:");
-            if (!reason) {
-                alert("El motivo de eliminación es obligatorio.");
-                return;
+        function promptDeleteOrder(orderId, orderCode) {
+            const reason = prompt("¿Desea mover el pedido #" + orderCode + " a la papelera?\n\nIngrese el motivo (Opcional):", "Cancelación por cliente / Error de digitación");
+            if (reason !== null) {
+                fetch('/admin/api/pedidos/' + orderId + '/eliminar?reason=' + encodeURIComponent(reason.trim() || 'Movido a papelera desde el historial'), {method: 'POST'})
+                    .then(res => {
+                        if (res.ok) {
+                            alert('Pedido movido a la papelera con éxito.');
+                            window.location.reload();
+                        } else {
+                            res.json().then(data => alert('Error: ' + (data.error || 'No se pudo mover a papelera.')));
+                        }
+                    })
+                    .catch(err => alert('Error de comunicación con el servidor.'));
             }
-            fetch('/admin/api/pedidos/' + currentOrder.id + '/eliminar?reason=' + encodeURIComponent(reason), {method: 'POST'})
-                .then(res => {
-                    if (res.ok) {
-                        alert('Pedido movido a la papelera.');
-                        window.location.reload();
-                    }
-                });
+        }
+
+        function deleteOrderAction() {
+            if (!currentOrder) return;
+            const reason = prompt("Ingrese el motivo por el cual desea mover a papelera este pedido:", "Movido a papelera desde detalle");
+            if (reason !== null) {
+                fetch('/admin/api/pedidos/' + currentOrder.id + '/eliminar?reason=' + encodeURIComponent(reason.trim() || 'Movido a papelera'), {method: 'POST'})
+                    .then(res => {
+                        if (res.ok) {
+                            alert('Pedido movido a la papelera con éxito.');
+                            window.location.reload();
+                        } else {
+                            res.json().then(data => alert('Error: ' + (data.error || 'No se pudo mover a papelera.')));
+                        }
+                    })
+                    .catch(err => alert('Error de comunicación con el servidor.'));
+            }
         }
 
         function toggleCloseAction() {

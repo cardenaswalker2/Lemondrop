@@ -102,7 +102,7 @@ public class AdminOrderApiController {
     }
 
     @PostMapping("/{id}/eliminar")
-    public ResponseEntity<?> deleteOrderAdmin(@PathVariable String id, @RequestParam String reason) {
+    public ResponseEntity<?> deleteOrderAdmin(@PathVariable String id, @RequestParam(required = false, defaultValue = "Eliminado lógicamente") String reason) {
         String actor = SecurityUtils.getCurrentUsername();
         try {
             Order updated = orderService.deleteOrderLogically(id, reason, actor);
@@ -120,6 +120,23 @@ public class AdminOrderApiController {
         try {
             Order updated = orderService.restoreOrderLogically(id, actor);
             return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @PostMapping("/{id}/eliminar-definitivo")
+    @DeleteMapping("/{id}/definitivo")
+    public ResponseEntity<?> deleteOrderPermanentlyAdmin(@PathVariable String id) {
+        String actor = SecurityUtils.getCurrentUsername();
+        try {
+            orderService.deleteOrderPermanently(id, actor);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Pedido eliminado definitivamente de la base de datos.");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());

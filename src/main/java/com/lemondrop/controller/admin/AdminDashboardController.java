@@ -8,6 +8,7 @@ import com.lemondrop.repository.OrderRepository;
 import com.lemondrop.service.OrderService;
 import com.lemondrop.service.StatsService;
 import com.lemondrop.service.UserService;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -61,87 +62,36 @@ public class AdminDashboardController {
     }
 
     @GetMapping("/pedidos")
-    public String orderHistory(@RequestParam(required = false) String query,
+    public String orderHistory(@RequestParam(defaultValue = "0") int page,
+                               @RequestParam(defaultValue = "20") int size,
+                               @RequestParam(required = false) String query,
                                @RequestParam(required = false) OrderStatus status,
                                @RequestParam(required = false) String advisor,
+                               @RequestParam(required = false) String priority,
                                @RequestParam(required = false) String dateFilter,
                                @RequestParam(required = false) String startDate,
                                @RequestParam(required = false) String endDate,
-                               @RequestParam(required = false) String sort,
+                               @RequestParam(defaultValue = "newest") String sort,
                                Model model) {
-        List<Order> orders = orderService.getAllOrders();
+        Page<Order> orderPage = orderService.getOrdersPaginated(
+                query, status, advisor, priority, dateFilter, startDate, endDate, sort, page, size
+        );
 
-        // 1. Status Filter
-        if (status != null) {
-            orders = orders.stream()
-                    .filter(o -> o.getStatus() == status)
-                    .collect(Collectors.toList());
-        }
+        model.addAttribute("orders", orderPage.getContent());
+        model.addAttribute("orderPage", orderPage);
+        model.addAttribute("currentPage", orderPage.getNumber());
+        model.addAttribute("totalPages", Math.max(1, orderPage.getTotalPages()));
+        model.addAttribute("totalItems", orderPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", orderPage.hasPrevious());
+        model.addAttribute("hasNext", orderPage.hasNext());
+        model.addAttribute("isFirst", orderPage.isFirst());
+        model.addAttribute("isLast", orderPage.isLast());
 
-        // 2. Advisor Filter
-        if (advisor != null && !advisor.trim().isEmpty() && !"all".equals(advisor)) {
-            orders = orders.stream()
-                    .filter(o -> advisor.equals(o.getAssignedAdvisor()))
-                    .collect(Collectors.toList());
-        }
-
-        // 3. Date Filter
-        if (dateFilter != null && !dateFilter.trim().isEmpty()) {
-            LocalDateTime start = null;
-            LocalDateTime end = null;
-            if ("today".equals(dateFilter)) {
-                start = LocalDate.now().atStartOfDay();
-                end = LocalDate.now().atTime(LocalTime.MAX);
-            } else if ("yesterday".equals(dateFilter)) {
-                start = LocalDate.now().minusDays(1).atStartOfDay();
-                end = LocalDate.now().minusDays(1).atTime(LocalTime.MAX);
-            } else if ("last7days".equals(dateFilter)) {
-                start = LocalDate.now().minusDays(7).atStartOfDay();
-                end = LocalDate.now().atTime(LocalTime.MAX);
-            } else if ("custom".equals(dateFilter) && startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
-                try {
-                    start = LocalDate.parse(startDate).atStartOfDay();
-                    end = LocalDate.parse(endDate).atTime(LocalTime.MAX);
-                } catch (Exception e) {
-                    // ignore
-                }
-            }
-
-            if (start != null && end != null) {
-                final LocalDateTime fStart = start;
-                final LocalDateTime fEnd = end;
-                orders = orders.stream()
-                        .filter(o -> o.getCreatedAt() != null && !o.getCreatedAt().isBefore(fStart) && !o.getCreatedAt().isAfter(fEnd))
-                        .collect(Collectors.toList());
-            }
-        }
-
-        // 4. Query Search
-        if (query != null && !query.trim().isEmpty()) {
-            String q = query.trim().toLowerCase();
-            orders = orders.stream()
-                    .filter(o -> (o.getOrderCode() != null && o.getOrderCode().toLowerCase().contains(q))
-                            || (o.getCustomerName() != null && o.getCustomerName().toLowerCase().contains(q))
-                            || (o.getCustomerPhone() != null && o.getCustomerPhone().contains(q))
-                            || (o.getAssignedAdvisor() != null && o.getAssignedAdvisor().toLowerCase().contains(q)))
-                    .collect(Collectors.toList());
-        }
-
-        // 5. Sorting
-        if ("oldest".equals(sort)) {
-            orders = orders.stream().sorted(Comparator.comparing(Order::getCreatedAt)).collect(Collectors.toList());
-        } else if ("highest".equals(sort)) {
-            orders = orders.stream().sorted(Comparator.comparing(Order::getTotal).reversed()).collect(Collectors.toList());
-        } else if ("lowest".equals(sort)) {
-            orders = orders.stream().sorted(Comparator.comparing(Order::getTotal)).collect(Collectors.toList());
-        } else { // default "newest"
-            orders = orders.stream().sorted(Comparator.comparing(Order::getCreatedAt).reversed()).collect(Collectors.toList());
-        }
-
-        model.addAttribute("orders", orders);
         model.addAttribute("statuses", OrderStatus.values());
         model.addAttribute("selectedStatus", status);
         model.addAttribute("selectedAdvisor", advisor);
+        model.addAttribute("selectedPriority", priority);
         model.addAttribute("dateFilter", dateFilter);
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
@@ -152,14 +102,39 @@ public class AdminDashboardController {
                 .filter(u -> "ASESOR".equalsIgnoreCase(u.getRole()))
                 .collect(Collectors.toList());
         model.addAttribute("advisors", activeAdvisors);
-        
+
         return "admin/pedidos";
     }
 
     @GetMapping("/pedidos/eliminados")
-    public String deletedOrders(Model model) {
-        List<Order> deletedOrders = orderService.getAllDeletedOrders();
-        model.addAttribute("orders", deletedOrders);
+    public String deletedOrders(@RequestParam(defaultValue = "0") int page,
+                                @RequestParam(defaultValue = "20") int size,
+                                @RequestParam(required = false) String query,
+                                @RequestParam(required = false) String dateFilter,
+                                @RequestParam(required = false) String startDate,
+                                @RequestParam(required = false) String endDate,
+                                @RequestParam(defaultValue = "newest") String sort,
+                                Model model) {
+        Page<Order> deletedPage = orderService.getDeletedOrdersPaginated(
+                query, dateFilter, startDate, endDate, sort, page, size
+        );
+
+        model.addAttribute("orders", deletedPage.getContent());
+        model.addAttribute("orderPage", deletedPage);
+        model.addAttribute("currentPage", deletedPage.getNumber());
+        model.addAttribute("totalPages", Math.max(1, deletedPage.getTotalPages()));
+        model.addAttribute("totalItems", deletedPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", deletedPage.hasPrevious());
+        model.addAttribute("hasNext", deletedPage.hasNext());
+        model.addAttribute("isFirst", deletedPage.isFirst());
+        model.addAttribute("isLast", deletedPage.isLast());
+        model.addAttribute("searchQuery", query);
+        model.addAttribute("dateFilter", dateFilter);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("selectedSort", sort);
+
         return "admin/pedidos-eliminados";
     }
 }

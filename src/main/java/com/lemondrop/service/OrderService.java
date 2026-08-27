@@ -5,17 +5,27 @@ import com.lemondrop.dto.order.OrderItemDto;
 import com.lemondrop.model.*;
 import com.lemondrop.repository.*;
 import com.lemondrop.security.SecurityUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +40,7 @@ public class OrderService {
     private final CounterService counterService;
     private final InventoryService inventoryService;
     private final NotificationService notificationService;
+    private final MongoTemplate mongoTemplate;
 
     public OrderService(OrderRepository orderRepository,
                         ProductRepository productRepository,
@@ -39,7 +50,8 @@ public class OrderService {
                         OrderChangeHistoryRepository changeHistoryRepository,
                         CounterService counterService,
                         InventoryService inventoryService,
-                        NotificationService notificationService) {
+                        NotificationService notificationService,
+                        MongoTemplate mongoTemplate) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.flavorRepository = flavorRepository;
@@ -49,6 +61,7 @@ public class OrderService {
         this.counterService = counterService;
         this.inventoryService = inventoryService;
         this.notificationService = notificationService;
+        this.mongoTemplate = mongoTemplate;
     }
 
     public synchronized Order createOrder(CreateOrderRequest request) {
@@ -364,16 +377,136 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    public Page<Order> getOrdersPaginated(String query, OrderStatus status, String advisor, String priority,
+                                         String dateFilter, String startDate, String endDate, String sort,
+                                         int page, int size) {
+        Query mongoQuery = new Query();
+
+        // 1. Soft delete condition: deleted != true (matches false, null, and missing field)
+        mongoQuery.addCriteria(Criteria.where("deleted").ne(true));
+
+        // 2. Query search across code, customerName, customerPhone
+        if (query != null && !query.trim().isEmpty()) {
+            String q = Pattern.quote(query.trim());
+            mongoQuery.addCriteria(new Criteria().orOperator(
+                    Criteria.where("orderCode").regex(q, "i"),
+                    Criteria.where("customerName").regex(q, "i"),
+                    Criteria.where("customerPhone").regex(q, "i")
+            ));
+        }
+
+        // 3. Status
+        if (status != null) {
+            mongoQuery.addCriteria(Criteria.where("status").is(status));
+        }
+
+        // 4. Advisor
+        if (advisor != null && !advisor.trim().isEmpty() && !"all".equalsIgnoreCase(advisor)) {
+            mongoQuery.addCriteria(Criteria.where("assignedAdvisor").is(advisor));
+        }
+
+        // 5. Priority
+        if (priority != null && !priority.trim().isEmpty() && !"all".equalsIgnoreCase(priority)) {
+            mongoQuery.addCriteria(Criteria.where("priority").is(priority.toUpperCase()));
+        }
+
+        // 6. Dates filter
+        applyDateFilter(mongoQuery, dateFilter, startDate, endDate, "createdAt");
+
+        // 7. Total count before pagination
+        long total = mongoTemplate.count(mongoQuery, Order.class);
+
+        // 8. Sorting & Pagination
+        Sort sortObj = resolveSort(sort, "createdAt");
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), sortObj);
+        mongoQuery.with(pageable);
+
+        List<Order> orders = mongoTemplate.find(mongoQuery, Order.class);
+        return new PageImpl<>(orders, pageable, total);
+    }
+
+    public Page<Order> getDeletedOrdersPaginated(String query, String dateFilter, String startDate, String endDate,
+                                                String sort, int page, int size) {
+        Query mongoQuery = new Query();
+
+        // Soft delete condition: deleted == true
+        mongoQuery.addCriteria(Criteria.where("deleted").is(true));
+
+        // Query search across code, customerName, customerPhone
+        if (query != null && !query.trim().isEmpty()) {
+            String q = Pattern.quote(query.trim());
+            mongoQuery.addCriteria(new Criteria().orOperator(
+                    Criteria.where("orderCode").regex(q, "i"),
+                    Criteria.where("customerName").regex(q, "i"),
+                    Criteria.where("customerPhone").regex(q, "i")
+            ));
+        }
+
+        // Date filter on deletedAt
+        applyDateFilter(mongoQuery, dateFilter, startDate, endDate, "deletedAt");
+
+        long total = mongoTemplate.count(mongoQuery, Order.class);
+        Sort sortObj = resolveSort(sort, "deletedAt");
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), sortObj);
+        mongoQuery.with(pageable);
+
+        List<Order> orders = mongoTemplate.find(mongoQuery, Order.class);
+        return new PageImpl<>(orders, pageable, total);
+    }
+
+    private void applyDateFilter(Query mongoQuery, String dateFilter, String startDate, String endDate, String dateField) {
+        if (dateFilter == null || dateFilter.trim().isEmpty()) return;
+
+        LocalDateTime start = null;
+        LocalDateTime end = null;
+
+        if ("today".equalsIgnoreCase(dateFilter)) {
+            start = LocalDate.now().atStartOfDay();
+            end = LocalDate.now().atTime(LocalTime.MAX);
+        } else if ("yesterday".equalsIgnoreCase(dateFilter)) {
+            start = LocalDate.now().minusDays(1).atStartOfDay();
+            end = LocalDate.now().minusDays(1).atTime(LocalTime.MAX);
+        } else if ("last7days".equalsIgnoreCase(dateFilter)) {
+            start = LocalDate.now().minusDays(7).atStartOfDay();
+            end = LocalDate.now().atTime(LocalTime.MAX);
+        } else if ("custom".equalsIgnoreCase(dateFilter) && startDate != null && endDate != null && !startDate.isEmpty() && !endDate.isEmpty()) {
+            try {
+                start = LocalDate.parse(startDate).atStartOfDay();
+                end = LocalDate.parse(endDate).atTime(LocalTime.MAX);
+            } catch (Exception e) {
+                // Ignore parsing errors
+            }
+        }
+
+        if (start != null && end != null) {
+            mongoQuery.addCriteria(Criteria.where(dateField).gte(start).lte(end));
+        }
+    }
+
+    private Sort resolveSort(String sort, String defaultDateField) {
+        if ("oldest".equalsIgnoreCase(sort)) {
+            return Sort.by(Sort.Direction.ASC, defaultDateField);
+        } else if ("highest".equalsIgnoreCase(sort)) {
+            return Sort.by(Sort.Direction.DESC, "total");
+        } else if ("lowest".equalsIgnoreCase(sort)) {
+            return Sort.by(Sort.Direction.ASC, "total");
+        } else if ("priority".equalsIgnoreCase(sort)) {
+            return Sort.by(Sort.Direction.DESC, "priority").and(Sort.by(Sort.Direction.DESC, defaultDateField));
+        } else {
+            return Sort.by(Sort.Direction.DESC, defaultDateField);
+        }
+    }
+
     public List<Order> getAllOrders() {
-        return orderRepository.findByDeletedFalseOrderByCreatedAtDesc();
+        return orderRepository.findActiveOrdersOrderByCreatedAtDesc();
     }
 
     public List<Order> getAllDeletedOrders() {
-        return orderRepository.findByDeletedTrueOrderByCreatedAtDesc();
+        return orderRepository.findDeletedOrdersOrderByDeletedAtDesc();
     }
 
     public List<Order> getOrdersByStatus(OrderStatus status) {
-        return orderRepository.findByStatus(status); // Note: we can filter deleted ones in the controller if needed or repository
+        return orderRepository.findByStatus(status);
     }
 
     public Optional<Order> getOrderById(String id) {
@@ -408,12 +541,12 @@ public class OrderService {
         OrderChangeHistory changeHistory = OrderChangeHistory.builder()
                 .orderId(order.getId())
                 .orderCode(order.getOrderCode())
-                .propertyName("deleted")
-                .oldValue("false")
-                .newValue("true")
+                .propertyName("MOVED_TO_TRASH")
+                .oldValue("deleted: false")
+                .newValue("deleted: true")
                 .updatedBy(actor)
                 .updatedAt(LocalDateTime.now())
-                .reason(reason)
+                .reason(reason != null && !reason.trim().isEmpty() ? reason : "Movido a papelera")
                 .build();
         changeHistoryRepository.save(changeHistory);
 
@@ -432,9 +565,9 @@ public class OrderService {
         OrderChangeHistory changeHistory = OrderChangeHistory.builder()
                 .orderId(order.getId())
                 .orderCode(order.getOrderCode())
-                .propertyName("deleted")
-                .oldValue("true")
-                .newValue("false")
+                .propertyName("RESTORED")
+                .oldValue("deleted: true")
+                .newValue("deleted: false")
                 .updatedBy(actor)
                 .updatedAt(LocalDateTime.now())
                 .reason("Restaurado desde papelera")
@@ -442,6 +575,27 @@ public class OrderService {
         changeHistoryRepository.save(changeHistory);
 
         return orderRepository.save(order);
+    }
+
+    public synchronized void deleteOrderPermanently(String id, String actor) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado."));
+
+        // Save independent audit trail log before physical deletion
+        OrderChangeHistory changeHistory = OrderChangeHistory.builder()
+                .orderId(order.getId())
+                .orderCode(order.getOrderCode())
+                .propertyName("PERMANENTLY_DELETED")
+                .oldValue("deleted: true (total: $" + order.getTotal() + ", cliente: " + order.getCustomerName() + ")")
+                .newValue("ELIMINADO_DEFINITIVAMENTE")
+                .updatedBy(actor)
+                .updatedAt(LocalDateTime.now())
+                .reason("Eliminación física definitiva de base de datos por administrador")
+                .build();
+        changeHistoryRepository.save(changeHistory);
+
+        // Physical hard delete from MongoDB
+        orderRepository.deleteById(id);
     }
 
     public synchronized Order togglePriority(String id, String priority, String actor) {

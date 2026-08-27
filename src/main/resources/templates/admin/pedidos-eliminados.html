@@ -10,7 +10,25 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .filter-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 25px;
+            align-items: flex-end;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
     </style>
 </head>
@@ -25,10 +43,58 @@
             <header class="trash-header">
                 <div>
                     <h1 style="font-size: 2.2rem;">🗑️ Papelera de Pedidos</h1>
-                    <p style="color: var(--text-secondary);">Pedidos eliminados lógicamente que pueden ser restaurados.</p>
+                    <p style="color: var(--text-secondary);">Área de recuperación y eliminación definitiva de pedidos eliminados lógicamente.</p>
                 </div>
-                <a href="/admin/pedidos" class="btn-custom btn-mint">Volver a Pedidos</a>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span class="badge-custom badge-strawberry" style="font-size:0.85rem; padding: 6px 14px;" th:text="${totalItems + ' en papelera'}">0 en papelera</span>
+                    <a href="/admin/pedidos" class="btn-custom btn-mint">← Volver al Historial</a>
+                </div>
             </header>
+
+            <!-- Search & Filters -->
+            <form action="/admin/pedidos/eliminados" method="get" class="filter-bar">
+                <input type="hidden" name="page" value="0">
+                <input type="hidden" name="size" th:value="${pageSize}">
+
+                <div class="filter-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Buscar</label>
+                    <input type="text" name="query" class="form-control" placeholder="Código, Cliente o Teléfono" th:value="${searchQuery}">
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Fecha de Eliminación</label>
+                    <select name="dateFilter" id="dateFilterSelect" class="form-control" onchange="toggleCustomDates()">
+                        <option value="" th:selected="${dateFilter == null || dateFilter == ''}">Cualquier fecha</option>
+                        <option value="today" th:selected="${dateFilter == 'today'}">Hoy</option>
+                        <option value="yesterday" th:selected="${dateFilter == 'yesterday'}">Ayer</option>
+                        <option value="last7days" th:selected="${dateFilter == 'last7days'}">Últimos 7 días</option>
+                        <option value="custom" th:selected="${dateFilter == 'custom'}">Rango personalizado</option>
+                    </select>
+                </div>
+
+                <div class="filter-group" id="customDateRange" style="display:none;">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Rango de Fechas</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="date" name="startDate" class="form-control" th:value="${startDate}">
+                        <input type="date" name="endDate" class="form-control" th:value="${endDate}">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600;">Ordenar por</label>
+                    <select name="sort" class="form-control">
+                        <option value="newest" th:selected="${selectedSort == 'newest'}">Eliminados más recientes</option>
+                        <option value="oldest" th:selected="${selectedSort == 'oldest'}">Eliminados más antiguos</option>
+                        <option value="highest" th:selected="${selectedSort == 'highest'}">Mayor valor</option>
+                        <option value="lowest" th:selected="${selectedSort == 'lowest'}">Menor valor</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn-custom btn-strawberry" style="padding: 11px 20px; flex:1;">Filtrar 🔍</button>
+                    <a href="/admin/pedidos/eliminados" class="btn-custom btn-outline" style="padding: 11px 20px;">Limpiar 🔄</a>
+                </div>
+            </form>
 
             <!-- Deleted Orders Table -->
             <div class="card-premium">
@@ -40,30 +106,63 @@
                                 <th style="padding:15px;">Cliente</th>
                                 <th style="padding:15px;">Teléfono</th>
                                 <th style="padding:15px;">Total</th>
+                                <th style="padding:15px;">Estado Original</th>
                                 <th style="padding:15px;">Eliminado por</th>
                                 <th style="padding:15px;">Motivo Eliminación</th>
                                 <th style="padding:15px;">Fecha Eliminación</th>
-                                <th style="padding:15px;">Acciones</th>
+                                <th style="padding:15px; text-align:right;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="o : ${orders}" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
-                                <td style="padding:15px; font-weight:700;" th:text="${o.orderCode}">LD-26-00001</td>
+                                <td style="padding:15px; font-weight:700; color:var(--text-primary);" th:text="${o.orderCode}">LD-26-00001</td>
                                 <td style="padding:15px;" th:text="${o.customerName}">Juan</td>
-                                <td style="padding:15px;" th:text="${o.customerPhone}">3001234567</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.customerPhone != null ? o.customerPhone : 'N/A'}">3001234567</td>
                                 <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
-                                <td style="padding:15px; font-size:0.85rem;" th:text="${o.deletedBy}">admin</td>
-                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.deletionReason}">Motivo</td>
-                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${#temporals.format(o.deletedAt, 'dd/MM/yyyy HH:mm')}">Hora</td>
-                                <td style="padding:15px; display:flex; gap:8px;">
-                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="'restoreOrder(\'' + ${o.id} + '\')'">↩️ Restaurar</button>
+                                <td style="padding:15px;">
+                                    <span th:text="${o.status != null ? o.status.getDisplayName() : 'Recibido'}" class="badge-custom badge-new" style="font-size:0.75rem; padding: 3px 8px;">Recibido</span>
+                                </td>
+                                <td style="padding:15px; font-size:0.85rem; font-weight:600;" th:text="${o.deletedBy != null ? o.deletedBy : 'admin'}">admin</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" th:text="${o.deletionReason != null ? o.deletionReason : 'Sin motivo especificado'}">Motivo</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.deletedAt != null ? #temporals.format(o.deletedAt, 'dd/MM/yyyy HH:mm') : '-'}">Hora</td>
+                                <td style="padding:15px; text-align:right; display:flex; gap:8px; justify-content:flex-end;">
+                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="'restoreOrder(\'' + ${o.id} + '\', \'' + ${o.orderCode} + '\')'">↩️ Restaurar</button>
+                                    <button class="btn-custom btn-strawberry" style="padding: 6px 12px; font-size: 0.8rem; background:#e53e3e;" th:onclick="'confirmPermanentDelete(\'' + ${o.id} + '\', \'' + ${o.orderCode} + '\')'">❌ Eliminar</button>
                                 </td>
                             </tr>
-                            <tr th:if="${orders.size() == 0}">
-                                <td colspan="8" style="text-align:center; padding: 30px; color:var(--text-secondary);">La papelera está vacía.</td>
+                            <tr th:if="${orders == null || orders.isEmpty()}">
+                                <td colspan="9" style="text-align:center; padding: 40px; color:var(--text-secondary);">
+                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🗑️</div>
+                                    <h3 style="font-size: 1.1rem; color: #4a5568; margin-bottom: 5px;">La papelera está vacía</h3>
+                                    <p style="font-size: 0.85rem;">No hay pedidos en la papelera de reciclaje.</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination Widget -->
+                <div th:if="${totalPages > 1}" style="display:flex; justify-content:space-between; align-items:center; padding: 18px 20px; border-top: 1px solid #edf2f7; flex-wrap:wrap; gap:10px;">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                        Mostrando página <strong th:text="${currentPage + 1}">1</strong> de <strong th:text="${totalPages}">1</strong> (<span th:text="${totalItems}">0</span> eliminados)
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <a th:if="${!isFirst}" 
+                           th:href="@{/admin/pedidos/eliminados(page=0, size=${pageSize}, query=${searchQuery}, dateFilter=${dateFilter}, startDate=${startDate}, endDate=${endDate}, sort=${selectedSort})}" 
+                           class="btn-custom btn-outline" style="padding: 6px 12px; font-size:0.8rem;">« Primera</a>
+                        <a th:if="${hasPrevious}" 
+                           th:href="@{/admin/pedidos/eliminados(page=${currentPage - 1}, size=${pageSize}, query=${searchQuery}, dateFilter=${dateFilter}, startDate=${startDate}, endDate=${endDate}, sort=${selectedSort})}" 
+                           class="btn-custom btn-outline" style="padding: 6px 12px; font-size:0.8rem;">‹ Anterior</a>
+                        
+                        <span class="badge-custom badge-strawberry" style="padding: 6px 12px; font-size:0.85rem;" th:text="${'Página ' + (currentPage + 1)}">Página 1</span>
+                        
+                        <a th:if="${hasNext}" 
+                           th:href="@{/admin/pedidos/eliminados(page=${currentPage + 1}, size=${pageSize}, query=${searchQuery}, dateFilter=${dateFilter}, startDate=${startDate}, endDate=${endDate}, sort=${selectedSort})}" 
+                           class="btn-custom btn-outline" style="padding: 6px 12px; font-size:0.8rem;">Siguiente ›</a>
+                        <a th:if="${!isLast}" 
+                           th:href="@{/admin/pedidos/eliminados(page=${totalPages - 1}, size=${pageSize}, query=${searchQuery}, dateFilter=${dateFilter}, startDate=${startDate}, endDate=${endDate}, sort=${selectedSort})}" 
+                           class="btn-custom btn-outline" style="padding: 6px 12px; font-size:0.8rem;">Última »</a>
+                    </div>
                 </div>
             </div>
         </main>
@@ -72,23 +171,49 @@
     <script th:inline="javascript">
         document.getElementById('side-deleted-orders').classList.add('active');
 
-        function restoreOrder(orderId) {
-            if (confirm('¿Está seguro de que desea restaurar este pedido al historial activo?')) {
+        function toggleCustomDates() {
+            const select = document.getElementById('dateFilterSelect');
+            const customDates = document.getElementById('customDateRange');
+            if (select.value === 'custom') {
+                customDates.style.display = 'block';
+            } else {
+                customDates.style.display = 'none';
+            }
+        }
+        toggleCustomDates();
+
+        function restoreOrder(orderId, orderCode) {
+            if (confirm('¿Desea restaurar el pedido #' + orderCode + ' al historial activo de pedidos?')) {
                 fetch('/admin/api/pedidos/' + orderId + '/restaurar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
+                    method: 'POST'
                 })
                 .then(res => {
                     if (res.ok) {
-                        alert('Pedido restaurado con éxito.');
+                        alert('Pedido #' + orderCode + ' restaurado con éxito al historial activo.');
                         window.location.reload();
                     } else {
-                        res.json().then(data => alert('Error: ' + data.error));
+                        res.json().then(data => alert('Error: ' + (data.error || 'No se pudo restaurar.')));
                     }
                 })
-                .catch(err => alert('Error al procesar la solicitud.'));
+                .catch(err => alert('Error al comunicarse con el servidor.'));
+            }
+        }
+
+        function confirmPermanentDelete(orderId, orderCode) {
+            const confirmation = confirm('⚠️ ADVERTENCIA CRÍTICA:\n\n¿Está seguro de que desea ELIMINAR DEFINITIVAMENTE el pedido #' + orderCode + ' de la base de datos?\n\nEsta acción NO se puede deshacer. Los registros de auditoría se conservarán de forma permanente.');
+            if (confirmation) {
+                fetch('/admin/api/pedidos/' + orderId + '/eliminar-definitivo', {
+                    method: 'POST'
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert('Pedido #' + orderCode + ' eliminado físicamente con éxito de la base de datos.');
+                        window.location.reload();
+                    } else {
+                        res.json().then(data => alert('Error: ' + (data.error || 'No se pudo eliminar definitivamente.')));
+                    }
+                })
+                .catch(err => alert('Error de conexión con el servidor.'));
             }
         }
     </script>

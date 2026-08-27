@@ -48,6 +48,7 @@ class LemondropApplicationTests {
         counterService = Mockito.mock(CounterService.class);
         inventoryService = Mockito.mock(InventoryService.class);
         notificationService = Mockito.mock(NotificationService.class);
+        org.springframework.data.mongodb.core.MongoTemplate mongoTemplate = Mockito.mock(org.springframework.data.mongodb.core.MongoTemplate.class);
 
         when(counterService.getNextOrderCode(anyInt())).thenReturn("LD-2026-00001");
 
@@ -60,7 +61,8 @@ class LemondropApplicationTests {
                 changeHistoryRepository,
                 counterService,
                 inventoryService,
-                notificationService
+                notificationService,
+                mongoTemplate
         );
 
         Map<ProductSize, BigDecimal> prices = new HashMap<>();

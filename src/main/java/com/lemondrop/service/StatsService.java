@@ -157,7 +157,7 @@ public class StatsService {
                 .filter(u -> "ASESOR".equalsIgnoreCase(u.getRole()))
                 .collect(Collectors.toList());
 
-        List<Order> activeOrders = orderRepository.findByDeletedFalseOrderByCreatedAtDesc().stream()
+        List<Order> activeOrders = orderRepository.findActiveOrdersOrderByCreatedAtDesc().stream()
                 .filter(o -> o.getStatus() != OrderStatus.DELIVERED && o.getStatus() != OrderStatus.CANCELLED)
                 .collect(Collectors.toList());
 
@@ -203,7 +203,7 @@ public class StatsService {
     }
 
     public Map<String, Object> getLiveOperationsOverview() {
-        List<Order> activeOrders = orderRepository.findByDeletedFalseOrderByCreatedAtDesc().stream()
+        List<Order> activeOrders = orderRepository.findActiveOrdersOrderByCreatedAtDesc().stream()
                 .filter(o -> o.getStatus() != OrderStatus.DELIVERED && o.getStatus() != OrderStatus.CANCELLED)
                 .collect(Collectors.toList());
 
