@@ -127,8 +127,7 @@ public class AdminOrderApiController {
         }
     }
 
-    @PostMapping("/{id}/eliminar-definitivo")
-    @DeleteMapping("/{id}/definitivo")
+    @RequestMapping(value = {"/{id}/eliminar-definitivo", "/{id}/definitivo"}, method = {RequestMethod.POST, RequestMethod.DELETE})
     public ResponseEntity<?> deleteOrderPermanentlyAdmin(@PathVariable String id) {
         String actor = SecurityUtils.getCurrentUsername();
         try {
