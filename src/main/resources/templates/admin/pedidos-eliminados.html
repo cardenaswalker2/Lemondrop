@@ -126,8 +126,8 @@
                                 <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" th:text="${o.deletionReason != null ? o.deletionReason : 'Sin motivo especificado'}">Motivo</td>
                                 <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.deletedAt != null ? #temporals.format(o.deletedAt, 'dd/MM/yyyy HH:mm') : '-'}">Hora</td>
                                 <td style="padding:15px; text-align:right; display:flex; gap:8px; justify-content:flex-end;">
-                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="'restoreOrder(\'' + ${o.id} + '\', \'' + ${o.orderCode} + '\')'">↩️ Restaurar</button>
-                                    <button class="btn-custom btn-strawberry" style="padding: 6px 12px; font-size: 0.8rem; background:#e53e3e;" th:onclick="'confirmPermanentDelete(\'' + ${o.id} + '\', \'' + ${o.orderCode} + '\')'">❌ Eliminar</button>
+                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="|restoreOrder('${o.id}', '${o.orderCode != null ? o.orderCode : o.id}')|">↩️ Restaurar</button>
+                                    <button class="btn-custom btn-strawberry" style="padding: 6px 12px; font-size: 0.8rem; background:#e53e3e;" th:onclick="|confirmPermanentDelete('${o.id}', '${o.orderCode != null ? o.orderCode : o.id}')|">❌ Eliminar</button>
                                 </td>
                             </tr>
                             <tr th:if="${orders == null || orders.isEmpty()}">

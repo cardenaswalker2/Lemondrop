@@ -239,8 +239,8 @@
                                 <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total != null ? o.total : 0, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
                                 <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.createdAt != null ? #temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm') : '-'}">Hora</td>
                                 <td style="padding:15px; display:flex; gap:6px;">
-                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="'openOrderDetails(\'' + ${o.id} + '\')'">Ver 👁️</button>
-                                    <button class="btn-custom btn-outline" style="padding: 6px 10px; font-size: 0.8rem; color:#e53e3e; border-color:#fed7d7;" th:onclick="'promptDeleteOrder(\'' + ${o.id} + '\', \'' + ${o.orderCode} + '\')'">🗑️</button>
+                                    <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="|openOrderDetails('${o.id}')|">Ver 👁️</button>
+                                    <button class="btn-custom btn-outline" style="padding: 6px 10px; font-size: 0.8rem; color:#e53e3e; border-color:#fed7d7;" th:onclick="|promptDeleteOrder('${o.id}', '${o.orderCode != null ? o.orderCode : o.id}')|">🗑️</button>
                                 </td>
                             </tr>
                             <tr th:if="${orders == null || orders.isEmpty()}">
