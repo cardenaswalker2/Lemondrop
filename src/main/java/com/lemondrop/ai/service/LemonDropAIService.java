@@ -21,8 +21,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +41,30 @@ public class LemonDropAIService {
     private final SecurityAuditService auditService;
     private final ObjectMapper objectMapper;
     private final ProductService productService;
+
+    public enum UserIntent {
+        GREETING(false),
+        CASUAL_CHAT(false),
+        BUSINESS_INFO(false),
+        AI_IDENTITY(false),
+        CUSTOMER_DATA(false),
+        CONTEXTUAL_SELECTION(false),
+        SEARCH_PRODUCTS(true),
+        RECOMMENDATION(true),
+        ORDER_INTENT(true),
+        ORDER_CONFIRMATION(true),
+        GENERAL(true);
+
+        private final boolean requiresTools;
+
+        UserIntent(boolean requiresTools) {
+            this.requiresTools = requiresTools;
+        }
+
+        public boolean requiresTools() {
+            return requiresTools;
+        }
+    }
 
     @Autowired
     public LemonDropAIService(GroqClient groqClient,
@@ -83,7 +110,7 @@ public class LemonDropAIService {
                 request.getCustomerPhone()
         );
 
-        // Auto-extract customer info from user message if provided
+        // Auto-extract customer info and order preferences from user message
         extractAndPersistCustomerInfo(cleanMessage, conversation);
 
         // Check if direct confirmation action requested by frontend button
@@ -99,10 +126,14 @@ public class LemonDropAIService {
 
         // Check if message is empty
         if (cleanMessage.isEmpty()) {
-            return buildStandardResponse(conversation, "¿En qué puedo ayudarte hoy con tu granizado? 🍋", startTime, false, false, false);
+            return buildStandardResponse(conversation, "¿En qué puedo ayudarte hoy con tu granizado? 🍋", startTime, false, false, false, UserIntent.GREETING.name());
         }
 
-        // 3. Append User Message
+        // 3. Detect User Intent
+        UserIntent intent = detectIntent(cleanMessage, conversation);
+        log.info("Intención detectada: {} para el mensaje: '{}'", intent, cleanMessage);
+
+        // 4. Append User Message
         AIMessage userMsg = AIMessage.builder()
                 .role("user")
                 .content(cleanMessage)
@@ -110,20 +141,21 @@ public class LemonDropAIService {
                 .build();
         conversation.addMessage(userMsg);
 
-        // 4. If Groq is not configured, notify clearly
+        // 5. If Groq is not configured, notify clearly
         if (!groqClient.isAvailable()) {
             log.warn("Groq API no está configurada o no tiene API key válida.");
             return buildStandardResponse(
                     conversation,
-                    "Lemon AI no está disponible en este momento. Por favor verifica la configuración de GROQ_API_KEY en el servidor o realiza tu pedido desde el catálogo digital. 🍋",
+                    "Lemon AI no está disponible en este momento. Por favor realiza tu pedido desde el menú digital. 🍋",
                     startTime,
                     false,
                     false,
-                    false
+                    false,
+                    intent.name()
             );
         }
 
-        // 5. Agent Loop with Function Calling
+        // 6. Agent Loop with Function Calling
         boolean cartUpdated = false;
         boolean requiresConfirmation = false;
         boolean orderConfirmed = false;
@@ -132,24 +164,25 @@ public class LemonDropAIService {
         String whatsAppUrl = null;
 
         int iterations = 0;
-        int maxIterations = lemonAiProperties.getMaxToolIterations();
+        int maxIterations = intent.requiresTools() ? lemonAiProperties.getMaxToolIterations() : 1;
         List<AIProductCardDto> collectedProducts = new ArrayList<>();
 
         while (iterations < maxIterations) {
             iterations++;
 
-            GroqChatRequest groqRequest = buildGroqRequest(conversation);
+            GroqChatRequest groqRequest = buildGroqRequest(conversation, intent);
             Optional<GroqChatResponse> optResponse = groqClient.sendChatCompletion(groqRequest);
 
             if (optResponse.isEmpty() || optResponse.get().getChoices() == null || optResponse.get().getChoices().isEmpty()) {
                 log.error("Groq devolvió una respuesta vacía o con error en la iteración {}.", iterations);
                 return buildStandardResponse(
                         conversation,
-                        "Lemon AI está experimentando alta demanda o intermitencia en este momento. Por favor intenta de nuevo en unos segundos. 🍋",
+                        "Lemon AI está experimentando alta demanda. Por favor intenta de nuevo en unos segundos. 🍋",
                         startTime,
                         false,
                         false,
-                        false
+                        false,
+                        intent.name()
                 );
             }
 
@@ -162,8 +195,8 @@ public class LemonDropAIService {
 
             List<GroqToolCall> toolCalls = choiceMsg.getToolCalls();
 
-            // If Groq wants to call one or more tools
-            if (toolCalls != null && !toolCalls.isEmpty()) {
+            // If Groq wants to call one or more tools (only when tools are enabled for this intent)
+            if (intent.requiresTools() && toolCalls != null && !toolCalls.isEmpty()) {
                 log.info("Agent Loop iteración {}: Groq solicitó {} tool call(s)", iterations, toolCalls.size());
 
                 // Record Assistant's tool request in conversation
@@ -211,12 +244,12 @@ public class LemonDropAIService {
                         }
                     }
 
-                    // Extract products for visual catalog cards in Flutter
+                    // Extract products ONLY from tools that explicitly search or recommend products
                     if (result.isSuccess() && result.getData() != null) {
                         extractProductsFromResult(result.getData(), collectedProducts);
                     }
 
-                    // Append Tool Result to conversation
+                    // Append Tool Result to conversation (compact JSON)
                     String resultJson;
                     try {
                         resultJson = objectMapper.writeValueAsString(result.getData() != null ? result.getData() : result.getMessage());
@@ -260,61 +293,181 @@ public class LemonDropAIService {
             conversation.addMessage(maxReachedMsg);
         }
 
-        // Save conversation state
-        conversationService.save(conversation);
+        // Store last shown product names in metadata for subsequent contextual references
+        if (!collectedProducts.isEmpty()) {
+            List<String> productNames = collectedProducts.stream()
+                    .map(AIProductCardDto::getName)
+                    .collect(Collectors.toList());
+            if (conversation.getMetadata() == null) {
+                conversation.setMetadata(new HashMap<>());
+            }
+            conversation.getMetadata().put("lastShownProducts", productNames);
+        }
 
-        // Ensure visual product cards are attached if the conversation is an inquiry about products
-        if (collectedProducts.isEmpty() && (isProductInquiry(cleanMessage) || isProductInquiry(finalAssistantMessage)) && productService != null) {
-            try {
-                List<Product> activeProds = productService.getAllActiveAndAvailable();
-                for (Product p : activeProds) {
-                    BigDecimal priceFrom = p.getSmallPrice();
-                    if (priceFrom == null || priceFrom.compareTo(BigDecimal.ZERO) <= 0) {
-                        priceFrom = p.getMediumPrice();
+        // Track last selected/recommended product if assistant mentioned one from options
+        if (finalAssistantMessage != null && conversation.getMetadata() != null && conversation.getMetadata().containsKey("lastShownProducts")) {
+            Object obj = conversation.getMetadata().get("lastShownProducts");
+            if (obj instanceof List<?> list) {
+                String msgLower = finalAssistantMessage.toLowerCase();
+                for (Object pName : list) {
+                    if (pName instanceof String name) {
+                        String cleanFlavor = name.toLowerCase().replace("granizado de ", "").trim();
+                        if (msgLower.contains(cleanFlavor)) {
+                            conversation.getMetadata().put("lastRecommendedProduct", name);
+                            break;
+                        }
                     }
-                    Map<String, BigDecimal> prices = new HashMap<>();
-                    if (p.getSizePrices() != null) {
-                        p.getSizePrices().forEach((sz, pr) -> prices.put(sz.name(), pr));
-                    }
-                    collectedProducts.add(AIProductCardDto.builder()
-                            .id(p.getId())
-                            .name(p.getName())
-                            .description(p.getDescription() != null ? p.getDescription() : "")
-                            .image(p.getImage() != null ? p.getImage() : "")
-                            .category(p.getCategory() != null ? p.getCategory() : "Granizados")
-                            .badge(p.getBadge() != null ? p.getBadge() : "")
-                            .priceFrom(priceFrom != null ? priceFrom : BigDecimal.ZERO)
-                            .prices(prices)
-                            .available(p.isAvailable())
-                            .build());
                 }
-            } catch (Exception ex) {
-                log.warn("No se pudieron cargar productos para respuesta visual: {}", ex.getMessage());
             }
         }
 
-        // Build structured response
-        AIChatResponse response = buildStandardResponse(conversation, finalAssistantMessage, startTime, cartUpdated, requiresConfirmation, orderConfirmed);
+        // Save conversation state
+        conversationService.save(conversation);
+
+        // Build structured response (Strict product attachment: only from explicit tool execution)
+        AIChatResponse response = buildStandardResponse(conversation, finalAssistantMessage, startTime, cartUpdated, requiresConfirmation, orderConfirmed, intent.name());
         if (lastOrderCode != null) response.setOrderCode(lastOrderCode);
         if (whatsAppUrl != null) response.setWhatsAppUrl(whatsAppUrl);
-        if (!collectedProducts.isEmpty()) response.setProducts(collectedProducts);
+        if (!collectedProducts.isEmpty()) {
+            response.setProducts(collectedProducts);
+        } else {
+            response.setProducts(new ArrayList<>());
+        }
 
         return response;
     }
 
-    private GroqChatRequest buildGroqRequest(AIConversation conversation) {
+    public UserIntent detectIntent(String rawMessage, AIConversation conv) {
+        if (rawMessage == null || rawMessage.trim().isEmpty()) return UserIntent.GENERAL;
+        String norm = normalize(rawMessage);
+
+        // 1. AI Identity
+        if (norm.contains("que modelo usas") || norm.contains("que modelo de ia") || norm.contains("que ia eres") ||
+            norm.contains("eres una ia") || norm.contains("como funcionas") || norm.contains("quien te creo") ||
+            norm.contains("que arquitectura") || norm.contains("eres un bot") || norm.contains("eres un robot")) {
+            return UserIntent.AI_IDENTITY;
+        }
+
+        // 2. Business Info
+        if (norm.contains("horario") || norm.contains("a que hora") || norm.contains("donde estan") ||
+            norm.contains("ubicacion") || norm.contains("direccion") || norm.contains("donde quedan") ||
+            norm.contains("whatsapp") || norm.contains("medios de pago") || norm.contains("metodos de pago") ||
+            norm.contains("como pagar") || norm.contains("donde los encuentro")) {
+            return UserIntent.BUSINESS_INFO;
+        }
+
+        // 3. Casual greeting
+        if (norm.matches("^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|holis|saludos|que mas)[!.\\s]*$")) {
+            return UserIntent.GREETING;
+        }
+
+        // 4. Casual chat
+        if (norm.matches("^(como estas|que tal|como te va|todo bien|que haces|como va todo)[?!.\\s]*$")) {
+            return UserIntent.CASUAL_CHAT;
+        }
+
+        // 5. Contextual Selection (e.g. "entre esos 3 escoge uno", "cual es el segundo", "el primero", "el de mango", "escoge al azar")
+        if (hasShownProductsInContext(conv) && isContextualReference(norm)) {
+            return UserIntent.CONTEXTUAL_SELECTION;
+        }
+
+        // 6. Explicit Customer Data (Name or Phone provided in response to prompt)
+        if (isCustomerDataInput(rawMessage, conv)) {
+            return UserIntent.CUSTOMER_DATA;
+        }
+
+        // 7. Order Confirmation
+        if (isConfirmationIntent(norm, conv)) {
+            return UserIntent.ORDER_CONFIRMATION;
+        }
+
+        // 8. Recommendation
+        if (norm.contains("recomiend") || norm.contains("mas vendido") || norm.contains("mas vendidos") ||
+            norm.contains("lo mas rico") || norm.contains("algo rico") || norm.contains("sugier") ||
+            norm.contains("cual es el mejor") || norm.contains("que me aconsejas")) {
+            return UserIntent.RECOMMENDATION;
+        }
+
+        // 9. Search Products / Catalog Inquiry
+        if (norm.contains("que sabores") || norm.contains("que granizados") || norm.contains("menu") ||
+            norm.contains("carta") || norm.contains("catalogo") || norm.contains("que tienen") ||
+            norm.contains("tienen de") || norm.contains("hay de") || norm.contains("muestrame") ||
+            norm.contains("mostrar") || norm.contains("que opciones") || norm.contains("que productos")) {
+            return UserIntent.SEARCH_PRODUCTS;
+        }
+
+        // 10. Order intent
+        if (norm.contains("quiero") || norm.contains("dame") || norm.contains("pedir") ||
+            norm.contains("agregar") || norm.contains("ponle") || norm.contains("grande") ||
+            norm.contains("mediano") || norm.contains("pequeno") || norm.contains("topping") ||
+            norm.contains("gomitas") || norm.contains("arequipe") || norm.contains("lechera")) {
+            return UserIntent.ORDER_INTENT;
+        }
+
+        return UserIntent.GENERAL;
+    }
+
+    private boolean isContextualReference(String norm) {
+        return norm.contains("entre esos") || norm.contains("escoge uno") || norm.contains("elige uno") ||
+               norm.contains("al azar") || norm.contains("por mi") || norm.contains("el primero") ||
+               norm.contains("el segundo") || norm.contains("el tercero") || norm.contains("segundo") ||
+               norm.contains("tercero") || norm.contains("primero") || norm.contains("cual es el segundo") ||
+               norm.contains("cual es el primero") || norm.contains("el que me recomendaste") ||
+               norm.equals("ese") || norm.equals("esa") || norm.equals("aquel") || norm.equals("aquella");
+    }
+
+    private boolean hasShownProductsInContext(AIConversation conv) {
+        if (conv == null) return false;
+        if (conv.getMetadata() != null && conv.getMetadata().containsKey("lastShownProducts")) {
+            return true;
+        }
+        // Check previous assistant messages for listed products
+        if (conv.getMessages() != null) {
+            for (AIMessage msg : conv.getMessages()) {
+                if ("assistant".equals(msg.getRole()) && msg.getContent() != null) {
+                    String c = msg.getContent().toLowerCase();
+                    if (c.contains("1.") || c.contains("2.") || c.contains("•") || c.contains("granizado")) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isConfirmationIntent(String norm, AIConversation conv) {
+        boolean hasItems = conv.getCart() != null && !conv.getCart().getItems().isEmpty();
+        boolean isWaiting = conv.getState() == ConversationState.WAITING_CONFIRMATION;
+        if (isWaiting || hasItems) {
+            return norm.matches("^(si|sí|dale|confirmo|confirmar|confirmado|de una|pidelo|pídelo|listo|ok|hagale|hágale)[!.\\s]*$") ||
+                   norm.contains("confirmo el pedido") || norm.contains("confirmar pedido");
+        }
+        return false;
+    }
+
+    private boolean isCustomerDataInput(String raw, AIConversation conv) {
+        if (conv.getState() == ConversationState.COLLECTING_CUSTOMER ||
+            (conv.getPendingCustomerFields() != null && !conv.getPendingCustomerFields().isEmpty())) {
+            String norm = normalize(raw);
+            if (norm.matches("^3\\d{9}$") || norm.matches("^\\d{7,15}$")) return true;
+            if (raw.matches("^[\\p{L} ]{2,30}$") && isValidName(raw)) return true;
+        }
+        return false;
+    }
+
+    private GroqChatRequest buildGroqRequest(AIConversation conversation, UserIntent intent) {
         List<GroqMessage> messages = new ArrayList<>();
 
         // 1. System Prompt
         messages.add(GroqMessage.builder()
                 .role("system")
-                .content(buildSystemPrompt(conversation))
+                .content(buildSystemPrompt(conversation, intent))
                 .build());
 
-        // 2. Conversation History (Mapped to Groq format, windowed to last 8 messages to conserve TPM)
+        // 2. Conversation History (Windowed to last 6 messages to preserve context and optimize tokens)
         if (conversation.getMessages() != null && !conversation.getMessages().isEmpty()) {
             List<AIMessage> history = conversation.getMessages();
-            int maxHistory = 8;
+            int maxHistory = 6;
             if (history.size() > maxHistory) {
                 history = history.subList(history.size() - maxHistory, history.size());
             }
@@ -344,13 +497,17 @@ public class LemonDropAIService {
             }
         }
 
+        // Tools assignment based on intent
+        List<GroqTool> tools = intent.requiresTools() ? toolRegistry.getGroqTools() : null;
+        String toolChoice = intent.requiresTools() ? "auto" : "none";
+
         return GroqChatRequest.builder()
                 .model(groqProperties.getApi().getModel())
                 .messages(messages)
-                .tools(toolRegistry.getGroqTools())
-                .toolChoice("auto")
-                .temperature(0.5)
-                .maxTokens(800)
+                .tools(tools)
+                .toolChoice(toolChoice)
+                .temperature(0.4)
+                .maxTokens(350)
                 .build();
     }
 
@@ -359,8 +516,8 @@ public class LemonDropAIService {
         String raw = text.trim();
 
         // 1. Extract phone number (7 to 15 digits, Colombian format 3xx xxx xxxx, +57, etc.)
-        java.util.regex.Pattern phonePattern = java.util.regex.Pattern.compile("(?:\\+?57\\s*)?(3\\d{2}[\\s.-]?\\d{3}[\\s.-]?\\d{4}|\\b\\d{7,15}\\b)");
-        java.util.regex.Matcher phoneMatcher = phonePattern.matcher(raw);
+        Pattern phonePattern = Pattern.compile("(?:\\+?57\\s*)?(3\\d{2}[\\s.-]?\\d{3}[\\s.-]?\\d{4}|\\b\\d{7,15}\\b)");
+        Matcher phoneMatcher = phonePattern.matcher(raw);
         if (phoneMatcher.find()) {
             String rawFound = phoneMatcher.group(1);
             String digits = rawFound.replaceAll("[^0-9]", "");
@@ -370,9 +527,8 @@ public class LemonDropAIService {
         }
 
         // 2. Extract name
-        // Pattern A: Text preceding phone number (e.g. "Juan y el número es 3005722844", "Carlos, 3101234567", "Soy Juan 300...")
         if (conv.getCustomerName() == null || conv.getCustomerName().isEmpty()) {
-            java.util.regex.Matcher pMatcher = phonePattern.matcher(raw);
+            Matcher pMatcher = phonePattern.matcher(raw);
             if (pMatcher.find()) {
                 int phoneStart = pMatcher.start();
                 if (phoneStart > 0) {
@@ -402,10 +558,9 @@ public class LemonDropAIService {
             }
         }
 
-        // Pattern B: "Mi nombre es Juan", "Me llamo Juan", "Soy Juan"
         if (conv.getCustomerName() == null || conv.getCustomerName().isEmpty()) {
-            java.util.regex.Pattern explicitNamePattern = java.util.regex.Pattern.compile("(?i)(?:mi nombre es|me llamo|soy)\\s+([\\p{L} ]{2,30})");
-            java.util.regex.Matcher enMatcher = explicitNamePattern.matcher(raw);
+            Pattern explicitNamePattern = Pattern.compile("(?i)(?:mi nombre es|me llamo|soy)\\s+([\\p{L} ]{2,30})");
+            Matcher enMatcher = explicitNamePattern.matcher(raw);
             if (enMatcher.find()) {
                 String foundName = enMatcher.group(1).trim();
                 if (isValidName(foundName)) {
@@ -414,7 +569,6 @@ public class LemonDropAIService {
             }
         }
 
-        // Pattern C: Single word or two words if state is COLLECTING_CUSTOMER and expecting NAME
         if ((conv.getCustomerName() == null || conv.getCustomerName().isEmpty()) &&
                 (conv.getState() == ConversationState.COLLECTING_CUSTOMER || conv.getPendingCustomerFields().contains("NAME"))) {
             if (raw.matches("^[\\p{L} ]{2,30}$") && isValidName(raw)) {
@@ -423,8 +577,8 @@ public class LemonDropAIService {
         }
 
         // 3. Extract Order Notes / Observations
-        java.util.regex.Pattern notePattern = java.util.regex.Pattern.compile("(?i)(?:(?:pon(?:le)?|deja|agrega)?\\s*(?:en|de)?\\s*(?:la\\s+)?(?:nota|observación|observacion|indicación|indicacion)(?:\\s+es)?(?:\\s*:\\s*|\\s+que\\s+|\\s+)|sin\\s+(?:mucho\\s+|tanto\\s+)?hielo|bien\\s+fr[ií]o|poca\\s+az[uú]car|sin\\s+az[uú]car)(.*)");
-        java.util.regex.Matcher noteMatcher = notePattern.matcher(raw);
+        Pattern notePattern = Pattern.compile("(?i)(?:(?:pon(?:le)?|deja|agrega)?\\s*(?:en|de)?\\s*(?:la\\s+)?(?:nota|observación|observacion|indicación|indicacion)(?:\\s+es)?(?:\\s*:\\s*|\\s+que\\s+|\\s+)|sin\\s+(?:mucho\\s+|tanto\\s+)?hielo|bien\\s+fr[ií]o|poca\\s+az[uú]car|sin\\s+az[uú]car)(.*)");
+        Matcher noteMatcher = notePattern.matcher(raw);
         if (noteMatcher.find()) {
             String extractedNote = noteMatcher.group(0).trim();
             String cleanNote = extractedNote.replaceAll("(?i)^(?:(?:pon(?:le)?|deja|agrega)?\\s*(?:en|de)?\\s*(?:la\\s+)?(?:nota|observación|observacion)(?:\\s+es)?(?:\\s*:\\s*|\\s+que\\s+|\\s+))", "").trim();
@@ -469,81 +623,78 @@ public class LemonDropAIService {
         return name.trim().length() >= 2 && name.trim().length() <= 30;
     }
 
-    private String buildSystemPrompt(AIConversation conv) {
+    private String buildSystemPrompt(AIConversation conv, UserIntent intent) {
         java.time.ZonedDateTime now = java.time.ZonedDateTime.now(java.time.ZoneId.of("America/Bogota"));
         java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy, hh:mm a", new java.util.Locale("es", "CO"));
         String currentDateTimeFormatted = now.format(dtf);
 
         StringBuilder clientContext = new StringBuilder();
         if (conv.getCustomerName() != null && !conv.getCustomerName().isEmpty()) {
-            clientContext.append("\n- Nombre del cliente: ").append(conv.getCustomerName());
+            clientContext.append("\n- Nombre: ").append(conv.getCustomerName());
         }
         if (conv.getCustomerPhone() != null && !conv.getCustomerPhone().isEmpty()) {
-            clientContext.append("\n- Teléfono del cliente: ").append(conv.getCustomerPhone());
-        }
-        if (conv.getObservations() != null && !conv.getObservations().isEmpty()) {
-            clientContext.append("\n- Observaciones/Notas del pedido: \"").append(conv.getObservations()).append("\"");
+            clientContext.append("\n- Teléfono: ").append(conv.getCustomerPhone());
         }
 
         StringBuilder cartContext = new StringBuilder();
         if (conv.getCart() != null && conv.getCart().getItems() != null && !conv.getCart().getItems().isEmpty()) {
-            cartContext.append("\nESTADO ACTUAL DEL CARRITO:");
+            cartContext.append("\nCARRITO ACTUAL:");
             for (AICartItem item : conv.getCart().getItems()) {
                 cartContext.append("\n• ")
                         .append(item.getQuantity()).append("x ")
                         .append(item.getProductName()).append(" (").append(item.getSize()).append(")");
                 if (item.getAddons() != null && !item.getAddons().isEmpty()) {
-                    cartContext.append(" con Toppings: ").append(item.getAddons().stream().map(AICartItemAddon::getAddonName).collect(Collectors.joining(", ")));
-                }
-                if (item.getObservations() != null && !item.getObservations().isEmpty()) {
-                    cartContext.append(" [Nota ítem: ").append(item.getObservations()).append("]");
+                    cartContext.append(" + Toppings: ").append(item.getAddons().stream().map(AICartItemAddon::getAddonName).collect(Collectors.joining(", ")));
                 }
                 cartContext.append(" - $").append(item.getSubtotal());
             }
-            cartContext.append("\nTotal acumulado: $").append(conv.getCart().getTotal());
-            if (conv.getCart().getObservations() != null && !conv.getCart().getObservations().isEmpty()) {
-                cartContext.append("\nNota general del pedido: \"").append(conv.getCart().getObservations()).append("\"");
-            }
+            cartContext.append("\nTotal: $").append(conv.getCart().getTotal());
         }
 
-        String pendingStr = (conv.getPendingCustomerFields() != null && !conv.getPendingCustomerFields().isEmpty())
-                ? String.join(", ", conv.getPendingCustomerFields())
-                : "Ninguno (datos completos)";
+        StringBuilder lastProductsContext = new StringBuilder();
+        if (conv.getMetadata() != null && conv.getMetadata().containsKey("lastShownProducts")) {
+            Object obj = conv.getMetadata().get("lastShownProducts");
+            if (obj instanceof List<?> list && !list.isEmpty()) {
+                lastProductsContext.append("\nOPCIONES RECIENTES MOSTRADAS AL CLIENTE: ");
+                for (int i = 0; i < list.size(); i++) {
+                    if (i > 0) lastProductsContext.append(", ");
+                    lastProductsContext.append((i + 1)).append(". ").append(list.get(i));
+                }
+            }
+        }
+        if (conv.getMetadata() != null && conv.getMetadata().containsKey("lastRecommendedProduct")) {
+            lastProductsContext.append("\nÚLTIMA OPCIÓN ELEGIDA/RECOMENDADA: ").append(conv.getMetadata().get("lastRecommendedProduct"));
+        }
 
         return """
-                Eres "Lemon Drop AI", el asistente inteligente oficial de Lemon Drop.
-                Eres un asistente conversacional general y un agente de pedidos experto.
+                Eres Lemon Drop AI 🍋, el asistente comercial de Lemon Drop (tienda de granizados y bebidas refrescantes).
                 
-                FECHA Y HORA ACTUAL DEL NEGOCIO:
-                - Hoy es %s (Zona Horaria: Colombia / America/Bogota).
+                INFORMACIÓN DEL NEGOCIO:
+                - Fecha/Hora: %s (Colombia)
+                - Horario: Lunes a Domingo de 10:00 AM a 9:00 PM.
+                - Ubicación: Calle 10 # 40-20, Medellín, Colombia.
                 
-                DATOS ACTUALES DEL CLIENTE:%s
+                ESTADO ACTUAL:%s%s%s
                 
-                ESTADO CONVERSACIONAL DE NEGOCIO:
-                - Estado: %s
-                - Campos pendientes de cliente: [%s]
-                %s
-                
-                DIRECTIVAS PRINCIPALES:
-                1. CONVERSACIÓN LIBRE: Puedes responder preguntas generales, conversar, explicar, recomendar y ayudar con pedidos.
-                2. NO REDIRIJAS AUTOMÁTICAMENTE toda conversación hacia un pedido. Solo habla del pedido cuando el usuario esté hablando del pedido o cuando sea útil y pertinente para la conversación.
-                3. Si el usuario pregunta "¿eres una IA?", responde directamente y con naturalidad explicando quién eres y qué puedes hacer.
-                4. Si el usuario pregunta "¿cómo estás?", responde directamente con calidez y estilo agradable ("¡De una! 🍋").
-                5. Si el usuario pregunta "¿cuáles productos tienen?" o "¿cuáles hay?", consulta el catálogo con `buscar_productos` o `obtener_catalogo`.
-                6. Si el usuario pregunta la fecha o la hora (ej. "¿qué día es hoy?"), responde usando la fecha/hora actual del sistema o la herramienta `obtener_fecha_hora_actual`.
-                7. Si el usuario quiere pedir algo, utiliza las tools correspondientes (`agregar_producto`, `modificar_producto_carrito`, `actualizar_nota_pedido`, etc.).
-                8. MANTÉN EL CONTEXTO: Conserva siempre los datos del cliente, notas y los productos agregados al carrito, pero NO fuerces al usuario a hablar del pedido si está haciendo preguntas generales.
-                9. AUTORIDAD DEL BACKEND: NUNCA inventes productos, sabores, tamaños, precios ni códigos de pedido. Toda operación comercial real debe ejecutarse mediante las tools.
-                10. CONFIRMACIÓN: Cuando el cliente tenga su pedido armado y dé su confirmación ("Sí", "Confirmo", "Dale", "Pídelo"), ejecuta `confirmar_pedido`. El estado inicial es "Pedido recibido" (RECEIVED) en preparación en cocina.
-                11. REGLA VISUAL DE PRODUCTOS: Cuando consultes productos del catálogo, da una introducción breve y entusiasta. Las tarjetas interactivas se muestran automáticamente en la interfaz.
-                """.formatted(currentDateTimeFormatted, clientContext.toString(),
-                conv.getState() != null ? conv.getState().name() : "IDLE",
-                pendingStr,
-                cartContext.toString());
+                DIRECTIVAS OBLIGATORIAS:
+                1. ESTILO: Responde de forma natural, humana, ágil y comercial (1 a 3 frases máximo).
+                2. SIN RELLENO: NUNCA digas "¡Entendido! 🎉", "Solo necesito saber...", "Como siempre...", "Como asistente virtual...", "Permíteme ayudarte...", "Con esa información procederé...".
+                3. SOBRE LA IA: Si preguntan qué modelo o IA eres, responde brevemente: "Soy la IA de Lemon Drop 🍋✨". No des explicaciones técnicas salvo que lo pidan explícitamente.
+                4. ELECCIONES Y REFERENCIAS CONTEXTUALES:
+                   - Si el usuario dice "entre esos 3 escoge uno", "escoge uno al azar", "el segundo", "el primero", "el de mango", utiliza directamente las opciones mostradas en el contexto.
+                   - Si el usuario dice "quiero ese", "ese", "agrega ese" o "el que me recomendaste", utiliza directamente la ÚLTIMA OPCIÓN ELEGIDA/RECOMENDADA o la opción seleccionada sin volver a consultar el catálogo.
+                   - Responde directo (ej. "🎲 Me quedo con el de mango 😋" o "El segundo es el de mango"). NO vuelvas a pedir las opciones.
+                5. FLUJO DE PEDIDO PASO A PASO:
+                   - 1. Sabor -> 2. Tamaño (Mediano/Grande) -> 3. Toppings -> 4. Cantidad -> 5. Datos -> 6. Confirmación.
+                   - Pregunta solo el siguiente dato necesario. Si ya conoces el sabor o tamaño, NO lo vuelvas a preguntar.
+                6. RECOMENDACIONES: Recomienda máximo 1 a 3 productos relevantes del catálogo oficial.
+                7. HERRAMIENTAS: Para agregar al carrito usa `agregar_producto`, para confirmar usa `confirmar_pedido`. Si el usuario solo saluda o charla, responde amablemente en texto sin llamar herramientas de catálogo.
+                """.formatted(currentDateTimeFormatted, clientContext.toString(), cartContext.toString(), lastProductsContext.toString());
     }
 
     private AIChatResponse buildStandardResponse(AIConversation conv, String message, long startTime,
-                                                 boolean cartUpdated, boolean requiresConfirmation, boolean orderConfirmed) {
+                                                 boolean cartUpdated, boolean requiresConfirmation, boolean orderConfirmed,
+                                                 String intent) {
         AICartDto cartDto = formatCartDto(conv.getCart());
 
         List<String> suggestions = List.of(
@@ -558,7 +709,7 @@ public class LemonDropAIService {
                 .clientToken(conv.getClientToken())
                 .message(message)
                 .state(conv.getState() != null ? conv.getState().name() : ConversationState.IDLE.name())
-                .intent(orderConfirmed ? "ORDER_CONFIRMED" : (requiresConfirmation ? "WAITING_CONFIRMATION" : (conv.getState() != null ? conv.getState().name() : "DISCOVERING")))
+                .intent(intent != null ? intent : (orderConfirmed ? "ORDER_CONFIRMED" : (requiresConfirmation ? "WAITING_CONFIRMATION" : "DISCOVERING")))
                 .customerName(conv.getCustomerName())
                 .customerPhone(conv.getCustomerPhone())
                 .observations(conv.getObservations())
@@ -586,7 +737,7 @@ public class LemonDropAIService {
             whatsAppUrl = (String) map.get("whatsAppUrl");
         }
 
-        AIChatResponse response = buildStandardResponse(conv, msg, startTime, true, false, orderCreated);
+        AIChatResponse response = buildStandardResponse(conv, msg, startTime, true, false, orderCreated, "ORDER_ACTION");
         if (orderCode != null) response.setOrderCode(orderCode);
         if (whatsAppUrl != null) response.setWhatsAppUrl(whatsAppUrl);
         return response;
@@ -630,7 +781,7 @@ public class LemonDropAIService {
         List<Map<String, Object>> productMaps = new ArrayList<>();
         if (data instanceof List<?> list) {
             for (Object item : list) {
-                if (item instanceof Map<?, ?> map && (map.containsKey("name") && (map.containsKey("prices") || map.containsKey("priceFrom")))) {
+                if (item instanceof Map<?, ?> map && (map.containsKey("name") || map.containsKey("productName"))) {
                     productMaps.add((Map<String, Object>) map);
                 }
             }
@@ -645,7 +796,7 @@ public class LemonDropAIService {
         }
 
         for (Map<String, Object> p : productMaps) {
-            String name = (String) p.getOrDefault("name", "");
+            String name = (String) p.getOrDefault("name", p.getOrDefault("productName", ""));
             if (name == null || name.trim().isEmpty()) continue;
 
             // Avoid duplicates
@@ -656,7 +807,11 @@ public class LemonDropAIService {
             BigDecimal priceFrom = BigDecimal.ZERO;
             if (p.get("priceFrom") instanceof BigDecimal bd) {
                 priceFrom = bd;
+            } else if (p.get("startingPrice") instanceof BigDecimal bd) {
+                priceFrom = bd;
             } else if (p.get("priceFrom") instanceof Number num) {
+                priceFrom = BigDecimal.valueOf(num.doubleValue());
+            } else if (p.get("startingPrice") instanceof Number num) {
                 priceFrom = BigDecimal.valueOf(num.doubleValue());
             }
 
@@ -673,6 +828,7 @@ public class LemonDropAIService {
                     .name(name)
                     .description((String) p.getOrDefault("description", ""))
                     .image((String) p.getOrDefault("image", ""))
+                    .category((String) p.getOrDefault("category", "Granizados"))
                     .badge((String) p.getOrDefault("badge", ""))
                     .priceFrom(priceFrom)
                     .prices(prices)
@@ -681,41 +837,10 @@ public class LemonDropAIService {
         }
     }
 
-    private boolean isProductInquiry(String text) {
-        if (text == null) return false;
-        String lower = text.toLowerCase();
-        return lower.contains("producto") || lower.contains("granizado") || lower.contains("sabor") ||
-                lower.contains("sabores") || lower.contains("carta") || lower.contains("menu") ||
-                lower.contains("menú") || lower.contains("recomiend") || lower.contains("tienes") ||
-                lower.contains("opcion") || lower.contains("opción") || lower.contains("vendido") ||
-                lower.contains("catalogo") || lower.contains("catálogo") || lower.contains("vendes") ||
-                lower.contains("ofreces") || lower.contains("dulce") || lower.contains("acido") ||
-                lower.contains("ácido") || lower.contains("mostrar") || lower.contains("muestrame") ||
-                lower.contains("muéstrame") || lower.contains("puedo pedir") || lower.contains("que hay");
-    }
-
-    private void attachAllActiveProducts(List<AIProductCardDto> target) {
-        if (productService == null) return;
-        try {
-            List<Product> prods = productService.getAllActiveAndAvailable();
-            for (Product p : prods) {
-                BigDecimal priceFrom = p.getSmallPrice();
-                if (priceFrom == null || priceFrom.compareTo(BigDecimal.ZERO) <= 0) priceFrom = p.getMediumPrice();
-                Map<String, BigDecimal> prices = new HashMap<>();
-                if (p.getSizePrices() != null) p.getSizePrices().forEach((sz, pr) -> prices.put(sz.name(), pr));
-
-                target.add(AIProductCardDto.builder()
-                        .id(p.getId())
-                        .name(p.getName())
-                        .description(p.getDescription() != null ? p.getDescription() : "")
-                        .image(p.getImage() != null ? p.getImage() : "")
-                        .category(p.getCategory() != null ? p.getCategory() : "Granizados")
-                        .badge(p.getBadge() != null ? p.getBadge() : "")
-                        .priceFrom(priceFrom != null ? priceFrom : BigDecimal.ZERO)
-                        .prices(prices)
-                        .available(p.isAvailable())
-                        .build());
-            }
-        } catch (Exception ignored) {}
+    private String normalize(String input) {
+        if (input == null) return "";
+        return Normalizer.normalize(input.toLowerCase().trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
     }
 }
+

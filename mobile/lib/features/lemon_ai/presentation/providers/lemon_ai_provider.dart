@@ -155,7 +155,7 @@ class LemonAiNotifier extends StateNotifier<LemonAiState> {
     final welcome = AIMessage(
       id: 'msg-welcome',
       role: 'assistant',
-      content: '¡Hola! 🍋 Bienvenido a Lemon Drop.\n¿Qué granizado se te antoja hoy? Puedo recomendarte sabores, armar tu vaso a tu gusto o ayudarte con tu pedido. 🍧✨',
+      content: '¡Hola! 🍋 Bienvenido a Lemon Drop. ¿Qué granizado se te antoja hoy? Puedes pedirme un sabor, armar tu vaso o pedir una recomendación. 😄',
       timestamp: DateTime.now(),
     );
     state = state.copyWith(

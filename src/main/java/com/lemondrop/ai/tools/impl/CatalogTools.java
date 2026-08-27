@@ -69,21 +69,21 @@ public class CatalogTools {
 
     private AIToolResult buscarProductos(Map<String, Object> args, AIConversation conv) {
         String query = (String) args.getOrDefault("query", "");
-        String cleanQuery = query != null ? query.toLowerCase().trim() : "";
+        String cleanQuery = normalizeText(query);
 
         List<Product> allProducts = productService.getAllActiveAndAvailable();
         List<Flavor> allFlavors = flavorService.getAvailableFlavors();
         List<Addon> allAddons = addonService.getAvailableAddons();
 
         List<Map<String, Object>> matchedProducts = allProducts.stream()
-                .filter(p -> cleanQuery.isEmpty() || p.getName().toLowerCase().contains(cleanQuery) ||
-                        (p.getDescription() != null && p.getDescription().toLowerCase().contains(cleanQuery)) ||
-                        (p.getCategory() != null && p.getCategory().toLowerCase().contains(cleanQuery)))
+                .filter(p -> cleanQuery.isEmpty() || normalizeText(p.getName()).contains(cleanQuery) ||
+                        (p.getDescription() != null && normalizeText(p.getDescription()).contains(cleanQuery)) ||
+                        (p.getCategory() != null && normalizeText(p.getCategory()).contains(cleanQuery)))
                 .map(this::formatProductSummary)
                 .collect(Collectors.toList());
 
         List<Map<String, Object>> matchedFlavors = allFlavors.stream()
-                .filter(f -> cleanQuery.isEmpty() || f.getName().toLowerCase().contains(cleanQuery))
+                .filter(f -> cleanQuery.isEmpty() || normalizeText(f.getName()).contains(cleanQuery))
                 .map(f -> Map.<String, Object>of(
                         "id", f.getId(),
                         "name", f.getName(),
@@ -93,7 +93,7 @@ public class CatalogTools {
                 .collect(Collectors.toList());
 
         List<Map<String, Object>> matchedAddons = allAddons.stream()
-                .filter(a -> cleanQuery.isEmpty() || a.getName().toLowerCase().contains(cleanQuery))
+                .filter(a -> cleanQuery.isEmpty() || normalizeText(a.getName()).contains(cleanQuery))
                 .map(a -> Map.<String, Object>of(
                         "id", a.getId(),
                         "name", a.getName(),
@@ -113,6 +113,12 @@ public class CatalogTools {
                 .data(resultData)
                 .message("Búsqueda completada exitosamente.")
                 .build();
+    }
+
+    private String normalizeText(String input) {
+        if (input == null) return "";
+        return java.text.Normalizer.normalize(input.toLowerCase().trim(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
     }
 
     private void registerObtenerCatalogo() {

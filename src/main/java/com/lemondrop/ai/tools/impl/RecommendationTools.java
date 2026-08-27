@@ -93,29 +93,78 @@ public class RecommendationTools {
                 continue; // Exceeds budget
             }
 
-            Map<String, Object> item = new HashMap<>();
-            item.put("productName", p.getName());
-            item.put("description", p.getDescription());
-            item.put("badge", p.getBadge());
-            item.put("isFeatured", p.isFeatured());
-            item.put("startingPrice", minPrice);
+            // Preference matching
+            if (!cleanPref.isEmpty()) {
+                boolean matches = false;
+                if (cleanPref.contains("ácido") || cleanPref.contains("acido") || cleanPref.contains("citrico") || cleanPref.contains("cítrico") || cleanPref.contains("refrescante")) {
+                    matches = p.getName().toLowerCase().contains("limón") || p.getName().toLowerCase().contains("limon") ||
+                              p.getName().toLowerCase().contains("maracuyá") || p.getName().toLowerCase().contains("maracuya");
+                } else if (cleanPref.contains("dulce") || cleanPref.contains("frutos") || cleanPref.contains("fresa") || cleanPref.contains("cereza")) {
+                    matches = p.getName().toLowerCase().contains("fresa") || p.getName().toLowerCase().contains("cereza") ||
+                              p.getName().toLowerCase().contains("mango");
+                } else if (cleanPref.contains("popular") || cleanPref.contains("vendido") || cleanPref.contains("favorito")) {
+                    matches = p.isFeatured() || (p.getBadge() != null && !p.getBadge().isEmpty());
+                } else {
+                    matches = p.getName().toLowerCase().contains(cleanPref) ||
+                              (p.getDescription() != null && p.getDescription().toLowerCase().contains(cleanPref));
+                }
 
-            // Pair with suggested flavors based on taste
-            List<String> suggestedFlavors = flavors.stream()
-                    .filter(f -> {
-                        if (cleanPref.contains("ácido") || cleanPref.contains("citrico") || cleanPref.contains("refrescante")) {
-                            return f.getName().equalsIgnoreCase("Limón") || f.getName().equalsIgnoreCase("Maracuyá");
-                        }
-                        if (cleanPref.contains("dulce") || cleanPref.contains("frutos")) {
-                            return f.getName().equalsIgnoreCase("Fresa") || f.getName().equalsIgnoreCase("Cereza");
-                        }
-                        return true;
-                    })
-                    .map(Flavor::getName)
-                    .collect(Collectors.toList());
+                if (!matches && !p.isFeatured()) {
+                    continue;
+                }
+            }
 
-            item.put("recommendedFlavors", suggestedFlavors);
-            recommendations.add(item);
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", p.getId());
+            map.put("name", p.getName());
+            map.put("productName", p.getName());
+            map.put("description", p.getDescription() != null ? p.getDescription() : "");
+            map.put("image", p.getImage() != null ? p.getImage() : "");
+            map.put("category", p.getCategory() != null ? p.getCategory() : "Granizados");
+            map.put("badge", p.getBadge() != null ? p.getBadge() : "");
+            map.put("isFeatured", p.isFeatured());
+            map.put("available", p.isAvailable());
+            map.put("priceFrom", minPrice != null ? minPrice : BigDecimal.ZERO);
+            map.put("startingPrice", minPrice != null ? minPrice : BigDecimal.ZERO);
+
+            Map<String, BigDecimal> prices = new HashMap<>();
+            if (p.getSizePrices() != null) {
+                p.getSizePrices().forEach((sz, pr) -> prices.put(sz.name(), pr));
+            }
+            map.put("prices", prices);
+
+            recommendations.add(map);
+
+            if (recommendations.size() >= 3) {
+                break; // Cap at 3 recommended products
+            }
+        }
+
+        // Fallback: if no specific matched preference, take top 2-3 active products
+        if (recommendations.isEmpty()) {
+            for (Product p : products) {
+                BigDecimal minPrice = p.getSmallPrice() != null && p.getSmallPrice().compareTo(BigDecimal.ZERO) > 0 ?
+                        p.getSmallPrice() : p.getMediumPrice();
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", p.getId());
+                map.put("name", p.getName());
+                map.put("productName", p.getName());
+                map.put("description", p.getDescription() != null ? p.getDescription() : "");
+                map.put("image", p.getImage() != null ? p.getImage() : "");
+                map.put("category", p.getCategory() != null ? p.getCategory() : "Granizados");
+                map.put("badge", p.getBadge() != null ? p.getBadge() : "");
+                map.put("isFeatured", p.isFeatured());
+                map.put("available", p.isAvailable());
+                map.put("priceFrom", minPrice != null ? minPrice : BigDecimal.ZERO);
+                map.put("startingPrice", minPrice != null ? minPrice : BigDecimal.ZERO);
+                Map<String, BigDecimal> prices = new HashMap<>();
+                if (p.getSizePrices() != null) {
+                    p.getSizePrices().forEach((sz, pr) -> prices.put(sz.name(), pr));
+                }
+                map.put("prices", prices);
+                recommendations.add(map);
+                if (recommendations.size() >= 3) break;
+            }
         }
 
         return AIToolResult.builder()

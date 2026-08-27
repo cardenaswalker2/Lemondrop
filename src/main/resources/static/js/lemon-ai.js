@@ -127,11 +127,7 @@
                         <!-- Welcome message -->
                         <div class="lemon-ai-msg assistant">
                             <div class="lemon-ai-msg-bubble">
-                                ¡Hola! 👋🍋 Soy tu asesor de <strong>Lemon Drop</strong>.
-                                <br><br>
-                                Pídeme lo que quieras por texto o pulsa el micrófono 🎙️. Por ejemplo:
-                                <br>
-                                <em>"Quiero un granizado de mango grande con gomitas"</em>
+                                ¡Hola! 🍋 ¿Qué granizado se te antoja hoy? Puedes pedirme un sabor, armar tu vaso o pedir una recomendación. 😄
                             </div>
                         </div>
                     </div>
@@ -273,6 +269,11 @@
                 this.tts.speak(data.message);
             }
 
+            // Render interactive product cards if provided by backend
+            if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+                this.renderProductCards(data.products);
+            }
+
             // If structured cart data is present and confirmation is required, render order card
             if ((data.requiresConfirmation || data.orderReadyForConfirmation) && data.cart && data.cart.items && data.cart.items.length > 0) {
                 this.renderStructuredOrderCard(data.cart);
@@ -286,6 +287,57 @@
             if (data.cartUpdated) {
                 window.dispatchEvent(new CustomEvent('lemon:cartUpdated', { detail: data.cart }));
             }
+        }
+
+        renderProductCards(products) {
+            const container = document.getElementById('lemon-ai-messages');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'lemon-ai-msg assistant';
+
+            let cardsHtml = '';
+            products.forEach(p => {
+                const badgeHtml = p.badge ? `<span class="lemon-ai-prod-badge">${p.badge}</span>` : '';
+                const priceFormatted = Number(p.priceFrom || 0).toLocaleString('es-CO');
+                const imgHtml = p.image ? `<img src="${p.image}" alt="${p.name}" class="lemon-ai-prod-img" onerror="this.style.display='none'">` : '<div class="lemon-ai-prod-icon">🍋</div>';
+
+                cardsHtml += `
+                    <div class="lemon-ai-prod-card" data-product-name="${p.name}">
+                        ${badgeHtml}
+                        <div class="lemon-ai-prod-thumb">
+                            ${imgHtml}
+                        </div>
+                        <div class="lemon-ai-prod-info">
+                            <div class="lemon-ai-prod-name">${p.name}</div>
+                            <div class="lemon-ai-prod-desc">${p.description || ''}</div>
+                            <div class="lemon-ai-prod-footer">
+                                <span class="lemon-ai-prod-price">Desde $${priceFormatted}</span>
+                                <button class="lemon-ai-prod-btn" type="button">Pedir 🍧</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            wrapper.innerHTML = `
+                <div class="lemon-ai-products-carousel">
+                    ${cardsHtml}
+                </div>
+            `;
+
+            container.appendChild(wrapper);
+            this.scrollToBottom();
+
+            // Bind click events on product cards
+            wrapper.querySelectorAll('.lemon-ai-prod-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const prodName = card.getAttribute('data-product-name');
+                    if (prodName) {
+                        const input = document.getElementById('lemon-ai-input');
+                        input.value = `Quiero un ${prodName}`;
+                        this.handleSendMessage();
+                    }
+                });
+            });
         }
 
         renderStructuredOrderCard(cart) {
