@@ -115,10 +115,10 @@
                         </thead>
                         <tbody>
                             <tr th:each="o : ${orders}" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
-                                <td style="padding:15px; font-weight:700; color:var(--text-primary);" th:text="${o.orderCode}">LD-26-00001</td>
-                                <td style="padding:15px;" th:text="${o.customerName}">Juan</td>
-                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.customerPhone != null ? o.customerPhone : 'N/A'}">3001234567</td>
-                                <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
+                                <td style="padding:15px; font-weight:700; color:var(--text-primary);" th:text="${o.orderCode != null ? o.orderCode : o.id}">LD-26-00001</td>
+                                <td style="padding:15px;" th:text="${o.customerName != null ? o.customerName : 'Cliente'}">Juan</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.customerPhone != null && !o.customerPhone.isEmpty() ? o.customerPhone : 'N/A'}">3001234567</td>
+                                <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total != null ? o.total : 0, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
                                 <td style="padding:15px;">
                                     <span th:text="${o.status != null ? o.status.getDisplayName() : 'Recibido'}" class="badge-custom badge-new" style="font-size:0.75rem; padding: 3px 8px;">Recibido</span>
                                 </td>

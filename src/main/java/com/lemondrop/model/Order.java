@@ -72,4 +72,30 @@ public class Order {
     
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public BigDecimal getTotal() {
+        if (total != null) return total;
+        if (subtotal != null) return subtotal;
+        return BigDecimal.ZERO;
+    }
+
+    public OrderStatus getStatus() {
+        return status != null ? status : OrderStatus.RECEIVED;
+    }
+
+    public String getPriority() {
+        return priority != null && !priority.trim().isEmpty() ? priority : "NORMAL";
+    }
+
+    public String getCustomerName() {
+        return customerName != null && !customerName.trim().isEmpty() ? customerName : "Cliente";
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone != null ? customerPhone : "";
+    }
+
+    public String getOrderCode() {
+        return orderCode != null && !orderCode.trim().isEmpty() ? orderCode : (id != null ? id : "LD-ORD");
+    }
 }

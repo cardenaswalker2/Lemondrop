@@ -221,23 +221,23 @@
                         <tbody>
                             <tr th:each="o : ${orders}" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
                                 <td style="padding:15px; font-weight:700;">
-                                    <span th:text="${o.orderCode}">LD-26-00001</span>
+                                    <span th:text="${o.orderCode != null ? o.orderCode : o.id}">LD-26-00001</span>
                                     <span th:if="${o.closed}" class="badge-custom badge-closed" style="font-size:0.65rem; padding: 2px 6px; margin-left: 5px;">🔒 Cerrado</span>
                                 </td>
-                                <td style="padding:15px;" th:text="${o.customerName}">Juan</td>
-                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.customerPhone != null ? o.customerPhone : 'N/A'}">3001234567</td>
+                                <td style="padding:15px;" th:text="${o.customerName != null ? o.customerName : 'Cliente'}">Juan</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.customerPhone != null && !o.customerPhone.isEmpty() ? o.customerPhone : 'N/A'}">3001234567</td>
                                 <td style="padding:15px;">
-                                    <span th:text="${o.priority == 'ALTA' ? '⚡ ALTA' : 'NORMAL'}" 
+                                    <span th:text="${o.priority != null && o.priority == 'ALTA' ? '⚡ ALTA' : 'NORMAL'}" 
                                           class="badge-custom" 
-                                          th:classappend="${o.priority == 'ALTA' ? 'badge-priority-alta' : 'badge-priority-normal'}"
+                                          th:classappend="${o.priority != null && o.priority == 'ALTA' ? 'badge-priority-alta' : 'badge-priority-normal'}"
                                           style="font-size:0.7rem; padding: 3px 8px;">Normal</span>
                                 </td>
                                 <td style="padding:15px;">
-                                    <span th:text="${o.status.getDisplayName()}" class="badge-custom badge-new" style="font-size:0.75rem; padding: 4px 10px;">Recibido</span>
+                                    <span th:text="${o.status != null ? o.status.getDisplayName() : 'Recibido'}" class="badge-custom badge-new" style="font-size:0.75rem; padding: 4px 10px;">Recibido</span>
                                 </td>
-                                <td style="padding:15px; font-size:0.85rem;" th:text="${o.assignedAdvisor != null ? o.assignedAdvisor : 'Sin asignar'}">Sin asignar</td>
-                                <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
-                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${#temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm')}">Hora</td>
+                                <td style="padding:15px; font-size:0.85rem;" th:text="${o.assignedAdvisor != null && !o.assignedAdvisor.isEmpty() ? o.assignedAdvisor : 'Sin asignar'}">Sin asignar</td>
+                                <td style="padding:15px; font-weight:700;" th:text="${'$' + #numbers.formatDecimal(o.total != null ? o.total : 0, 0, 'POINT', 0, 'COMMA')}">$8.000</td>
+                                <td style="padding:15px; font-size:0.85rem; color:var(--text-secondary);" th:text="${o.createdAt != null ? #temporals.format(o.createdAt, 'dd/MM/yyyy HH:mm') : '-'}">Hora</td>
                                 <td style="padding:15px; display:flex; gap:6px;">
                                     <button class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.8rem;" th:onclick="'openOrderDetails(\'' + ${o.id} + '\')'">Ver 👁️</button>
                                     <button class="btn-custom btn-outline" style="padding: 6px 10px; font-size: 0.8rem; color:#e53e3e; border-color:#fed7d7;" th:onclick="'promptDeleteOrder(\'' + ${o.id} + '\', \'' + ${o.orderCode} + '\')'">🗑️</button>

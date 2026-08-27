@@ -175,4 +175,81 @@ class OrderHistoryAndTrashTest {
         // Verify hard delete
         verify(orderRepository, times(1)).deleteById("order-789");
     }
+
+    @Test
+    @DisplayName("Pagination test: 33 orders without filters returns Page 1 with 20 items, Page 2 with 13 items, totalElements=33, totalPages=2")
+    void testPaginationWith33Orders() {
+        java.util.List<Order> thirtyThreeOrders = new java.util.ArrayList<>();
+        for (int i = 1; i <= 33; i++) {
+            thirtyThreeOrders.add(Order.builder()
+                    .id("ord-" + i)
+                    .orderCode("LD-26-" + String.format("%05d", i))
+                    .customerName(i % 2 == 0 ? "Cliente " + i : null) // test null customer
+                    .status(i % 3 == 0 ? null : OrderStatus.RECEIVED) // test null status
+                    .total(i % 4 == 0 ? null : new BigDecimal("8000")) // test null total
+                    .priority(i % 5 == 0 ? null : "NORMAL")
+                    .createdAt(i % 2 == 0 ? LocalDateTime.now().minusMinutes(i) : null) // test null createdAt
+                    .deleted(false)
+                    .build());
+        }
+
+        when(mongoTemplate.count(any(Query.class), eq(Order.class))).thenReturn(33L);
+
+        // Page 0 (items 0..19)
+        when(mongoTemplate.find(any(Query.class), eq(Order.class))).thenReturn(thirtyThreeOrders.subList(0, 20));
+
+        Page<Order> page1 = orderService.getOrdersPaginated(null, null, null, null, null, null, null, "newest", 0, 20);
+        assertEquals(33L, page1.getTotalElements());
+        assertEquals(2, page1.getTotalPages());
+        assertEquals(20, page1.getContent().size());
+        assertEquals(0, page1.getNumber());
+        assertTrue(page1.hasNext());
+        assertFalse(page1.hasPrevious());
+
+        // Test safe getters on all items
+        for (Order o : page1.getContent()) {
+            assertNotNull(o.getStatus(), "Status should not be null via safe getter");
+            assertNotNull(o.getTotal(), "Total should not be null via safe getter");
+            assertNotNull(o.getPriority(), "Priority should not be null via safe getter");
+            assertNotNull(o.getCustomerName(), "Customer name should not be null via safe getter");
+            assertNotNull(o.getOrderCode(), "Order code should not be null via safe getter");
+        }
+
+        // Page 1 (items 20..32)
+        when(mongoTemplate.find(any(Query.class), eq(Order.class))).thenReturn(thirtyThreeOrders.subList(20, 33));
+
+        Page<Order> page2 = orderService.getOrdersPaginated(null, null, null, null, null, null, null, "newest", 1, 20);
+        assertEquals(33L, page2.getTotalElements());
+        assertEquals(2, page2.getTotalPages());
+        assertEquals(13, page2.getContent().size());
+        assertEquals(1, page2.getNumber());
+        assertFalse(page2.hasNext());
+        assertTrue(page2.hasPrevious());
+    }
+
+    @Test
+    @DisplayName("Trash pagination test: 5 deleted orders returns 5 items and proper metadata")
+    void testTrashPagination() {
+        java.util.List<Order> deletedOrders = new java.util.ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            deletedOrders.add(Order.builder()
+                    .id("del-" + i)
+                    .orderCode("LD-26-D" + i)
+                    .deleted(true)
+                    .deletedAt(LocalDateTime.now().minusHours(i))
+                    .deletedBy("admin")
+                    .deletionReason("Motivo " + i)
+                    .build());
+        }
+
+        when(mongoTemplate.count(any(Query.class), eq(Order.class))).thenReturn(5L);
+        when(mongoTemplate.find(any(Query.class), eq(Order.class))).thenReturn(deletedOrders);
+
+        Page<Order> trashPage = orderService.getDeletedOrdersPaginated(null, null, null, null, "newest", 0, 20);
+        assertEquals(5L, trashPage.getTotalElements());
+        assertEquals(1, trashPage.getTotalPages());
+        assertEquals(5, trashPage.getContent().size());
+        assertEquals("LD-26-D1", trashPage.getContent().get(0).getOrderCode());
+        assertTrue(trashPage.getContent().get(0).isDeleted());
+    }
 }

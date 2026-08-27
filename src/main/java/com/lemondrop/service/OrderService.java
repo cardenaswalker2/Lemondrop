@@ -413,8 +413,8 @@ public class OrderService {
         // 6. Dates filter
         applyDateFilter(mongoQuery, dateFilter, startDate, endDate, "createdAt");
 
-        // 7. Total count before pagination
-        long total = mongoTemplate.count(mongoQuery, Order.class);
+        // 7. Total count before pagination using clean copy
+        long total = mongoTemplate.count(Query.of(mongoQuery), Order.class);
 
         // 8. Sorting & Pagination
         Sort sortObj = resolveSort(sort, "createdAt");
@@ -445,7 +445,7 @@ public class OrderService {
         // Date filter on deletedAt
         applyDateFilter(mongoQuery, dateFilter, startDate, endDate, "deletedAt");
 
-        long total = mongoTemplate.count(mongoQuery, Order.class);
+        long total = mongoTemplate.count(Query.of(mongoQuery), Order.class);
         Sort sortObj = resolveSort(sort, "deletedAt");
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), sortObj);
         mongoQuery.with(pageable);
@@ -485,24 +485,28 @@ public class OrderService {
 
     private Sort resolveSort(String sort, String defaultDateField) {
         if ("oldest".equalsIgnoreCase(sort)) {
-            return Sort.by(Sort.Direction.ASC, defaultDateField);
+            return Sort.by(Sort.Direction.ASC, defaultDateField).and(Sort.by(Sort.Direction.ASC, "_id"));
         } else if ("highest".equalsIgnoreCase(sort)) {
-            return Sort.by(Sort.Direction.DESC, "total");
+            return Sort.by(Sort.Direction.DESC, "total").and(Sort.by(Sort.Direction.DESC, defaultDateField));
         } else if ("lowest".equalsIgnoreCase(sort)) {
-            return Sort.by(Sort.Direction.ASC, "total");
+            return Sort.by(Sort.Direction.ASC, "total").and(Sort.by(Sort.Direction.DESC, defaultDateField));
         } else if ("priority".equalsIgnoreCase(sort)) {
-            return Sort.by(Sort.Direction.DESC, "priority").and(Sort.by(Sort.Direction.DESC, defaultDateField));
+            return Sort.by(Sort.Direction.DESC, "priority").and(Sort.by(Sort.Direction.DESC, defaultDateField)).and(Sort.by(Sort.Direction.DESC, "_id"));
         } else {
-            return Sort.by(Sort.Direction.DESC, defaultDateField);
+            return Sort.by(Sort.Direction.DESC, defaultDateField).and(Sort.by(Sort.Direction.DESC, "_id"));
         }
     }
 
     public List<Order> getAllOrders() {
-        return orderRepository.findActiveOrdersOrderByCreatedAtDesc();
+        Query query = new Query(Criteria.where("deleted").ne(true));
+        query.with(Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "_id")));
+        return mongoTemplate.find(query, Order.class);
     }
 
     public List<Order> getAllDeletedOrders() {
-        return orderRepository.findDeletedOrdersOrderByDeletedAtDesc();
+        Query query = new Query(Criteria.where("deleted").is(true));
+        query.with(Sort.by(Sort.Direction.DESC, "deletedAt").and(Sort.by(Sort.Direction.DESC, "_id")));
+        return mongoTemplate.find(query, Order.class);
     }
 
     public List<Order> getOrdersByStatus(OrderStatus status) {
