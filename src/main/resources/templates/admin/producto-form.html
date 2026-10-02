@@ -34,7 +34,7 @@
             </header>
 
             <div class="form-container">
-                <form th:action="@{/admin/productos/guardar}" method="post" th:object="${product}">
+                <form th:action="@{/admin/productos/guardar}" method="post" th:object="${product}" onsubmit="return validateProductForm()">
                     <input type="hidden" th:field="*{id}">
 
                     <div class="form-group">
@@ -67,21 +67,47 @@
                         </select>
                     </div>
 
-                    <!-- Pricing by Sizes -->
-                    <h3 style="margin: 30px 0 15px 0; border-bottom: 2px solid var(--mint); padding-bottom: 8px;">Precios por Tamaño 📏💰</h3>
+                    <!-- Pricing and Availability by Sizes -->
+                    <h3 style="margin: 30px 0 10px 0; border-bottom: 2px solid var(--mint); padding-bottom: 8px;">Tamaños Disponibles y Precios 📏💰</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px;">
+                        Selecciona qué tamaños existen para este producto e ingresa su precio individual. Los tamaños no seleccionados no se mostrarán al cliente ni en la IA.
+                    </p>
                     
-                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
-                        <div class="form-group">
-                            <label class="form-label">Pequeño (SMALL) *</label>
-                            <input type="number" name="priceSmall" class="form-control" th:value="${priceSmall}" min="0" required>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <!-- Small -->
+                        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; background: #fafafa;" id="cardSizeSmall">
+                            <label style="display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer; margin-bottom: 12px;">
+                                <input type="checkbox" name="availSmall" id="chkSmall" th:checked="${availSmall}" onchange="toggleSizeField('Small')">
+                                <span>Pequeño (SMALL)</span>
+                            </label>
+                            <div class="form-group" style="margin-bottom: 0;" id="groupPriceSmall">
+                                <label class="form-label" style="font-size: 0.8rem;">Precio ($)</label>
+                                <input type="number" name="priceSmall" id="inputPriceSmall" class="form-control" th:value="${priceSmall}" min="1" placeholder="Ej: 4500">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Mediano (MEDIUM) *</label>
-                            <input type="number" name="priceMedium" class="form-control" th:value="${priceMedium}" min="0" required>
+
+                        <!-- Medium -->
+                        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; background: #fafafa;" id="cardSizeMedium">
+                            <label style="display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer; margin-bottom: 12px;">
+                                <input type="checkbox" name="availMedium" id="chkMedium" th:checked="${availMedium}" onchange="toggleSizeField('Medium')">
+                                <span>Mediano (MEDIUM)</span>
+                            </label>
+                            <div class="form-group" style="margin-bottom: 0;" id="groupPriceMedium">
+                                <label class="form-label" style="font-size: 0.8rem;">Precio ($)</label>
+                                <input type="number" name="priceMedium" id="inputPriceMedium" class="form-control" th:value="${priceMedium}" min="1" placeholder="Ej: 6000">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Grande (LARGE) *</label>
-                            <input type="number" name="priceLarge" class="form-control" th:value="${priceLarge}" min="0" required>
+
+                        <!-- Large -->
+                        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; background: #fafafa;" id="cardSizeLarge">
+                            <label style="display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer; margin-bottom: 12px;">
+                                <input type="checkbox" name="availLarge" id="chkLarge" th:checked="${availLarge}" onchange="toggleSizeField('Large')">
+                                <span>Grande (LARGE)</span>
+                            </label>
+                            <div class="form-group" style="margin-bottom: 0;" id="groupPriceLarge">
+                                <label class="form-label" style="font-size: 0.8rem;">Precio ($)</label>
+                                <input type="number" name="priceLarge" id="inputPriceLarge" class="form-control" th:value="${priceLarge}" min="1" placeholder="Ej: 7500">
+                            </div>
                         </div>
                     </div>
 
@@ -109,6 +135,72 @@
 
     <script>
         document.getElementById('side-products').classList.add('active');
+
+        function toggleSizeField(size) {
+            const chk = document.getElementById('chk' + size);
+            const input = document.getElementById('inputPrice' + size);
+            const card = document.getElementById('cardSize' + size);
+            const group = document.getElementById('groupPrice' + size);
+
+            if (chk.checked) {
+                input.disabled = false;
+                input.required = true;
+                group.style.opacity = '1';
+                card.style.borderColor = 'var(--mint)';
+                card.style.background = '#f2fbf4';
+                if (!input.value || input.value === "0") {
+                    input.value = "";
+                    input.focus();
+                }
+            } else {
+                input.disabled = true;
+                input.required = false;
+                group.style.opacity = '0.4';
+                card.style.borderColor = '#e0e0e0';
+                card.style.background = '#f9f9f9';
+            }
+        }
+
+        // Initialize state on page load
+        ['Small', 'Medium', 'Large'].forEach(toggleSizeField);
+
+        function validateProductForm() {
+            const small = document.getElementById('chkSmall').checked;
+            const medium = document.getElementById('chkMedium').checked;
+            const large = document.getElementById('chkLarge').checked;
+
+            if (!small && !medium && !large) {
+                alert('Debes habilitar al menos un tamaño (Pequeño, Mediano o Grande) para el producto.');
+                return false;
+            }
+
+            if (small) {
+                const val = parseFloat(document.getElementById('inputPriceSmall').value);
+                if (isNaN(val) || val <= 0) {
+                    alert('Por favor ingresa un precio válido mayor a 0 para el tamaño Pequeño.');
+                    document.getElementById('inputPriceSmall').focus();
+                    return false;
+                }
+            }
+            if (medium) {
+                const val = parseFloat(document.getElementById('inputPriceMedium').value);
+                if (isNaN(val) || val <= 0) {
+                    alert('Por favor ingresa un precio válido mayor a 0 para el tamaño Mediano.');
+                    document.getElementById('inputPriceMedium').focus();
+                    return false;
+                }
+            }
+            if (large) {
+                const val = parseFloat(document.getElementById('inputPriceLarge').value);
+                if (isNaN(val) || val <= 0) {
+                    alert('Por favor ingresa un precio válido mayor a 0 para el tamaño Grande.');
+                    document.getElementById('inputPriceLarge').focus();
+                    return false;
+                }
+            }
+
+            return true;
+        }
     </script>
 </body>
 </html>

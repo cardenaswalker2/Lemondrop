@@ -289,17 +289,24 @@ public class CatalogTools {
         map.put("featured", p.isFeatured());
         map.put("available", p.isAvailable());
 
-        BigDecimal priceFrom = p.getSmallPrice();
-        if (priceFrom == null || priceFrom.compareTo(BigDecimal.ZERO) <= 0) {
-            priceFrom = p.getMediumPrice();
-        }
+        BigDecimal priceFrom = p.getMinAvailablePrice();
         map.put("priceFrom", priceFrom != null ? priceFrom : BigDecimal.ZERO);
 
         Map<String, Object> prices = new HashMap<>();
-        if (p.getSizePrices() != null) {
-            p.getSizePrices().forEach((size, price) -> prices.put(size.name(), price));
+        List<String> availableSizes = new ArrayList<>();
+        
+        for (ProductSize sz : ProductSize.values()) {
+            if (p.isSizeAvailable(sz)) {
+                BigDecimal price = p.getPriceForSize(sz);
+                if (price != null && price.compareTo(BigDecimal.ZERO) > 0) {
+                    prices.put(sz.name(), price);
+                    availableSizes.add(sz.name());
+                }
+            }
         }
+        
         map.put("prices", prices);
+        map.put("availableSizes", availableSizes);
         return map;
     }
 }

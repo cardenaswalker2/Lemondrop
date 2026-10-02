@@ -124,14 +124,22 @@ public class RecommendationTools {
             map.put("badge", p.getBadge() != null ? p.getBadge() : "");
             map.put("isFeatured", p.isFeatured());
             map.put("available", p.isAvailable());
-            map.put("priceFrom", minPrice != null ? minPrice : BigDecimal.ZERO);
-            map.put("startingPrice", minPrice != null ? minPrice : BigDecimal.ZERO);
+            map.put("priceFrom", p.getMinAvailablePrice());
+            map.put("startingPrice", p.getMinAvailablePrice());
 
             Map<String, BigDecimal> prices = new HashMap<>();
-            if (p.getSizePrices() != null) {
-                p.getSizePrices().forEach((sz, pr) -> prices.put(sz.name(), pr));
+            List<String> availableSizes = new ArrayList<>();
+            for (ProductSize sz : ProductSize.values()) {
+                if (p.isSizeAvailable(sz)) {
+                    BigDecimal pr = p.getPriceForSize(sz);
+                    if (pr != null && pr.compareTo(BigDecimal.ZERO) > 0) {
+                        prices.put(sz.name(), pr);
+                        availableSizes.add(sz.name());
+                    }
+                }
             }
             map.put("prices", prices);
+            map.put("availableSizes", availableSizes);
 
             recommendations.add(map);
 
@@ -143,8 +151,6 @@ public class RecommendationTools {
         // Fallback: if no specific matched preference, take top 2-3 active products
         if (recommendations.isEmpty()) {
             for (Product p : products) {
-                BigDecimal minPrice = p.getSmallPrice() != null && p.getSmallPrice().compareTo(BigDecimal.ZERO) > 0 ?
-                        p.getSmallPrice() : p.getMediumPrice();
                 Map<String, Object> map = new HashMap<>();
                 map.put("id", p.getId());
                 map.put("name", p.getName());
@@ -155,13 +161,22 @@ public class RecommendationTools {
                 map.put("badge", p.getBadge() != null ? p.getBadge() : "");
                 map.put("isFeatured", p.isFeatured());
                 map.put("available", p.isAvailable());
-                map.put("priceFrom", minPrice != null ? minPrice : BigDecimal.ZERO);
-                map.put("startingPrice", minPrice != null ? minPrice : BigDecimal.ZERO);
+                map.put("priceFrom", p.getMinAvailablePrice());
+                map.put("startingPrice", p.getMinAvailablePrice());
+                
                 Map<String, BigDecimal> prices = new HashMap<>();
-                if (p.getSizePrices() != null) {
-                    p.getSizePrices().forEach((sz, pr) -> prices.put(sz.name(), pr));
+                List<String> availableSizes = new ArrayList<>();
+                for (ProductSize sz : ProductSize.values()) {
+                    if (p.isSizeAvailable(sz)) {
+                        BigDecimal pr = p.getPriceForSize(sz);
+                        if (pr != null && pr.compareTo(BigDecimal.ZERO) > 0) {
+                            prices.put(sz.name(), pr);
+                            availableSizes.add(sz.name());
+                        }
+                    }
                 }
                 map.put("prices", prices);
+                map.put("availableSizes", availableSizes);
                 recommendations.add(map);
                 if (recommendations.size() >= 3) break;
             }

@@ -388,8 +388,12 @@ public class LemonDropAIService {
             return UserIntent.RECOMMENDATION;
         }
 
-        // 9. Search Products / Catalog Inquiry
-        if (norm.contains("que sabores") || norm.contains("que granizados") || norm.contains("menu") ||
+        // 9. Search Products / Catalog & Price Inquiry
+        if (norm.contains("precio") || norm.contains("precios") || norm.contains("cuesta") ||
+            norm.contains("cuestan") || norm.contains("vale") || norm.contains("valen") ||
+            norm.contains("cuanto") || norm.contains("cuánto") || norm.contains("tamano") ||
+            norm.contains("tamaño") || norm.contains("tamanos") || norm.contains("tamaños") ||
+            norm.contains("que sabores") || norm.contains("que granizados") || norm.contains("menu") ||
             norm.contains("carta") || norm.contains("catalogo") || norm.contains("que tienen") ||
             norm.contains("tienen de") || norm.contains("hay de") || norm.contains("muestrame") ||
             norm.contains("mostrar") || norm.contains("que opciones") || norm.contains("que productos")) {
@@ -399,8 +403,9 @@ public class LemonDropAIService {
         // 10. Order intent
         if (norm.contains("quiero") || norm.contains("dame") || norm.contains("pedir") ||
             norm.contains("agregar") || norm.contains("ponle") || norm.contains("grande") ||
-            norm.contains("mediano") || norm.contains("pequeno") || norm.contains("topping") ||
-            norm.contains("gomitas") || norm.contains("arequipe") || norm.contains("lechera")) {
+            norm.contains("mediano") || norm.contains("pequeno") || norm.contains("pequeño") ||
+            norm.contains("topping") || norm.contains("gomitas") || norm.contains("arequipe") ||
+            norm.contains("lechera")) {
             return UserIntent.ORDER_INTENT;
         }
 
@@ -676,6 +681,12 @@ public class LemonDropAIService {
                 
                 ESTADO ACTUAL:%s%s%s
                 
+                REGLAS FUNDAMENTALES DE PRECIOS Y TAMAÑOS:
+                - NUNCA inventes precios, tamaños ni disponibilidad. La ÚNICA fuente de verdad es la base de datos obtenida mediante las herramientas (`buscar_productos`, `obtener_catalogo`, `consultar_producto`, `recomendar_producto`).
+                - Si el cliente pregunta por el precio o tamaños de un producto, consulta la herramienta correspondiente y comunica EXACTAMENTE los tamaños y precios activos devueltos por el backend.
+                - Si un tamaño NO está en la lista de precios devuelta por la herramienta (ej. no está configurado o no disponible), NUNCA digas que cuesta $0 ni inventes un precio. Indica claramente que ese tamaño no está disponible para ese producto.
+                - Los tamaños disponibles son configurados por el administrador en tiempo real. Respeta estrictamente los valores numéricos entregados por el sistema.
+                
                 DIRECTIVAS OBLIGATORIAS:
                 1. ESTILO: Responde de forma natural, humana, ágil y comercial (1 a 3 frases máximo).
                 2. SIN RELLENO: NUNCA digas "¡Entendido! 🎉", "Solo necesito saber...", "Como siempre...", "Como asistente virtual...", "Permíteme ayudarte...", "Con esa información procederé...".
@@ -685,10 +696,10 @@ public class LemonDropAIService {
                    - Si el usuario dice "quiero ese", "ese", "agrega ese" o "el que me recomendaste", utiliza directamente la ÚLTIMA OPCIÓN ELEGIDA/RECOMENDADA o la opción seleccionada sin volver a consultar el catálogo.
                    - Responde directo (ej. "🎲 Me quedo con el de mango 😋" o "El segundo es el de mango"). NO vuelvas a pedir las opciones.
                 5. FLUJO DE PEDIDO PASO A PASO:
-                   - 1. Sabor -> 2. Tamaño (Mediano/Grande) -> 3. Toppings -> 4. Cantidad -> 5. Datos -> 6. Confirmación.
+                   - 1. Sabor -> 2. Tamaño disponible -> 3. Toppings -> 4. Cantidad -> 5. Datos -> 6. Confirmación.
                    - Pregunta solo el siguiente dato necesario. Si ya conoces el sabor o tamaño, NO lo vuelvas a preguntar.
                 6. RECOMENDACIONES: Recomienda máximo 1 a 3 productos relevantes del catálogo oficial.
-                7. HERRAMIENTAS: Para agregar al carrito usa `agregar_producto`, para confirmar usa `confirmar_pedido`. Si el usuario solo saluda o charla, responde amablemente en texto sin llamar herramientas de catálogo.
+                7. HERRAMIENTAS: Para agregar al carrito usa `agregar_producto`, para confirmar usa `confirmar_pedido`. Para consultas de precios, productos o tamaños usa `buscar_productos` o `consultar_producto`. Si el usuario solo saluda o charla, responde amablemente en texto sin llamar herramientas de catálogo.
                 """.formatted(currentDateTimeFormatted, clientContext.toString(), cartContext.toString(), lastProductsContext.toString());
     }
 

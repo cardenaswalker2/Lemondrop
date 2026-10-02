@@ -195,9 +195,9 @@
                     <h3 class="ld-product-title" th:text="${prod.name}">Granizado</h3>
                     <p class="ld-product-desc" th:text="${prod.description}">Descripción</p>
                     <div class="ld-product-footer">
-                        <div class="ld-product-price" th:text="${'$' + #numbers.formatDecimal(prod.mediumPrice, 0, 'POINT', 0, 'COMMA') + ' (Mediano)'}">$6.000</div>
+                        <div class="ld-product-price" th:text="${'Desde $' + #numbers.formatDecimal(prod.minAvailablePrice, 0, 'POINT', 0, 'COMMA')}">$5.000</div>
                         <button class="ld-btn ld-btn-lemon ld-btn-sm" 
-                                th:attr="onclick=|openCustomizerModal('${prod.id}', '${prod.name}', '${prod.description}', ${prod.smallPrice}, ${prod.mediumPrice}, ${prod.largePrice})|">
+                                th:attr="onclick=|openCustomizerModal('${prod.id}', '${prod.name}', '${prod.description}', ${prod.getPriceForSize(T(com.lemondrop.model.ProductSize).SMALL) != null ? prod.getPriceForSize(T(com.lemondrop.model.ProductSize).SMALL) : 'null'}, ${prod.getPriceForSize(T(com.lemondrop.model.ProductSize).MEDIUM) != null ? prod.getPriceForSize(T(com.lemondrop.model.ProductSize).MEDIUM) : 'null'}, ${prod.getPriceForSize(T(com.lemondrop.model.ProductSize).LARGE) != null ? prod.getPriceForSize(T(com.lemondrop.model.ProductSize).LARGE) : 'null'})|">
                             Personalizar 🍧
                         </button>
                     </div>
@@ -364,14 +364,48 @@
             document.getElementById('modalProdDesc').innerText = desc;
             
             activeProductPrices = {
-                SMALL: priceSmall,
-                MEDIUM: priceMedium,
-                LARGE: priceLarge
+                SMALL: (priceSmall !== null && priceSmall !== undefined && priceSmall > 0) ? priceSmall : null,
+                MEDIUM: (priceMedium !== null && priceMedium !== undefined && priceMedium > 0) ? priceMedium : null,
+                LARGE: (priceLarge !== null && priceLarge !== undefined && priceLarge > 0) ? priceLarge : null
             };
 
-            document.getElementById('sizePriceSmall').innerText = '$' + priceSmall.toLocaleString('es-CO');
-            document.getElementById('sizePriceMedium').innerText = '$' + priceMedium.toLocaleString('es-CO');
-            document.getElementById('sizePriceLarge').innerText = '$' + priceLarge.toLocaleString('es-CO');
+            const optSmall = document.getElementById('sizeOptSmall');
+            const optMedium = document.getElementById('sizeOptMedium');
+            const optLarge = document.getElementById('sizeOptLarge');
+
+            let defaultSize = null;
+
+            // Small
+            if (activeProductPrices.SMALL) {
+                optSmall.style.display = 'flex';
+                document.getElementById('sizePriceSmall').innerText = '$' + activeProductPrices.SMALL.toLocaleString('es-CO');
+                if (!defaultSize) defaultSize = 'SMALL';
+            } else {
+                optSmall.style.display = 'none';
+            }
+
+            // Medium
+            if (activeProductPrices.MEDIUM) {
+                optMedium.style.display = 'flex';
+                document.getElementById('sizePriceMedium').innerText = '$' + activeProductPrices.MEDIUM.toLocaleString('es-CO');
+                if (!defaultSize) defaultSize = 'MEDIUM';
+            } else {
+                optMedium.style.display = 'none';
+            }
+
+            // Large
+            if (activeProductPrices.LARGE) {
+                optLarge.style.display = 'flex';
+                document.getElementById('sizePriceLarge').innerText = '$' + activeProductPrices.LARGE.toLocaleString('es-CO');
+                if (!defaultSize) defaultSize = 'LARGE';
+            } else {
+                optLarge.style.display = 'none';
+            }
+
+            // Fallback if medium preferred
+            if (activeProductPrices.MEDIUM) {
+                defaultSize = 'MEDIUM';
+            }
 
             document.getElementById('modalFlavorId').selectedIndex = 0;
             document.getElementById('modalQty').value = 1;
@@ -380,13 +414,16 @@
             const cbs = document.getElementsByName('modalAddons');
             cbs.forEach(cb => cb.checked = false);
 
-            selectSize('MEDIUM');
+            if (defaultSize) {
+                selectSize(defaultSize);
+            }
             calculateModalTotal();
             document.getElementById('customizerModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
 
         function selectSize(size) {
+            if (!activeProductPrices[size]) return;
             document.querySelectorAll('.ld-size-option').forEach(el => el.classList.remove('selected'));
             const radio = document.querySelector(`input[name="modalSize"][value="${size}"]`);
             if (radio) {
@@ -398,11 +435,18 @@
         }
 
         function calculateModalTotal() {
-            if (!activeProductPrices.MEDIUM) return;
-            
             const sizeRadio = document.querySelector('input[name="modalSize"]:checked');
-            const size = sizeRadio ? sizeRadio.value : 'MEDIUM';
-            const basePrice = activeProductPrices[size] || 0;
+            let size = sizeRadio ? sizeRadio.value : null;
+            if (!size || !activeProductPrices[size]) {
+                for (const sz of ['MEDIUM', 'SMALL', 'LARGE']) {
+                    if (activeProductPrices[sz]) {
+                        size = sz;
+                        break;
+                    }
+                }
+            }
+            
+            const basePrice = (size && activeProductPrices[size]) ? activeProductPrices[size] : 0;
             
             const flavorSelect = document.getElementById('modalFlavorId');
             const flavorPrice = parseFloat(flavorSelect.options[flavorSelect.selectedIndex]?.getAttribute('data-price') || 0);

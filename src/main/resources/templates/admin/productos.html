@@ -53,10 +53,20 @@
                                 <td style="padding:15px;">
                                     <span th:text="${p.available ? '✅ Disponible' : '❌ Agotado'}" th:class="${p.available ? 'badge-custom badge-fav' : 'badge-custom badge-out'}">Disponible</span>
                                 </td>
-                                <td style="padding:15px; font-weight:700;">
-                                    <span th:text="${'$' + #numbers.formatDecimal(p.smallPrice, 0, 'POINT', 0, 'COMMA')}">$5.000</span> /
-                                    <span th:text="${'$' + #numbers.formatDecimal(p.mediumPrice, 0, 'POINT', 0, 'COMMA')}">$7.000</span> /
-                                    <span th:text="${'$' + #numbers.formatDecimal(p.largePrice, 0, 'POINT', 0, 'COMMA')}">$9.000</span>
+                                <td style="padding:15px; font-weight:600; font-size:0.9rem;">
+                                    <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                                        <span th:if="${p.isSizeAvailable(T(com.lemondrop.model.ProductSize).SMALL)}" 
+                                              style="background:#e8f5e9; color:#2e7d32; padding:3px 8px; border-radius:4px; font-size:0.8rem;"
+                                              th:text="${'S: $' + #numbers.formatDecimal(p.getPriceForSize(T(com.lemondrop.model.ProductSize).SMALL), 0, 'POINT', 0, 'COMMA')}">S: $4.500</span>
+                                        <span th:if="${p.isSizeAvailable(T(com.lemondrop.model.ProductSize).MEDIUM)}" 
+                                              style="background:#e3f2fd; color:#1565c0; padding:3px 8px; border-radius:4px; font-size:0.8rem;"
+                                              th:text="${'M: $' + #numbers.formatDecimal(p.getPriceForSize(T(com.lemondrop.model.ProductSize).MEDIUM), 0, 'POINT', 0, 'COMMA')}">M: $6.000</span>
+                                        <span th:if="${p.isSizeAvailable(T(com.lemondrop.model.ProductSize).LARGE)}" 
+                                              style="background:#fff3e0; color:#e65100; padding:3px 8px; border-radius:4px; font-size:0.8rem;"
+                                              th:text="${'L: $' + #numbers.formatDecimal(p.getPriceForSize(T(com.lemondrop.model.ProductSize).LARGE), 0, 'POINT', 0, 'COMMA')}">L: $7.500</span>
+                                        <span th:if="${!p.isSizeAvailable(T(com.lemondrop.model.ProductSize).SMALL) and !p.isSizeAvailable(T(com.lemondrop.model.ProductSize).MEDIUM) and !p.isSizeAvailable(T(com.lemondrop.model.ProductSize).LARGE)}"
+                                              style="color:var(--text-secondary); font-size:0.8rem;">Sin tamaños configurados</span>
+                                    </div>
                                 </td>
                                 <td style="padding:15px; display:flex; gap:10px;">
                                     <a th:href="@{/admin/productos/editar/{id}(id=${p.id})}" class="btn-custom btn-mint" style="padding: 6px 12px; font-size: 0.85rem;">Editar ✏️</a>

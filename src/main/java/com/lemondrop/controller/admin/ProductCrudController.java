@@ -31,9 +31,12 @@ public class ProductCrudController {
     @GetMapping("/nuevo")
     public String showCreateForm(Model model) {
         model.addAttribute("product", new Product());
-        model.addAttribute("priceSmall", BigDecimal.ZERO);
-        model.addAttribute("priceMedium", BigDecimal.ZERO);
-        model.addAttribute("priceLarge", BigDecimal.ZERO);
+        model.addAttribute("availSmall", true);
+        model.addAttribute("availMedium", true);
+        model.addAttribute("availLarge", true);
+        model.addAttribute("priceSmall", "");
+        model.addAttribute("priceMedium", "");
+        model.addAttribute("priceLarge", "");
         return "admin/producto-form";
     }
 
@@ -43,9 +46,25 @@ public class ProductCrudController {
         if (productOpt.isPresent()) {
             Product product = productOpt.get();
             model.addAttribute("product", product);
-            model.addAttribute("priceSmall", product.getSizePrices().getOrDefault(ProductSize.SMALL, BigDecimal.ZERO));
-            model.addAttribute("priceMedium", product.getSizePrices().getOrDefault(ProductSize.MEDIUM, BigDecimal.ZERO));
-            model.addAttribute("priceLarge", product.getSizePrices().getOrDefault(ProductSize.LARGE, BigDecimal.ZERO));
+            
+            boolean availSmall = product.isSizeAvailable(ProductSize.SMALL);
+            boolean availMedium = product.isSizeAvailable(ProductSize.MEDIUM);
+            boolean availLarge = product.isSizeAvailable(ProductSize.LARGE);
+
+            // Default fallback if brand new or unconfigured
+            if (!availSmall && !availMedium && !availLarge && product.getSizePrices().isEmpty()) {
+                availSmall = true;
+                availMedium = true;
+                availLarge = true;
+            }
+
+            model.addAttribute("availSmall", availSmall);
+            model.addAttribute("availMedium", availMedium);
+            model.addAttribute("availLarge", availLarge);
+
+            model.addAttribute("priceSmall", product.getPriceForSize(ProductSize.SMALL) != null ? product.getPriceForSize(ProductSize.SMALL) : "");
+            model.addAttribute("priceMedium", product.getPriceForSize(ProductSize.MEDIUM) != null ? product.getPriceForSize(ProductSize.MEDIUM) : "");
+            model.addAttribute("priceLarge", product.getPriceForSize(ProductSize.LARGE) != null ? product.getPriceForSize(ProductSize.LARGE) : "");
             return "admin/producto-form";
         }
         return "redirect:/admin/productos";
@@ -53,18 +72,59 @@ public class ProductCrudController {
 
     @PostMapping("/guardar")
     public String save(@ModelAttribute Product product,
-                       @RequestParam BigDecimal priceSmall,
-                       @RequestParam BigDecimal priceMedium,
-                       @RequestParam BigDecimal priceLarge,
-                       @RequestParam(required = false) boolean available,
-                       @RequestParam(required = false) boolean featured) {
+                       @RequestParam(required = false, defaultValue = "false") boolean availSmall,
+                       @RequestParam(required = false) BigDecimal priceSmall,
+                       @RequestParam(required = false, defaultValue = "false") boolean availMedium,
+                       @RequestParam(required = false) BigDecimal priceMedium,
+                       @RequestParam(required = false, defaultValue = "false") boolean availLarge,
+                       @RequestParam(required = false) BigDecimal priceLarge,
+                       @RequestParam(required = false, defaultValue = "false") boolean available,
+                       @RequestParam(required = false, defaultValue = "false") boolean featured) {
         
-        Map<ProductSize, BigDecimal> sizePrices = new HashMap<>();
-        sizePrices.put(ProductSize.SMALL, priceSmall);
-        sizePrices.put(ProductSize.MEDIUM, priceMedium);
-        sizePrices.put(ProductSize.LARGE, priceLarge);
+        Map<ProductSize, com.lemondrop.model.ProductSizeInfo> sizesMap = new HashMap<>();
+        Map<ProductSize, BigDecimal> legacySizePrices = new HashMap<>();
+
+        if (availSmall && priceSmall != null && priceSmall.compareTo(BigDecimal.ZERO) > 0) {
+            sizesMap.put(ProductSize.SMALL, com.lemondrop.model.ProductSizeInfo.builder()
+                    .available(true)
+                    .price(priceSmall)
+                    .build());
+            legacySizePrices.put(ProductSize.SMALL, priceSmall);
+        } else {
+            sizesMap.put(ProductSize.SMALL, com.lemondrop.model.ProductSizeInfo.builder()
+                    .available(false)
+                    .price(null)
+                    .build());
+        }
+
+        if (availMedium && priceMedium != null && priceMedium.compareTo(BigDecimal.ZERO) > 0) {
+            sizesMap.put(ProductSize.MEDIUM, com.lemondrop.model.ProductSizeInfo.builder()
+                    .available(true)
+                    .price(priceMedium)
+                    .build());
+            legacySizePrices.put(ProductSize.MEDIUM, priceMedium);
+        } else {
+            sizesMap.put(ProductSize.MEDIUM, com.lemondrop.model.ProductSizeInfo.builder()
+                    .available(false)
+                    .price(null)
+                    .build());
+        }
+
+        if (availLarge && priceLarge != null && priceLarge.compareTo(BigDecimal.ZERO) > 0) {
+            sizesMap.put(ProductSize.LARGE, com.lemondrop.model.ProductSizeInfo.builder()
+                    .available(true)
+                    .price(priceLarge)
+                    .build());
+            legacySizePrices.put(ProductSize.LARGE, priceLarge);
+        } else {
+            sizesMap.put(ProductSize.LARGE, com.lemondrop.model.ProductSizeInfo.builder()
+                    .available(false)
+                    .price(null)
+                    .build());
+        }
         
-        product.setSizePrices(sizePrices);
+        product.setSizes(sizesMap);
+        product.setSizePrices(legacySizePrices);
         product.setAvailable(available);
         product.setFeatured(featured);
         

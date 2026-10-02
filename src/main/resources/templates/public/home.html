@@ -153,7 +153,7 @@
                     <p class="ld-product-desc" th:text="${product.description}">Descripción</p>
                     <div class="ld-product-footer">
                         <div class="ld-product-price" 
-                             th:text="${'Desde $' + #numbers.formatDecimal(product.sizePrices.get(T(com.lemondrop.model.ProductSize).SMALL), 0, 'POINT', 0, 'COMMA')}">
+                             th:text="${'Desde $' + #numbers.formatDecimal(product.minAvailablePrice, 0, 'POINT', 0, 'COMMA')}">
                             Desde $5.000
                         </div>
                         <a href="/catalogo" class="ld-btn ld-btn-lemon ld-btn-sm">Personalizar 🍧</a>
