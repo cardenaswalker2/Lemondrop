@@ -197,7 +197,7 @@
                     <div class="ld-product-footer">
                         <div class="ld-product-price" th:text="${'Desde $' + #numbers.formatDecimal(prod.minAvailablePrice, 0, 'POINT', 0, 'COMMA')}">$5.000</div>
                         <button class="ld-btn ld-btn-lemon ld-btn-sm" 
-                                th:attr="onclick=|openCustomizerModal('${prod.id}', '${prod.name}', '${prod.description}', ${prod.getPriceForSize(T(com.lemondrop.model.ProductSize).SMALL) != null ? prod.getPriceForSize(T(com.lemondrop.model.ProductSize).SMALL) : 'null'}, ${prod.getPriceForSize(T(com.lemondrop.model.ProductSize).MEDIUM) != null ? prod.getPriceForSize(T(com.lemondrop.model.ProductSize).MEDIUM) : 'null'}, ${prod.getPriceForSize(T(com.lemondrop.model.ProductSize).LARGE) != null ? prod.getPriceForSize(T(com.lemondrop.model.ProductSize).LARGE) : 'null'})|">
+                                th:attr="onclick=|openCustomizerModal('${prod.id}', '${prod.name}', '${prod.description}', ${prod.smallPrice != null ? prod.smallPrice : 'null'}, ${prod.mediumPrice != null ? prod.mediumPrice : 'null'}, ${prod.largePrice != null ? prod.largePrice : 'null'})|">
                             Personalizar 🍧
                         </button>
                     </div>

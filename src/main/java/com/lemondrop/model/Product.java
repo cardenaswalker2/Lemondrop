@@ -97,6 +97,18 @@ public class Product {
         return getPriceForSize(ProductSize.LARGE);
     }
 
+    public boolean isHasSmall() {
+        return isSizeAvailable(ProductSize.SMALL);
+    }
+
+    public boolean isHasMedium() {
+        return isSizeAvailable(ProductSize.MEDIUM);
+    }
+
+    public boolean isHasLarge() {
+        return isSizeAvailable(ProductSize.LARGE);
+    }
+
     public BigDecimal getMinAvailablePrice() {
         BigDecimal min = null;
         for (ProductSize sz : ProductSize.values()) {
