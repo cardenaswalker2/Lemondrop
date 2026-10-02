@@ -108,15 +108,16 @@ public class OrderService {
                     throw new IllegalStateException("El complemento " + addon.getName() + " no está disponible.");
                 }
 
+                BigDecimal effectiveAddonPrice = addon.getEffectivePrice();
                 OrderItemAddon itemAddon = OrderItemAddon.builder()
                         .addonId(addon.getId())
                         .addonName(addon.getName())
-                        .unitPrice(addon.getAdditionalPrice())
+                        .unitPrice(effectiveAddonPrice)
                         .quantity(1) // default 1 per unit
                         .build();
 
                 itemAddons.add(itemAddon);
-                addonsTotal = addonsTotal.add(addon.getAdditionalPrice());
+                addonsTotal = addonsTotal.add(effectiveAddonPrice);
             }
 
             BigDecimal itemSubtotal = unitPrice.add(addonsTotal).multiply(new BigDecimal(itemDto.getQuantity()));
@@ -309,13 +310,14 @@ public class OrderService {
             for (String addonId : itemDto.getAddonIds()) {
                 Addon addon = addonRepository.findById(addonId)
                         .orElseThrow(() -> new IllegalArgumentException("Complemento no encontrado."));
+                BigDecimal effectiveAddonPrice = addon.getEffectivePrice();
                 itemAddons.add(OrderItemAddon.builder()
                         .addonId(addon.getId())
                         .addonName(addon.getName())
-                        .unitPrice(addon.getAdditionalPrice())
+                        .unitPrice(effectiveAddonPrice)
                         .quantity(1)
                         .build());
-                addonsTotal = addonsTotal.add(addon.getAdditionalPrice());
+                addonsTotal = addonsTotal.add(effectiveAddonPrice);
             }
 
             BigDecimal itemSubtotal = unitTotal.add(addonsTotal).multiply(new BigDecimal(itemDto.getQuantity()));
@@ -775,13 +777,14 @@ public class OrderService {
                 for (String addonId : itemDto.getAddonIds()) {
                     Addon addon = addonRepository.findById(addonId)
                             .orElseThrow(() -> new IllegalArgumentException("Complemento no encontrado."));
+                    BigDecimal effectiveAddonPrice = addon.getEffectivePrice();
                     itemAddons.add(OrderItemAddon.builder()
                             .addonId(addon.getId())
                             .addonName(addon.getName())
-                            .unitPrice(addon.getAdditionalPrice())
+                            .unitPrice(effectiveAddonPrice)
                             .quantity(1)
                             .build());
-                    addonsTotal = addonsTotal.add(addon.getAdditionalPrice());
+                    addonsTotal = addonsTotal.add(effectiveAddonPrice);
                 }
             }
 

@@ -93,13 +93,22 @@ public class CatalogTools {
                 .collect(Collectors.toList());
 
         List<Map<String, Object>> matchedAddons = allAddons.stream()
-                .filter(a -> cleanQuery.isEmpty() || normalizeText(a.getName()).contains(cleanQuery))
-                .map(a -> Map.<String, Object>of(
-                        "id", a.getId(),
-                        "name", a.getName(),
-                        "description", a.getDescription() != null ? a.getDescription() : "",
-                        "additionalPrice", a.getAdditionalPrice()
-                ))
+                .filter(a -> cleanQuery.isEmpty() || normalizeText(a.getName()).contains(cleanQuery) ||
+                        (a.getDescription() != null && normalizeText(a.getDescription()).contains(cleanQuery)) ||
+                        (a.getCategory() != null && normalizeText(a.getCategory()).contains(cleanQuery)))
+                .map(a -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", a.getId());
+                    map.put("name", a.getName());
+                    map.put("description", a.getDescription() != null ? a.getDescription() : "");
+                    map.put("priceType", a.getEffectivePriceType().name());
+                    map.put("isFree", a.isFree());
+                    map.put("additionalPrice", a.getEffectivePrice());
+                    map.put("category", a.getCategory() != null ? a.getCategory() : "Otros");
+                    map.put("displayOrder", a.getDisplayOrder() != null ? a.getDisplayOrder() : 0);
+                    map.put("priceFormatted", a.isFree() ? "GRATIS" : ("$" + String.format(java.util.Locale.GERMAN, "%,d", a.getEffectivePrice().longValue())));
+                    return map;
+                })
                 .collect(Collectors.toList());
 
         Map<String, Object> resultData = new HashMap<>();
@@ -152,11 +161,19 @@ public class CatalogTools {
                 .collect(Collectors.toList());
 
         List<Map<String, Object>> addonList = addons.stream()
-                .map(a -> Map.<String, Object>of(
-                        "id", a.getId(),
-                        "name", a.getName(),
-                        "additionalPrice", a.getAdditionalPrice()
-                ))
+                .map(a -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", a.getId());
+                    map.put("name", a.getName());
+                    map.put("description", a.getDescription() != null ? a.getDescription() : "");
+                    map.put("priceType", a.getEffectivePriceType().name());
+                    map.put("isFree", a.isFree());
+                    map.put("additionalPrice", a.getEffectivePrice());
+                    map.put("category", a.getCategory() != null ? a.getCategory() : "Otros");
+                    map.put("displayOrder", a.getDisplayOrder() != null ? a.getDisplayOrder() : 0);
+                    map.put("priceFormatted", a.isFree() ? "GRATIS" : ("$" + String.format(java.util.Locale.GERMAN, "%,d", a.getEffectivePrice().longValue())));
+                    return map;
+                })
                 .collect(Collectors.toList());
 
         Map<String, Object> data = new HashMap<>();

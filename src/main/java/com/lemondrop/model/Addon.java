@@ -22,4 +22,31 @@ public class Addon {
     private String image;
     private boolean available;
     private BigDecimal additionalPrice;
+    
+    @Builder.Default
+    private PriceType priceType = PriceType.PAID;
+    
+    private String category; // Dulces, Salsas, Frutas, Toppings, Otros
+    private Integer displayOrder;
+
+    public PriceType getEffectivePriceType() {
+        if (priceType != null) {
+            return priceType;
+        }
+        if (additionalPrice == null || additionalPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            return PriceType.FREE;
+        }
+        return PriceType.PAID;
+    }
+
+    public boolean isFree() {
+        return getEffectivePriceType() == PriceType.FREE;
+    }
+
+    public BigDecimal getEffectivePrice() {
+        if (isFree()) {
+            return BigDecimal.ZERO;
+        }
+        return additionalPrice != null ? additionalPrice : BigDecimal.ZERO;
+    }
 }

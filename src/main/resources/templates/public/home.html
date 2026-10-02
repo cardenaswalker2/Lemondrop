@@ -183,7 +183,7 @@
             <div class="ld-chip-card" th:each="addon : ${addons}" style="background: var(--ld-cream-card);">
                 <div class="ld-chip-name" th:text="${addon.name}">Leche condensada</div>
                 <div class="ld-chip-desc" th:text="${addon.description}">Toque dulce y cremoso</div>
-                <div class="ld-chip-price" th:text="${'+ $' + #numbers.formatDecimal(addon.additionalPrice, 0, 'POINT', 0, 'COMMA')}">+$1.000</div>
+                <div class="ld-chip-price" th:text="${addon.free ? 'Gratis' : '+ $' + #numbers.formatDecimal(addon.effectivePrice, 0, 'POINT', 0, 'COMMA')}">+$1.000</div>
             </div>
         </div>
     </section>

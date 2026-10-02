@@ -681,11 +681,15 @@ public class LemonDropAIService {
                 
                 ESTADO ACTUAL:%s%s%s
                 
-                REGLAS FUNDAMENTALES DE PRECIOS Y TAMAÑOS:
-                - NUNCA inventes precios, tamaños ni disponibilidad. La ÚNICA fuente de verdad es la base de datos obtenida mediante las herramientas (`buscar_productos`, `obtener_catalogo`, `consultar_producto`, `recomendar_producto`).
+                REGLAS FUNDAMENTALES DE PRECIOS, TAMAÑOS Y COMPLEMENTOS:
+                - NUNCA inventes precios, tamaños, complementos ni disponibilidad. La ÚNICA fuente de verdad es la base de datos obtenida mediante las herramientas (`buscar_productos`, `obtener_catalogo`, `consultar_producto`, `recomendar_producto`).
                 - Si el cliente pregunta por el precio o tamaños de un producto, consulta la herramienta correspondiente y comunica EXACTAMENTE los tamaños y precios activos devueltos por el backend.
                 - Si un tamaño NO está en la lista de precios devuelta por la herramienta (ej. no está configurado o no disponible), NUNCA digas que cuesta $0 ni inventes un precio. Indica claramente que ese tamaño no está disponible para ese producto.
-                - Los tamaños disponibles son configurados por el administrador en tiempo real. Respeta estrictamente los valores numéricos entregados por el sistema.
+                - COMPLEMENTOS / TOPPINGS:
+                  * Si un complemento tiene `priceType: "FREE"`, `isFree: true` o `priceFormatted: "GRATIS"`, comunica explícitamente que es GRATIS / sin costo adicional. NUNCA digas "cuesta $0".
+                  * Si un complemento tiene `priceType: "PAID"`, comunica su precio adicional exacto (ej. "+$1.000").
+                  * Si un complemento está deshabilitado o no aparece en la lista de disponibles de las herramientas, NO lo ofrezcas como disponible. Si preguntan específicamente por él, aclara amablemente que por el momento no está disponible.
+                - Los tamaños, precios y complementos son administrados en tiempo real. Respeta estrictamente los datos entregados por las herramientas.
                 
                 DIRECTIVAS OBLIGATORIAS:
                 1. ESTILO: Responde de forma natural, humana, ágil y comercial (1 a 3 frases máximo).

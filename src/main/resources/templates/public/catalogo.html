@@ -262,10 +262,15 @@
                 <div class="ld-toppings-list">
                     <label class="ld-topping-item" th:each="addon : ${addons}">
                         <div class="ld-topping-left">
-                            <input type="checkbox" name="modalAddons" th:value="${addon.id}" th:attr="data-price=${addon.additionalPrice},data-name=${addon.name}" onchange="calculateModalTotal()">
+                            <input type="checkbox" name="modalAddons" th:value="${addon.id}" th:attr="data-price=${addon.effectivePrice},data-name=${addon.name}" onchange="calculateModalTotal()">
                             <span th:text="${addon.name}">Leche Condensada</span>
                         </div>
-                        <span class="ld-topping-price" th:text="${'+ $' + #numbers.formatDecimal(addon.additionalPrice, 0, 'POINT', 0, 'COMMA')}">+$1.000</span>
+                        <span class="ld-topping-price" 
+                              th:if="${addon.free}" 
+                              style="color: var(--ld-green-primary); font-weight: 700;">GRATIS</span>
+                        <span class="ld-topping-price" 
+                              th:if="${!addon.free}" 
+                              th:text="${'+ $' + #numbers.formatDecimal(addon.effectivePrice, 0, 'POINT', 0, 'COMMA')}">+$1.000</span>
                     </label>
                 </div>
             </div>

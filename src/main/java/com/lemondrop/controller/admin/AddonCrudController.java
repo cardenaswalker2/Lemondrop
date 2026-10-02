@@ -26,11 +26,22 @@ public class AddonCrudController {
 
     @PostMapping("/guardar")
     public String save(@ModelAttribute Addon addon,
-                       @RequestParam(required = false) boolean available) {
+                       @RequestParam(required = false, defaultValue = "false") boolean available,
+                       @RequestParam(required = false, defaultValue = "PAID") com.lemondrop.model.PriceType priceType,
+                       @RequestParam(required = false) BigDecimal additionalPrice,
+                       @RequestParam(required = false) String category,
+                       @RequestParam(required = false) Integer displayOrder) {
         addon.setAvailable(available);
-        if (addon.getAdditionalPrice() == null) {
+        addon.setPriceType(priceType);
+        addon.setCategory(category != null && !category.trim().isEmpty() ? category.trim() : "Toppings");
+        addon.setDisplayOrder(displayOrder != null ? displayOrder : 0);
+        
+        if (priceType == com.lemondrop.model.PriceType.FREE) {
             addon.setAdditionalPrice(BigDecimal.ZERO);
+        } else {
+            addon.setAdditionalPrice(additionalPrice != null ? additionalPrice : BigDecimal.ZERO);
         }
+        
         addonService.save(addon);
         return "redirect:/admin/complementos";
     }

@@ -197,7 +197,7 @@ public class CartTools {
                 if (obj != null) {
                     Addon addon = resolveAddon(obj.toString());
                     if (addon != null && addon.isAvailable()) {
-                        BigDecimal addonPrice = addon.getAdditionalPrice() != null ? addon.getAdditionalPrice() : BigDecimal.ZERO;
+                        BigDecimal addonPrice = addon.getEffectivePrice();
                         itemAddons.add(AICartItemAddon.builder()
                                 .addonId(addon.getId())
                                 .addonName(addon.getName())
@@ -334,7 +334,7 @@ public class CartTools {
                 if (obj != null) {
                     Addon addon = resolveAddon(obj.toString());
                     if (addon != null && addon.isAvailable()) {
-                        BigDecimal addonPrice = addon.getAdditionalPrice() != null ? addon.getAdditionalPrice() : BigDecimal.ZERO;
+                        BigDecimal addonPrice = addon.getEffectivePrice();
                         newItemAddons.add(AICartItemAddon.builder()
                                 .addonId(addon.getId())
                                 .addonName(addon.getName())
@@ -359,7 +359,7 @@ public class CartTools {
                         boolean alreadyHas = targetItem.getAddons().stream()
                                 .anyMatch(a -> a.getAddonId() != null && a.getAddonId().equals(addon.getId()));
                         if (!alreadyHas) {
-                            BigDecimal addonPrice = addon.getAdditionalPrice() != null ? addon.getAdditionalPrice() : BigDecimal.ZERO;
+                            BigDecimal addonPrice = addon.getEffectivePrice();
                             targetItem.getAddons().add(AICartItemAddon.builder()
                                     .addonId(addon.getId())
                                     .addonName(addon.getName())
